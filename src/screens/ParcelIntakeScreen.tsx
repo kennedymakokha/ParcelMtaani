@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { FormInput } from '../components/input.component';
 import { PrinterSelectionModal } from '../modals/printerSelect.model';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { buildReceiptText } from '../services /recieptBuilder';
-import { buildQrPayload, printToPrinter } from '../services /printer.service';
-export default function ParcelIntakeScreen() {
+import { printToPrinter } from '../services /printer.service';
+export default function ParcelIntakeScreen({ navigation }: any) {
   const [destination, setDestination] = useState('pickup');
   const [pickup, setpickup] = useState('');
   const [notes, setNotes] = useState('');
@@ -36,8 +36,8 @@ export default function ParcelIntakeScreen() {
     },
     printerMac: null,
   });
-  const updateField = (section, field, value) => {
-    setFormData(prev => ({
+  const updateField = (section: any, field: any, value: any) => {
+    setFormData((prev: any) => ({
       ...prev,
       [section]: {
         ...prev[section],
@@ -70,9 +70,17 @@ export default function ParcelIntakeScreen() {
     });
 
     await printToPrinter(selectedPrinterMac, receiptText, qrData, true);
-
+    navigation.navigate('Delivery');
     console.log('object', notes, formData);
   };
+  useEffect(() => {
+    const loadPrinter = async () => {
+      const savedMac = await AsyncStorage.getItem('SELECTED_PRINTER_MAC');
+      if (savedMac) setSelectedPrinterMac(savedMac);
+    };
+
+    loadPrinter();
+  }, []);
   return (
     <ScrollView className="flex-1 bg-gray-50 px-6 pb-24">
       {/* Sender Details */}
@@ -162,7 +170,7 @@ export default function ParcelIntakeScreen() {
         <View className="border border-gray-300 rounded-lg mb-3 bg-white">
           <Picker
             selectedValue={destination}
-            onValueChange={value => setDestination(value)}
+            onValueChange={(value: any) => setDestination(value)}
           >
             <Picker.Item label="Pickup" value="pickup" />
             <Picker.Item label="Drop-off" value="dropoff" />
@@ -172,7 +180,7 @@ export default function ParcelIntakeScreen() {
           <View className="border border-gray-300 rounded-lg mb-3 bg-white">
             <Picker
               selectedValue={pickup}
-              onValueChange={value => setpickup(value)}
+              onValueChange={(value: any) => setpickup(value)}
             >
               <Picker.Item
                 label="Kitale(Hindu Temple)"

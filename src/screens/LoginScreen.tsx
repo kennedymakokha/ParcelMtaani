@@ -16,7 +16,7 @@ export default function LoginScreen({ navigation }:any) {
       />
       <TouchableOpacity
         className="bg-blue-600 w-full p-3 rounded-lg"
-        onPress={() => navigation.navigate("Parcel Intake")}
+        onPress={() => navigation.navigate("Delivery")}
       >
         <Text className="text-white text-center font-semibold">Login</Text>
       </TouchableOpacity>

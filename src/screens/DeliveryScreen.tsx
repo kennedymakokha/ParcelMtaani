@@ -1,76 +1,81 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import QRCodeScanner from "react-native-qrcode-scanner";
-import { RNCamera } from "react-native-camera";
+import { CameraKitCameraScreen } from "react-native-camera-kit";
 
 export default function OnReceivingScreen() {
   const [scannedData, setScannedData] = useState<any>(null);
+  const [scanning, setScanning] = useState(true);
 
-  const handleScan = (e: any) => {
+  const handleScan = (event: any) => {
+    const code = event.nativeEvent.codeStringValue;
+
     try {
-      const parsed = JSON.parse(e.data); // QR payload is JSON from buildQrPayload
+      const parsed = JSON.parse(code);
       setScannedData(parsed);
-    } catch (err) {
-      setScannedData({ error: "Invalid QR data" });
+      setScanning(false);
+    } catch (err: any) {
+      setScannedData({ error: "Invalid QR data",err });
+      setScanning(false);
     }
   };
 
+  if (scanning) {
+    return (
+      <CameraKitCameraScreen
+        scanBarcode={true}
+        onReadCode={handleScan}
+        showFrame={true}
+        laserColor="#2563eb"
+        frameColor="#2563eb"
+      />
+    );
+  }
+
   return (
     <View style={styles.container}>
-      {!scannedData ? (
-        <QRCodeScanner
-          onRead={handleScan}
-          flashMode={RNCamera.Constants.FlashMode.off}
-          topContent={
-            <Text style={styles.title}>Scan Parcel QR Code</Text>
-          }
-        />
-      ) : (
-        <View style={styles.detailsCard}>
-          {scannedData.error ? (
-            <Text style={styles.error}>{scannedData.error}</Text>
-          ) : (
-            <>
-              <Text style={styles.sectionTitle}>Sender</Text>
-              <Text>Name: {scannedData.sender?.name}</Text>
-              <Text>Phone: {scannedData.sender?.phone}</Text>
-              <Text>Address: {scannedData.sender?.address}</Text>
+      <View style={styles.detailsCard}>
+        {scannedData?.error ? (
+          <Text style={styles.error}>{scannedData.error}</Text>
+        ) : (
+          <>
+            <Text style={styles.sectionTitle}>Sender</Text>
+            <Text>Name: {scannedData.sender?.name}</Text>
+            <Text>Phone: {scannedData.sender?.phone}</Text>
 
-              <Text style={styles.sectionTitle}>Receiver</Text>
-              <Text>Name: {scannedData.receiver?.name}</Text>
-              <Text>Phone: {scannedData.receiver?.phone}</Text>
-              <Text>Address: {scannedData.receiver?.address}</Text>
+            <Text style={styles.sectionTitle}>Receiver</Text>
+            <Text>Name: {scannedData.receiver?.name}</Text>
+            <Text>Phone: {scannedData.receiver?.phone}</Text>
 
-              <Text style={styles.sectionTitle}>Parcel</Text>
-              <Text>Weight: {scannedData.parcel?.weight} kg</Text>
-              <Text>Destination: {scannedData.parcel?.destination}</Text>
-              <Text>Price: KES {scannedData.parcel?.price}</Text>
-              <Text>Receipt No: {scannedData.receiptNo}</Text>
-            </>
-          )}
+            <Text style={styles.sectionTitle}>Parcel</Text>
+            <Text>Weight: {scannedData.parcel?.weight} kg</Text>
+            <Text>Destination: {scannedData.parcel?.destination}</Text>
+            <Text>Price: KES {scannedData.parcel?.price}</Text>
+            <Text>Receipt No: {scannedData.receiptNo}</Text>
+          </>
+        )}
 
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => setScannedData(null)}
-          >
-            <Text style={styles.buttonText}>Scan Another</Text>
-          </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => {
+            setScannedData(null);
+            setScanning(true);
+          }}
+        >
+          <Text style={styles.buttonText}>Scan Another</Text>
+        </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.button, { backgroundColor: "#16a34a" }]}
-            onPress={() => {
-              // TODO: Call backend API to mark parcel as "Received"
-              console.log("Confirm reception:", scannedData);
-            }}
-          >
-            <Text style={styles.buttonText}>Confirm Reception</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: "#16a34a" }]}
+          onPress={() => {
+            console.log("Confirm reception:", scannedData);
+          }}
+        >
+          <Text style={styles.buttonText}>Confirm Reception</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f9fafb" },
   title: { fontSize: 20, fontWeight: "bold", textAlign: "center", marginBottom: 10 },
