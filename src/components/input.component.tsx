@@ -1,55 +1,84 @@
 import React from "react";
-import { View, Text, TextInput } from "react-native";
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  StyleSheet, 
+  KeyboardTypeOptions,
+  StyleProp,
+  ViewStyle
+} from "react-native";
 import { useTheme } from "../contexts/themeContext";
 
 interface FormInputProps {
   label: string;
-  placeholder: string;
-  keyboardType?: "default" | "numeric" | "phone-pad" | "email-address";
+  placeholder?: string; // Optional to prevent strict errors if missing
+  keyboardType?: KeyboardTypeOptions; // Use built-in RN types
   multiline?: boolean;
   value?: string;
   onChangeText?: (text: string) => void;
+  containerStyle?: StyleProp<ViewStyle>; // Allow layout overrides
 }
 
-export const FormInput = ({
+export const FormInput: React.FC<FormInputProps> = ({
   label,
   placeholder,
   keyboardType = "default",
   multiline = false,
   value,
   onChangeText,
-}: FormInputProps) => {
-  const { colors, typography } = useTheme();
+  containerStyle,
+}) => {
+  const { colors } = useTheme();
 
   return (
-    <View style={{ marginBottom: 16 }}>
+    <View style={[styles.container, containerStyle]}>
       <Text
-        style={{
-          fontSize: 14,
-          fontWeight: "600",
-          color: colors.text,
-          marginBottom: 6,
-        }}
+        style={[
+          styles.label,
+          { color: colors.text }
+        ]}
       >
         {label}
       </Text>
       <TextInput
-        style={{
-          borderWidth: 1,
-          borderColor: colors.border,
-          color: colors.text,
-          backgroundColor: colors.background,
-          borderRadius: 8,
-          padding: 12,
-          fontSize: 16,
-        }}
+        style={[
+          styles.input,
+          {
+            borderColor: colors.border,
+            color: colors.text,
+            backgroundColor: colors.background,
+            // Adjust height for multiline
+            minHeight: multiline ? 80 : 48,
+            textAlignVertical: multiline ? "top" : "center",
+          },
+        ]}
         placeholder={placeholder}
-        placeholderTextColor={colors.secondary}
+        placeholderTextColor={colors.textSecondary || "#999"}
         keyboardType={keyboardType}
         multiline={multiline}
         value={value}
         onChangeText={onChangeText}
+        autoCapitalize="none"
       />
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 6,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+  },
+});

@@ -3,7 +3,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import AdminDashboard from "../../screens/AdminDashboard";
 import ParcelIntakeScreen from "../../screens/ParcelIntakeScreen";
-import OnReceivingScreen from "../../screens/DeliveryScreen";
+import OnReceivingScreen from "../../screens/ArrivalToScreen";
 import CustomDrawerContent from "./CustomDrawer";
 
 

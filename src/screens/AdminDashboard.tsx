@@ -1,8 +1,8 @@
 import React from "react";
 import { View, Text } from "react-native";
 import { useTheme } from "../contexts/themeContext";
-import { PrimaryButton } from "../components/PrimaryButton";
-import { AnimatedAnalyticsChart } from "../components/AnalyticsChart";
+
+// import { AnimatedAnalyticsChart } from "../components/AnalyticsChart";
 
 export default function AdminDashboard() {
   const { colors } = useTheme();
@@ -39,8 +39,8 @@ export default function AdminDashboard() {
       </View>
 
       {/* Analytics Charts */}
-      <AnimatedAnalyticsChart title="Weekly Parcel Trends" type="line" series={weeklySeries} />
-      <AnimatedAnalyticsChart title="Monthly Totals (Jan–Jun)" type="bar" series={monthlySeries} />
+      {/* <AnimatedAnalyticsChart title="Weekly Parcel Trends" type="line" series={weeklySeries} />
+      <AnimatedAnalyticsChart title="Monthly Totals (Jan–Jun)" type="bar" series={monthlySeries} /> */}
 
       {/* Action Button */}
       {/* <PrimaryButton title="Export Report" onPress={() => console.log("Exporting report...")} /> */}

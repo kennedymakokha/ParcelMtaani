@@ -1,0 +1,12 @@
+{
+  "name": "react-native-qr-scanner",
+  "version": "1.0.0",
+  "main": "src/index",
+  "react-native": "src/index",
+  "source": "src/index",
+  "codegenConfig": {
+    "name": "RNQRScannerSpec",
+    "type": "modules",
+    "jsSrcsDir": "src"
+  }
+}

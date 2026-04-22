@@ -1,5 +1,8 @@
 package com.parcelmtaani
-import com.qrscanner.QRScannerPackage
+
+// REMOVE this line: import com.qrscanner.QRScannerPackage
+// It is no longer needed because the file is in the same package
+
 import android.app.Application
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
@@ -14,9 +17,7 @@ class MainApplication : Application(), ReactApplication {
       context = applicationContext,
       packageList =
         PackageList(this).packages.apply {
-          // Packages that cannot be autolinked yet can be added manually here, for example:
-          // add(MyReactNativePackage())
-            add(QRScannerPackage())
+            add(QRScannerPackage()) // This will now work correctly
         },
     )
   }
