@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, TextInput } from "react-native";
+import { useTheme } from "../contexts/themeContext";
 
 interface FormInputProps {
   label: string;
@@ -18,13 +19,32 @@ export const FormInput = ({
   value,
   onChangeText,
 }: FormInputProps) => {
+  const { colors, typography } = useTheme();
+
   return (
-    <View className="mb-4">
-      <Text className="text-sm font-semibold text-gray-700 mb-1">{label}</Text>
+    <View style={{ marginBottom: 16 }}>
+      <Text
+        style={{
+          fontSize: 14,
+          fontWeight: "600",
+          color: colors.text,
+          marginBottom: 6,
+        }}
+      >
+        {label}
+      </Text>
       <TextInput
-        className="border border-gray-300 text-black rounded-lg p-3 bg-white"
+        style={{
+          borderWidth: 1,
+          borderColor: colors.border,
+          color: colors.text,
+          backgroundColor: colors.background,
+          borderRadius: 8,
+          padding: 12,
+          fontSize: 16,
+        }}
         placeholder={placeholder}
-        placeholderTextColor="#000000"
+        placeholderTextColor={colors.secondary}
         keyboardType={keyboardType}
         multiline={multiline}
         value={value}

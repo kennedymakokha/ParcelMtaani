@@ -1,31 +1,39 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
+import './global.css';
 
-import { NavigationContainer } from '@react-navigation/native';
-import { StatusBar, useColorScheme } from 'react-native';
-import "./global.css"
-import {
-  SafeAreaProvider,
-} from 'react-native-safe-area-context';
-import RootStack from './src/navigations/stacks/rootStack';
+// Screens
+import RootStack from "./src/navigations/stacks/rootStack";
+import { ThemeProvider, useTheme } from "./src/contexts/themeContext";
+import { AuthProvider } from "./src/contexts/AuthContext";
 
-function App() {
-  const isDarkMode = useColorScheme() === 'dark';
 
+
+function AppNavigator() {
+  const { colors } = useTheme();
   return (
-    <SafeAreaProvider>
-      <NavigationContainer>
-        <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-        <RootStack />
-      </NavigationContainer>
-    </SafeAreaProvider>
+    <NavigationContainer
+      theme={{
+        ...DefaultTheme,
+        colors: {
+          ...DefaultTheme.colors,
+          background: colors.background,
+          text: colors.text,
+          primary: colors.primary,
+          border: colors.border,
+        },
+      }}
+    >
+     <RootStack />
+    </NavigationContainer>
   );
 }
 
-
-
-export default App;
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <AppNavigator />
+      </AuthProvider>
+    </ThemeProvider>
+  );
+}

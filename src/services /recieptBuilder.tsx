@@ -1,5 +1,6 @@
 export const buildReceiptText = ({
   receiptNo,
+  sixDigitNumber,
   invoiceId,
   sender,
   reciever,

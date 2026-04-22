@@ -1,14 +1,21 @@
 {
   "extends": "@react-native/typescript-config",
   "compilerOptions": {
-    "types": [
-      "jest"
-    ]
+    "jsx": "react-jsx",          // enable JSX
+    "types": ["jest"],
+    "allowJs": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "moduleResolution": "node",  // keep standard node resolution
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
     "src",
+    "react-native-qr-scanner/src",   // include your local package
     "global.d.ts",
     "nativewind-env.d.ts"
   ],

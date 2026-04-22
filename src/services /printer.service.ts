@@ -5,9 +5,10 @@ import { Buffer } from 'buffer';
  * logoBase64 must be a MONOCHROME PNG converted to ESC/POS raster bytes.
  */
 export const printToPrinter = async (
-  macAddress: string,
-  text: string,
-  qrData: string,
+  macAddress?: string,
+  text?: string,
+  qrData?: string,
+  sixDigitNumber?: string,
   printQr?: boolean,
   logoBase64?: string
 ) => {
@@ -61,36 +62,49 @@ export const printToPrinter = async (
       const logoBuffer = Buffer.from(logoBase64, 'base64');
       logoSection = centerAlign + logoBuffer.toString('binary') + '\n';
     }
+// -----------------------------
+// QR SECTION + Number
+// -----------------------------
+let qrSection = '';
 
-    // -----------------------------
-    // QR SECTION (FIXED)
-    // -----------------------------
-    let qrSection = '';
+if (printQr && qrData) {
+  const qrBuffer = Buffer.from(qrData, 'utf8');
+  const length = qrBuffer.length + 3;
 
-    if (printQr && qrData) {
-      const qrBuffer = Buffer.from(qrData, 'utf8');
-      const length = qrBuffer.length + 3;
+  const pL = length % 256;
+  const pH = Math.floor(length / 256);
 
-      const pL = length % 256;
-      const pH = Math.floor(length / 256);
+  const storeCommand = Buffer.concat([
+    Buffer.from([0x1D, 0x28, 0x6B, pL, pH, 0x31, 0x50, 0x30]),
+    qrBuffer,
+  ]);
 
-      const storeCommand = Buffer.concat([
-        Buffer.from([0x1D, 0x28, 0x6B, pL, pH, 0x31, 0x50, 0x30]),
-        qrBuffer,
-      ]);
+  
+  qrSection = Buffer.concat([
+    Buffer.from([
+      0x1B, 0x61, 0x01,       // center
+      0x1D, 0x28, 0x6B, 0x04, 0x00, 0x31, 0x41, 0x32, 0x00, // model
+      0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x43, 0x08,       // size
+      0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x45, 0x30,       // error
+    ]),
+    storeCommand,
+    Buffer.from([0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x51, 0x30]), // print QR
+    Buffer.from('\n'),
 
-      qrSection = Buffer.concat([
-        Buffer.from([
-          0x1B, 0x61, 0x01,       // center
-          0x1D, 0x28, 0x6B, 0x04, 0x00, 0x31, 0x41, 0x32, 0x00, // model
-          0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x43, 0x08,       // size
-          0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x45, 0x30,       // error
-        ]),
-        storeCommand,
-        Buffer.from([0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x51, 0x30]), // print
-        Buffer.from('\n\n'),
-      ]).toString('binary');
-    }
+    // Large bold number
+    Buffer.from([
+      0x1B, 0x61, 0x01, // center
+      0x1B, 0x21, 0x30, // double height + double width
+      0x1B, 0x45, 0x01, // emphasized (bold)
+    ]),
+    Buffer.from(sixDigitNumber, 'ascii'),
+    Buffer.from([
+      0x1B, 0x21, 0x00, // reset font size
+      0x1B, 0x45, 0x00, // turn off bold
+    ]),
+    Buffer.from('\n\n'),
+  ]).toString('binary');
+}
 
     // -----------------------------
     // FINAL PRINT PAYLOAD
