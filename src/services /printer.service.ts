@@ -1,6 +1,5 @@
 import RNBluetoothClassic, { BluetoothDevice } from 'react-native-bluetooth-classic';
 import { Buffer } from 'buffer';
-import { getShortCode } from '../utils/loationMaps';
 import { ParcelFormData, QRPayload } from '../../types';
 
 export const printToPrinter = async (
@@ -69,7 +68,7 @@ export const printToPrinter = async (
         Buffer.from('\n'),
         // Large Bold Number
         Buffer.from([ESC, 0x61, 0x01, ESC, 0x21, 0x30, ESC, 0x45, 0x01]),
-        Buffer.from(`${getShortCode(pickup)}-${sixDigitNumber}`, 'ascii'),
+        Buffer.from(`${pickup}-${sixDigitNumber}`, 'ascii'),
         commands.resetFont,
         Buffer.from('\n\n'),
       ]);

@@ -1,0 +1,25 @@
+import { API_URL } from '@env';
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+// import { API_URL } from './../../env.local';
+const baseUrl = `${API_URL}/api`;
+// const baseUrl = `https://a899-102-205-188-82.ngrok-free.app/api`;
+
+export const api = createApi({
+    reducerPath: 'api',
+    baseQuery: fetchBaseQuery({
+        baseUrl,
+        // credentials: 'include', // use this if your backend uses cookies
+        prepareHeaders: (headers, { getState }) => {
+            const token = (getState() as any).auth?.token;
+            if (token) {
+                headers.set('Authorization', `Bearer ${token}`);
+            }
+            return headers;
+        },
+    }),
+    endpoints: builder => ({
+        
+    }),
+    
+});
+

@@ -1,41 +1,50 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, FlatList, TouchableOpacity, Modal } from "react-native";
-import { useTheme } from "../contexts/themeContext";
-import ParcelIntakeScreen from "../modals/parcelIntekeModal";
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  FlatList,
+  TouchableOpacity,
+  Modal,
+} from 'react-native';
+import { useTheme } from '../contexts/themeContext';
+import ParcelIntakeScreen from '../modals/parcelIntekeModal';
+import { useFetchparcelQuery } from '../services/apis/parcel.api';
+import { useSelector } from 'react-redux';
 
 export default function DispatchToTrackScreen() {
   const { colors } = useTheme();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [showIntakeModal, setShowIntakeModal] = useState(false);
   const [showTrackModal, setShowTrackModal] = useState(false);
   const [selectedParcels, setSelectedParcels] = useState<any[]>([]);
 
-  const [vehicleReg, setVehicleReg] = useState("");
-  const [driverName, setDriverName] = useState("");
-
-  const [parcels, setParcels] = useState([
-    { id: "1", from: "ParcelApp Nairobi", pickup: "Kitale (Hindu Temple)", code: "KIT-123456", status: "In Transit" },
-    { id: "2", from: "ParcelApp Nairobi", pickup: "Eldoret (Kiteleele Stop)", code: "ELD-654321", status: "Delivered" },
-    { id: "3", from: "ParcelApp Nairobi", pickup: "Nairobi (Gikomba)", code: "NBO-987654", status: "Pending Dispatch" },
-  ]);
-
-  const filteredParcels = parcels.filter(
-    (p) =>
-      p.pickup.toLowerCase().includes(search.toLowerCase()) ||
-      p.code.toLowerCase().includes(search.toLowerCase())
+  const currentPickup = useSelector(
+    (state: any) => state.pickups.currentPickup,
   );
+  const { data, isLoading, refetch } = useFetchparcelQuery({
+    limit: 10,
+    sentFrom: currentPickup,
+    page: 1,
+    status: '',
+    search,
+  });
+  const parcels = data?.parcels || [];
+
+  const [vehicleReg, setVehicleReg] = useState('');
+  const [driverName, setDriverName] = useState('');
 
   const toggleSelect = (item: any) => {
-    if (item.status !== "Pending Dispatch") return;
-    setSelectedParcels((prev) =>
-      prev.find((p) => p.id === item.id)
-        ? prev.filter((p) => p.id !== item.id)
-        : [...prev, item]
+    if (item.status !== 'Pending Dispatch') return;
+    setSelectedParcels(prev =>
+      prev.find(p => p._id === item._id)
+        ? prev.filter(p => p.id !== item._id)
+        : [...prev, item],
     );
   };
 
   const renderParcel = ({ item }: { item: any }) => {
-    const isSelected = selectedParcels.find((p) => p.id === item.id);
+    const isSelected = selectedParcels.find(p => p._id === item._id);
     return (
       <TouchableOpacity
         onPress={() => toggleSelect(item)}
@@ -47,23 +56,25 @@ export default function DispatchToTrackScreen() {
           shadowOpacity: 0.1,
         }}
       >
-        <Text style={{ fontSize: 16, fontWeight: "600", color: colors.text }}>
-          From: {item.from}
+        <Text style={{ fontSize: 16, fontWeight: '600', color: colors.text }}>
+          From: {item.sentFrom?.pickup_name}
         </Text>
         <Text style={{ color: colors.secondary, marginTop: 4 }}>
-          Pickup: {item.pickup}
+          Pickup: {item.pickup?.pickup_name}
         </Text>
-        <Text style={{ color: colors.primary, marginTop: 4, fontWeight: "500" }}>
+        <Text
+          style={{ color: colors.primary, marginTop: 4, fontWeight: '500' }}
+        >
           Code: {item.code}
         </Text>
         <Text
           style={{
             marginTop: 8,
-            fontWeight: "600",
+            fontWeight: '600',
             color:
-              item.status === "Delivered"
+              item.status === 'Delivered'
                 ? colors.success
-                : item.status === "In Transit"
+                : item.status === 'In Transit'
                 ? colors.warning
                 : colors.danger,
           }}
@@ -74,13 +85,13 @@ export default function DispatchToTrackScreen() {
     );
   };
 
+  useEffect(() => {
+    if (currentPickup) {
+      refetch();
+    }
+  }, [currentPickup,refetch]);
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, padding: 24 }}>
-      {/* Header */}
-      <Text style={{ fontSize: 22, fontWeight: "700", color: colors.text, marginBottom: 16 }}>
-        Dispatch to Track
-      </Text>
-
       {/* Search Bar */}
       <TextInput
         style={{
@@ -99,18 +110,22 @@ export default function DispatchToTrackScreen() {
         value={search}
         onChangeText={setSearch}
       />
-
-      {/* Parcel List */}
-      <FlatList
-        data={filteredParcels}
-        keyExtractor={(item) => item.id}
-        renderItem={renderParcel}
-        ListEmptyComponent={
-          <Text style={{ color: colors.secondary, textAlign: "center" }}>
-            No parcels found
-          </Text>
-        }
-      />
+      {isLoading ? (
+        <Text style={{ color: colors.secondary, textAlign: 'center' }}>
+          Loading parcels...
+        </Text>
+      ) : (
+        <FlatList
+          data={parcels}
+          keyExtractor={item => item._id}
+          renderItem={renderParcel}
+          ListEmptyComponent={
+            <Text style={{ color: colors.secondary, textAlign: 'center' }}>
+              No parcels found
+            </Text>
+          }
+        />
+      )}
 
       {/* Track Button (enabled if pending selected) */}
       {selectedParcels.length > 0 && (
@@ -123,7 +138,9 @@ export default function DispatchToTrackScreen() {
             marginTop: 12,
           }}
         >
-          <Text style={{ color: "#fff", textAlign: "center", fontWeight: "600" }}>
+          <Text
+            style={{ color: '#fff', textAlign: 'center', fontWeight: '600' }}
+          >
             Track Selected ({selectedParcels.length})
           </Text>
         </TouchableOpacity>
@@ -133,34 +150,43 @@ export default function DispatchToTrackScreen() {
       <TouchableOpacity
         onPress={() => setShowIntakeModal(true)}
         style={{
-          position: "absolute",
+          position: 'absolute',
           bottom: 24,
           right: 24,
           backgroundColor: colors.primary,
           paddingVertical: 16,
           paddingHorizontal: 20,
           borderRadius: 50,
-          shadowColor: "#000",
+          shadowColor: '#000',
           shadowOpacity: 0.3,
           shadowRadius: 4,
           elevation: 5,
         }}
       >
-        <Text style={{ color: "#fff", fontWeight: "600", fontSize: 20 }}>＋</Text>
+        <Text style={{ color: '#fff', fontWeight: '600', fontSize: 20 }}>
+          ＋
+        </Text>
       </TouchableOpacity>
 
       {/* Intake Modal */}
       <Modal visible={showIntakeModal} animationType="slide">
         <View style={{ flex: 1, backgroundColor: colors.background }}>
-          <View style={{ flexDirection: "row", justifyContent: "flex-end",paddingTop: 16, paddingHorizontal: 16 }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'flex-end',
+              paddingTop: 16,
+              paddingHorizontal: 16,
+            }}
+          >
             <TouchableOpacity
               onPress={() => setShowIntakeModal(false)}
-               className="flex items-center justify-center p-1 rounded-md"
+              className="flex items-center justify-center p-1 rounded-md"
               style={{
                 backgroundColor: colors.error,
               }}
             >
-              <Text style={{ color: "#fff", fontWeight: "600" }}>✕</Text>
+              <Text style={{ color: '#fff', fontWeight: '600' }}>✕</Text>
             </TouchableOpacity>
           </View>
           <ParcelIntakeScreen />
@@ -169,9 +195,29 @@ export default function DispatchToTrackScreen() {
 
       {/* Track Modal */}
       <Modal visible={showTrackModal} animationType="slide" transparent>
-        <View style={{ flex: 1, backgroundColor: "#000000aa", justifyContent: "center", padding: 24 }}>
-          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: 20 }}>
-            <Text style={{ fontSize: 18, fontWeight: "700", color: colors.text, marginBottom: 12 }}>
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: '#000000aa',
+            justifyContent: 'center',
+            padding: 24,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: colors.card,
+              borderRadius: 12,
+              padding: 20,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: '700',
+                color: colors.text,
+                marginBottom: 12,
+              }}
+            >
               Vehicle & Driver Details
             </Text>
             <TextInput
@@ -206,7 +252,12 @@ export default function DispatchToTrackScreen() {
             />
             <TouchableOpacity
               onPress={() => {
-                console.log("Dispatching:", selectedParcels, vehicleReg, driverName);
+                console.log(
+                  'Dispatching:',
+                  selectedParcels,
+                  vehicleReg,
+                  driverName,
+                );
                 setShowTrackModal(false);
                 setSelectedParcels([]);
               }}
@@ -216,7 +267,13 @@ export default function DispatchToTrackScreen() {
                 borderRadius: 8,
               }}
             >
-              <Text style={{ color: "#fff", textAlign: "center", fontWeight: "600" }}>
+              <Text
+                style={{
+                  color: '#fff',
+                  textAlign: 'center',
+                  fontWeight: '600',
+                }}
+              >
                 Confirm Dispatch
               </Text>
             </TouchableOpacity>
@@ -229,7 +286,13 @@ export default function DispatchToTrackScreen() {
                 borderRadius: 8,
               }}
             >
-              <Text style={{ color: "#fff", textAlign: "center", fontWeight: "600" }}>
+              <Text
+                style={{
+                  color: '#fff',
+                  textAlign: 'center',
+                  fontWeight: '600',
+                }}
+              >
                 Cancel
               </Text>
             </TouchableOpacity>

@@ -47,7 +47,8 @@ export const FormInput: React.FC<FormInputProps> = ({
           {
             borderColor: colors.border,
             color: colors.text,
-            backgroundColor: colors.background,
+             backgroundColor: colors.card,
+            // backgroundColor: colors.background,
             // Adjust height for multiline
             minHeight: multiline ? 80 : 48,
             textAlignVertical: multiline ? "top" : "center",

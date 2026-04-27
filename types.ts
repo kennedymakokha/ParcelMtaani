@@ -1,5 +1,5 @@
 // src/types/auth.ts
-export type UserRole = "superAdmin" | "staff" | "agent" | "customer";
+export type UserRole = "superadmin" | "staff" | "agent" | "customer"|"admin";
 
 
 export interface ParcelFormData {
@@ -22,7 +22,7 @@ export interface QRPayload {
 export interface Person {
   name: string;
   phone: string;
-  address: string;
+  address?: string;
 }
 
 export interface Parcel {
@@ -31,10 +31,43 @@ export interface Parcel {
   destination: string;
   pickup: string;
   price: string;
+  sentFrom: string;
+  code: string;
+   fragile: boolean;
 }
 
 export interface ParcelFormState {
   sender: Person;
   receiver: Person;
   parcel: Parcel;
+ 
+}
+
+// types.ts (optional but cleaner)
+
+export interface Pickup {
+  _id: string;
+  pickup_name: string;
+  phone_number: string;
+  working_hrs: string;
+  contact_number: string;
+  latitude: number | null;
+  longitude: number | null;
+  state: string;
+  api_key: string;
+  strictMpesa: boolean;
+  master_ke: string;
+  createdBy: string;
+  business: string;
+  deletedAt: string | null;
+  created_at: string;
+  updatedAt: string;
+  createdAt: string;
+  __v: number;
+}
+
+export interface PickupState {
+  pickups: Pickup[];
+  page: number;
+  totalPages: number;
 }

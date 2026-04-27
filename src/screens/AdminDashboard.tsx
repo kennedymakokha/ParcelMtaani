@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { View, Text } from "react-native";
 import { useTheme } from "../contexts/themeContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // import { AnimatedAnalyticsChart } from "../components/AnalyticsChart";
 
@@ -18,7 +19,28 @@ export default function AdminDashboard() {
     { label: "Intake", color: colors.primary, data: [200, 250, 300, 280, 320, 350] },
     { label: "Delivered", color: "#10b981", data: [150, 220, 270, 260, 300, 330] },
   ];
+ useEffect(() => {
+  const checkLogin = async () => {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      const userId = await AsyncStorage.getItem('userId');
+      const expiry = await AsyncStorage.getItem('tokenExpiry');
 
+      console.log('Auth check:', { token, userId, expiry });
+
+      if (token && userId) {
+        if (expiry && Date.now() > Number(expiry)) {
+          await AsyncStorage.clear();
+          return;
+        }
+      }
+    } catch (err) {
+      console.log('Auth check failed:', err);
+    }
+  };
+
+  checkLogin();
+}, []);
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, padding: 24 }}>
       {/* Header */}

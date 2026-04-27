@@ -1,3 +1,4 @@
+/* eslint-disable react-native/no-inline-styles */
 import React from "react";
 import { TouchableOpacity, Text, ActivityIndicator } from "react-native";
 import { useTheme } from "../contexts/themeContext";
@@ -12,6 +13,7 @@ export const PrimaryButton = ({ title, onPress, loading = false }:any) => {
         backgroundColor: loading ? "#93c5fd" : colors.primary,
         padding: 16,
         borderRadius: 12,
+        marginBottom: 12,
       }}
       onPress={onPress}
       disabled={loading}

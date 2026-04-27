@@ -1,55 +1,87 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
 import { AuthInput } from '../components/AuthInput'; // reusable input
 import { PrimaryButton } from '../components/PrimaryButton'; // reusable button
 import { SecondaryButton } from '../components/SecondaryButton';
 import { TertiaryButton } from '../components/TertiaryButton';
 import { useAuth } from '../contexts/AuthContext';
-import Icon from 'react-native-vector-icons/FontAwesome6'
+import Icon from 'react-native-vector-icons/FontAwesome6';
+import { useDispatch } from 'react-redux';
+import { useLoginMutation } from '../services/apis/auth.api';
+import { setCredentials } from '../features/auth/authSlice';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { setCurrentPickup } from '../features/pickSlice';
 export default function LoginScreen({ navigation }: any) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [phone_number, setPhoneNumber] = useState('+254790226514');
+  const [password, setPassword] = useState('+254790226514');
+
   const { setUser } = useAuth();
-  // const handleLogin = async () => {
-  //   setLoading(true);
-  //   try {
-  //     // Simulate API call
-  //     setTimeout(() => {
-  //       setLoading(false);
-  //       navigation.navigate("DashboardStack");
-  //     }, 2000);
-  //   } catch (err) {
-  //     setLoading(false);
-  //     console.error("Login failed:", err);
-  //   }
-  // };
+  const [msg, setMsg] = useState({ msg: '', state: '' });
+  const dispatch = useDispatch();
+  const [loginUser, { error, isLoading: loading }] = useLoginMutation();
+  console.log(error, msg);
   const handleLogin = async () => {
-    setLoading(true);
     try {
-      // Simulate API call
-      setTimeout(() => {
-        // Example: backend returns full user object
-        const fetchedUser = {
-          id: 'u123',
-          name: 'Makokha',
-          email,
-          role: 'staff' as const,
-          avatar: 'https://via.placeholder.com/80',
-          token: 'mock-jwt-token',
-        };
+      setMsg({ msg: '', state: '' });
 
-        // ✅ Store full user in context
-        setUser(fetchedUser);
+      if (!phone_number || !password) {
+        setMsg({ msg: 'Both fields are required', state: 'error' });
+        return;
+      }
 
-        setLoading(false);
-        navigation.navigate('DashboardStack');
-      }, 2000);
-    } catch (err) {
-      setLoading(false);
-      console.error('Login failed:', err);
+      const data = await loginUser({ phone_number, password }).unwrap();
+
+      if (data.ok) {
+        // Update Redux / AsyncStorage if needed
+        dispatch(setCredentials({ ...data }));
+        await AsyncStorage.setItem('accessToken', data.token);
+        await AsyncStorage.setItem('userId', data.user._id);
+        dispatch(setCurrentPickup(data.user.pickup._id || null));
+        //  Update context with logged-in user
+
+        if (data.exp) {
+          await AsyncStorage.setItem('tokenExpiry', data.exp.toString());
+          setUser(data.user);
+        }
+        setMsg({ msg: 'Login successful! Redirecting...', state: 'success' });
+      } else {
+        setMsg({ msg: 'Login successful! Redirecting...', state: 'error' });
+      }
+    } catch (error: any) {
+    
+      setMsg({
+        msg:
+          error.message ||
+          error.data ||
+          error.data.message ||
+          'Error occurred, try again ',
+        state: 'error',
+      });
     }
   };
+
+  useEffect(() => {
+    const checkLogin = async () => {
+      try {
+        const token = await AsyncStorage.getItem('accessToken');
+        const userId = await AsyncStorage.getItem('userId');
+        const expiry = await AsyncStorage.getItem('tokenExpiry');
+
+        console.log('Auth check:', { token, userId, expiry });
+
+        if (token && userId) {
+          if (expiry && Date.now() > Number(expiry)) {
+            await AsyncStorage.clear();
+            return;
+          }
+        }
+      } catch (err) {
+        console.log('Auth check failed:', err);
+      }
+    };
+
+    checkLogin();
+  }, []);
   return (
     <View className="flex-1 bg-gray-50 justify-center px-6">
       {/* Branding */}
@@ -68,11 +100,11 @@ export default function LoginScreen({ navigation }: any) {
         </Text>
 
         <AuthInput
-          label="Email"
-          placeholder="Enter your email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
+          label="Phone Number"
+          placeholder="Enter your phone"
+          value={phone_number}
+          onChangeText={setPhoneNumber}
+          keyboardType="phone-pad"
         />
         <AuthInput
           label="Password"

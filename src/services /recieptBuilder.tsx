@@ -10,8 +10,8 @@ export const buildReceiptText = ({
   paidMpesa = 0,
   totals = {},
   changeDue = 0,
-  destination,
-  pickup,
+  from,
+  pickupName,
   mpesaData,
   phoneNumber,
   user,
@@ -72,8 +72,8 @@ export const buildReceiptText = ({
   text += line;
   text += `PARCEL\n`;
   text += formatLine('Weight (kg)', parcel?.weight || '');
-  text += formatLine('Destination', destination || '');
-  text += formatLine('Pickup Point', pickup || '');
+  text += formatLine('From', from || '');
+  text += formatLine('Pickup Point', pickupName || '');
 
   if (parcel?.instructions) {
     text += `Notes: ${parcel.instructions}\n`;
