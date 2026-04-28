@@ -11,10 +11,10 @@ export const injectEndpoints = api.injectEndpoints({
         }),
 
         fetchparcel: builder.query({
-            query: ({ limit, sentFrom, page, status, search }) => `/parcel?limit=${limit}&sentFrom=${sentFrom}&page=${page}&status=${status}&search=${search}`,
+            query: ({ limit, sentFrom, page, sentTo, status, search }) => `/parcel?limit=${limit}&sentFrom=${sentFrom}&page=${page}&status=${status}&search=${search}&sentTo=${sentTo}`,
         }),
         fetchgroupedparcel: builder.query({
-            query: ({ limit, pickupId, page,currentTruck, status, search }) => `/parcel/grouped?limit=${limit}&page=${page}&status=${status}&search=${search}&pickuId=${pickupId}&currentTruck=${currentTruck}`,
+            query: ({ limit, pickupId, page, currentTruck, status, search }) => `/parcel/grouped?limit=${limit}&page=${page}&status=${status}&search=${search}&pickuId=${pickupId}&currentTruck=${currentTruck}`,
         }),
         fetchparcelJourney: builder.query({
             query: (id) => `/parcel/${id}/journey`,
@@ -22,13 +22,20 @@ export const injectEndpoints = api.injectEndpoints({
         fetchTruckCount: builder.query({
             query: () => `/parcel/trucks/count`,
         }),
-         fetchStatusCount: builder.query({
+        fetchStatusCount: builder.query({
             query: () => `/parcel/status/count`,
         }),
         dispatchParcel: builder.mutation({
             query: (data) => ({
                 url: '/parcel/dispatch/bulk',
                 method: 'POST',
+                body: data,
+            }),
+        }),
+        markParcelAsrrived: builder.mutation({
+            query: (data) => ({
+                url: `/parcel/${data.code}/arrive`,
+                method: 'PUT',
                 body: data,
             }),
         }),
@@ -53,5 +60,6 @@ export const {
     useDispatchParcelMutation,
     useFetchparcelJourneyQuery,
     useFetchTruckCountQuery,
-    useFetchStatusCountQuery
+    useFetchStatusCountQuery,
+    useMarkParcelAsrrivedMutation
 } = injectEndpoints;
