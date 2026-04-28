@@ -71,6 +71,9 @@ export const buildReceiptText = ({
   // Parcel Info
   text += line;
   text += `PARCEL\n`;
+  if (parcel?.fragile) {
+    text += '*** FRAGILE ITEM ***\n';
+  }
   text += formatLine('Weight (kg)', parcel?.weight || '');
   text += formatLine('From', from || '');
   text += formatLine('Pickup Point', pickupName || '');

@@ -18,7 +18,8 @@ export const drawerConfig: Record<
     { label: 'Parcel Intake', icon: 'cube-outline', screen: 'Parcel Intake' },
     { label: 'On Receiving', icon: 'qr-code-outline', screen: 'On Receiving' },
     { label: 'Delivery', icon: 'car-outline', screen: 'Delivery' },
-    { label: 'Reports', icon: 'document-text-outline', screen: 'Reports' },
+    { label: 'Reports', icon: 'document-text-outline', screen: 'Parcels' },
+
   ],
   staff: [
     { label: 'Parcel Intake', icon: 'cube-outline', screen: 'Parcel Intake' },

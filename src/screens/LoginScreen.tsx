@@ -11,6 +11,7 @@ import { useLoginMutation } from '../services/apis/auth.api';
 import { setCredentials } from '../features/auth/authSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setCurrentPickup } from '../features/pickSlice';
+import Toast from '../components/toast';
 export default function LoginScreen({ navigation }: any) {
   const [phone_number, setPhoneNumber] = useState('+254790226514');
   const [password, setPassword] = useState('+254790226514');
@@ -19,7 +20,7 @@ export default function LoginScreen({ navigation }: any) {
   const [msg, setMsg] = useState({ msg: '', state: '' });
   const dispatch = useDispatch();
   const [loginUser, { error, isLoading: loading }] = useLoginMutation();
-  console.log(error, msg);
+
   const handleLogin = async () => {
     try {
       setMsg({ msg: '', state: '' });
@@ -37,23 +38,22 @@ export default function LoginScreen({ navigation }: any) {
         await AsyncStorage.setItem('accessToken', data.token);
         await AsyncStorage.setItem('userId', data.user._id);
         dispatch(setCurrentPickup(data.user.pickup._id || null));
-        //  Update context with logged-in user
-
-        if (data.exp) {
-          await AsyncStorage.setItem('tokenExpiry', data.exp.toString());
-          setUser(data.user);
-        }
+     
+        // if (data.exp) {
+        //   await AsyncStorage.setItem('tokenExpiry', data.exp.toString());
+        //   setUser(data.user);
+        // }
         setMsg({ msg: 'Login successful! Redirecting...', state: 'success' });
       } else {
         setMsg({ msg: 'Login successful! Redirecting...', state: 'error' });
       }
-    } catch (error: any) {
-    
+    } catch (err: any) {
       setMsg({
         msg:
-          error.message ||
-          error.data ||
-          error.data.message ||
+          err.message ||
+          err.data ||
+          err.data.message ||
+          error ||
           'Error occurred, try again ',
         state: 'error',
       });
@@ -67,10 +67,8 @@ export default function LoginScreen({ navigation }: any) {
         const userId = await AsyncStorage.getItem('userId');
         const expiry = await AsyncStorage.getItem('tokenExpiry');
 
-        console.log('Auth check:', { token, userId, expiry });
-
         if (token && userId) {
-          if (expiry && Date.now() > Number(expiry)) {
+          if (expiry && Date.now() > Number(expiry) * 1000) {
             await AsyncStorage.clear();
             return;
           }
@@ -113,7 +111,7 @@ export default function LoginScreen({ navigation }: any) {
           onChangeText={setPassword}
           secureTextEntry
         />
-
+        {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
         {/* Reusable Button */}
         <PrimaryButton title="Login" onPress={handleLogin} loading={loading} />
         <View className="mt-3">

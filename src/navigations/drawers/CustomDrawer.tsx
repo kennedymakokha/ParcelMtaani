@@ -17,6 +17,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/FontAwesome6';
 import { useGetPickupsQuery } from '../../services/apis/business.api';
 import { setCurrentPickup, setPickups } from '../../features/pickSlice';
+import { TertiaryButton } from '../../components/TertiaryButton';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 export default function CustomDrawerContent(props: any) {
   const { colors } = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
@@ -140,6 +142,7 @@ export default function CustomDrawerContent(props: any) {
             Settings
           </Text>
         </TouchableOpacity>
+        <TertiaryButton onPress={async()=>await AsyncStorage.clear()} title='Logout'/>
         <TouchableOpacity
           style={{
             flexDirection: 'row',

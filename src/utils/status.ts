@@ -1,0 +1,1 @@
+export const statusData =["Pending Dispatch", "In Transit", "Pending Collection", "Collected", "Returned"]

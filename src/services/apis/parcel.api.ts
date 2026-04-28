@@ -9,10 +9,30 @@ export const injectEndpoints = api.injectEndpoints({
                 body,
             }),
         }),
-       
+
         fetchparcel: builder.query({
-            query: ({limit, sentFrom,page,status,search}) => `/parcel?limit=${limit}&sentFrom=${sentFrom}&page=${page}&status=${status}&search=${search}`,
+            query: ({ limit, sentFrom, page, status, search }) => `/parcel?limit=${limit}&sentFrom=${sentFrom}&page=${page}&status=${status}&search=${search}`,
         }),
+        fetchgroupedparcel: builder.query({
+            query: ({ limit, pickupId, page,currentTruck, status, search }) => `/parcel/grouped?limit=${limit}&page=${page}&status=${status}&search=${search}&pickuId=${pickupId}&currentTruck=${currentTruck}`,
+        }),
+        fetchparcelJourney: builder.query({
+            query: (id) => `/parcel/${id}/journey`,
+        }),
+        fetchTruckCount: builder.query({
+            query: () => `/parcel/trucks/count`,
+        }),
+         fetchStatusCount: builder.query({
+            query: () => `/parcel/status/count`,
+        }),
+        dispatchParcel: builder.mutation({
+            query: (data) => ({
+                url: '/parcel/dispatch/bulk',
+                method: 'POST',
+                body: data,
+            }),
+        }),
+
         updateParcel: builder.mutation({
             query: (data) => ({
                 url: `/parcel/${data._id}`,
@@ -20,15 +40,18 @@ export const injectEndpoints = api.injectEndpoints({
                 body: data
             })
         }),
-        
+
     }),
 });
 
 export const {
-  
+
     useFetchparcelQuery,
     useUpdateParcelMutation,
-   
+    useFetchgroupedparcelQuery,
     useRegisterParcelMutation,
-  
+    useDispatchParcelMutation,
+    useFetchparcelJourneyQuery,
+    useFetchTruckCountQuery,
+    useFetchStatusCountQuery
 } = injectEndpoints;

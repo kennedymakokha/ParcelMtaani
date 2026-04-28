@@ -43,8 +43,8 @@ export default function FilterChips<T>({
           onPress={() => onSelect(null)}
           style={{
             paddingHorizontal: 14,
-            paddingVertical: 8,
-            borderRadius: 20,
+            paddingVertical: 4,
+            borderRadius: 10,
             marginRight: 8,
             backgroundColor:
               selected === null ? colors.primary : colors.card,
@@ -74,10 +74,9 @@ export default function FilterChips<T>({
             onPress={() => onSelect(item)}
             style={{
               paddingHorizontal: 14,
-              paddingVertical: 8,
-            
-              borderRadius: 20,
-              marginRight: 8,
+             paddingVertical: 4,
+            borderRadius: 10,
+            marginRight: 8,
               backgroundColor: isSelected
                 ? colors.primary
                 : colors.card,

@@ -35,6 +35,13 @@ export interface Parcel {
   code: string;
    fragile: boolean;
 }
+export interface Truck {
+  _id: string;
+  plate: string;
+  model: string;
+  capacity: string;
+  driverId?: string;
+}
 
 export interface ParcelFormState {
   sender: Person;

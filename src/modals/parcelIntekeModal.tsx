@@ -5,7 +5,6 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
-  Alert,
   ActivityIndicator,
   Switch,
 } from 'react-native';
@@ -19,8 +18,9 @@ import { buildReceiptText } from '../services /recieptBuilder';
 import { printToPrinter } from '../services /printer.service';
 import { useRegisterParcelMutation } from '../services/apis/parcel.api';
 import { useSelector } from 'react-redux';
+import Toast from '../components/toast';
 
-export default function ParcelIntakeScreen() {
+export default function ParcelIntakeScreen({ onClose, refetch }: any) {
   const { colors } = useTheme();
 
   // State with strict types
@@ -32,8 +32,9 @@ export default function ParcelIntakeScreen() {
   );
   const pickups = useSelector((state: any) => state.pickups.pickups);
   const [showPrinterModal, setShowPrinterModal] = useState(false);
-  const [postParcel, { error: submitionError, isLoading: submitting }] =
-    useRegisterParcelMutation();
+  const [postParcel, { isLoading: submitting }] = useRegisterParcelMutation();
+
+  const [msg, setMsg] = useState({ msg: '', state: '' });
   const [formData, setFormData] = useState<ParcelFormState>({
     sender: { name: '', phone: '', address: '' },
     receiver: { name: '', phone: '', address: '' },
@@ -81,13 +82,20 @@ export default function ParcelIntakeScreen() {
       setShowPrinterModal(true);
       return;
     }
-    formData.parcel.pickup = pickup;
-    formData.parcel.code = `${
-      pickups.filter((p: any) => p._id === pickup)[0].short_code
-    }-${sixDigitNumber}`;
+    const updatedFormData = {
+      ...formData,
+      parcel: {
+        ...formData.parcel,
+        pickup,
+        code: `${
+          pickups.filter((p: any) => p._id === pickup)[0].short_code
+        }-${sixDigitNumber}`,
+      },
+    };
+
     try {
       const receiptNo = `INV${sixDigitNumber}`;
-      await postParcel(formData).unwrap();
+      await postParcel(updatedFormData).unwrap();
       // 1. Build Text Payload
       const receiptText = buildReceiptText({
         receiptNo,
@@ -114,6 +122,7 @@ export default function ParcelIntakeScreen() {
         }-${sixDigitNumber}`,
         from: `${user?.pickup?.pickup_name || ''}`,
       });
+      // const qrData = `${receiptNo}|${pickup}|${sixDigitNumber}`;
 
       // 3. Print (Handled by our strict service)
       const success = await printToPrinter(
@@ -126,13 +135,18 @@ export default function ParcelIntakeScreen() {
       );
 
       if (success) {
-        Alert.alert('Success', 'Receipt printed successfully!');
+        await onClose();
+        await refetch();
+        setMsg({
+          msg: 'Parcel registered and receipt printed successfully',
+          state: 'success',
+        });
       }
-    } catch (error) {
-      Alert.alert(
-        'Printer Error',
-        error instanceof Error ? error.message : 'An unknown error occurred',
-      );
+    } catch (error: any) {
+      setMsg({
+        msg: error?.data?.message || 'An unknown error occurred',
+        state: 'error',
+      });
     }
   };
 
@@ -212,37 +226,33 @@ export default function ParcelIntakeScreen() {
           value={formData.receiver.phone}
           onChangeText={t => updateField('receiver', 'phone', t)}
         />
-        {/* <FormInput
-          label="Recipient Address"
-          value={formData.receiver.address}
-          onChangeText={t => updateField('receiver', 'address', t)}
-        /> */}
       </View>
-
+      {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
       {/* Parcel Details */}
       <View
         style={{
-          backgroundColor: formData.parcel.fragile?colors.background:colors.card,
+          backgroundColor: formData.parcel.fragile
+            ? colors.background
+            : colors.card,
           borderRadius: 12,
           padding: 16,
           marginBottom: 24,
         }}
       >
-        <View 
-         style={{
+        <View
+          style={{
             flexDirection: 'row',
             justifyContent: 'space-between',
             alignItems: 'center',
-             marginBottom: 12,
-         }}
-        // className="flex flex-row align-items-center justify-content-space-between bg-red-300 w-full  px-1"
+            marginBottom: 12,
+          }}
+          // className="flex flex-row align-items-center justify-content-space-between bg-red-300 w-full  px-1"
         >
           <Text
             style={{
               fontSize: 18,
               fontWeight: '600',
               color: colors.text,
-             
             }}
           >
             Parcel Details
@@ -255,9 +265,7 @@ export default function ParcelIntakeScreen() {
               marginTop: 12,
             }}
           >
-            <Text style={{ color: colors.text, fontSize: 16 }}>
-              Fragile 
-            </Text>
+            <Text style={{ color: colors.text, fontSize: 16 }}>Fragile</Text>
 
             <Switch
               value={formData.parcel.fragile}
@@ -300,9 +308,11 @@ export default function ParcelIntakeScreen() {
           }}
         >
           <Picker selectedValue={pickup} onValueChange={v => setPickup(v)}>
-            {pickups?.map((pickup: any) => (
-              <Picker.Item label={pickup.pickup_name} value={pickup._id} />
-            ))}
+            {pickups
+              ?.filter((pickup: any) => pickup._id !== user.pickup?._id)
+              .map((pickup: any) => (
+                <Picker.Item label={pickup.pickup_name} value={pickup._id} />
+              ))}
           </Picker>
         </View>
       </View>

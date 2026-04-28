@@ -11,14 +11,8 @@ import { useTheme } from '../contexts/themeContext';
 import TruckFormModal from '../components/modals/truckManagement';
 import { useDeleteTruckMutation, useGetTrucksQuery } from '../services/apis/trucks.api';
 import ConfirmModal from '../components/modals/confirmDelete';
+import { Truck } from '../../types';
 
-interface Truck {
-  _id: string;
-  plate: string;
-  model: string;
-  capacity: string;
-  driverId?: string;
-}
 
 export default function TrucksManagementScreen() {
   const { colors } = useTheme();

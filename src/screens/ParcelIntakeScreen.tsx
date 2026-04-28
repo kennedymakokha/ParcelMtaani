@@ -1,3 +1,5 @@
+/* eslint-disable react/self-closing-comp */
+/* eslint-disable react-native/no-inline-styles */
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -6,11 +8,18 @@ import {
   FlatList,
   TouchableOpacity,
   Modal,
+  ScrollView,
 } from 'react-native';
 import { useTheme } from '../contexts/themeContext';
 import ParcelIntakeScreen from '../modals/parcelIntekeModal';
-import { useFetchparcelQuery } from '../services/apis/parcel.api';
+import { useDispatchParcelMutation, useFetchparcelQuery } from '../services/apis/parcel.api';
 import { useSelector } from 'react-redux';
+import { Picker } from '@react-native-picker/picker';
+import { useGetTrucksQuery } from '../services/apis/trucks.api';
+import { Truck } from '../../types';
+import Toast from '../components/toast';
+import { PrimaryButton } from '../components/PrimaryButton';
+import { SecondaryButton } from '../components/SecondaryButton';
 
 export default function DispatchToTrackScreen() {
   const { colors } = useTheme();
@@ -18,7 +27,14 @@ export default function DispatchToTrackScreen() {
   const [showIntakeModal, setShowIntakeModal] = useState(false);
   const [showTrackModal, setShowTrackModal] = useState(false);
   const [selectedParcels, setSelectedParcels] = useState<any[]>([]);
-
+  const [msg, setMsg] = useState({ msg: '', state: '' });
+  const [dispatchParcel, { isLoading: dispatching }] = useDispatchParcelMutation();
+  const { data: trucks, isFetching: fetchingTrucks } = useGetTrucksQuery({
+    page: 1,
+    limit: 1000,
+    search,
+  });
+  const Vehicles = trucks?.trucks || [];
   const currentPickup = useSelector(
     (state: any) => state.pickups.currentPickup,
   );
@@ -26,47 +42,57 @@ export default function DispatchToTrackScreen() {
     limit: 10,
     sentFrom: currentPickup,
     page: 1,
-    status: '',
+    status: 'Pending Dispatch',
     search,
   });
   const parcels = data?.parcels || [];
 
   const [vehicleReg, setVehicleReg] = useState('');
-  const [driverName, setDriverName] = useState('');
 
   const toggleSelect = (item: any) => {
     if (item.status !== 'Pending Dispatch') return;
+
     setSelectedParcels(prev =>
-      prev.find(p => p._id === item._id)
-        ? prev.filter(p => p.id !== item._id)
-        : [...prev, item],
+      prev.includes(item._id)
+        ? prev.filter(id => id !== item._id)
+        : [...prev, item._id],
     );
   };
 
   const renderParcel = ({ item }: { item: any }) => {
-    const isSelected = selectedParcels.find(p => p._id === item._id);
+    const isSelected = selectedParcels.includes(item._id);
+
     return (
       <TouchableOpacity
         onPress={() => toggleSelect(item)}
         style={{
-          backgroundColor: isSelected ? colors.primaryLight : colors.card,
+          backgroundColor: isSelected ? colors.primary + '20' : colors.card,
           borderRadius: 12,
           padding: 16,
           marginBottom: 12,
+          borderWidth: isSelected ? 1 : 0,
+          borderColor: isSelected ? colors.primary : 'transparent',
           shadowOpacity: 0.1,
         }}
       >
         <Text style={{ fontSize: 16, fontWeight: '600', color: colors.text }}>
           From: {item.sentFrom?.pickup_name}
         </Text>
+
         <Text style={{ color: colors.secondary, marginTop: 4 }}>
           Pickup: {item.pickup?.pickup_name}
         </Text>
+
         <Text
-          style={{ color: colors.primary, marginTop: 4, fontWeight: '500' }}
+          style={{
+            color: colors.primary,
+            marginTop: 4,
+            fontWeight: '500',
+          }}
         >
           Code: {item.code}
         </Text>
+
         <Text
           style={{
             marginTop: 8,
@@ -84,12 +110,11 @@ export default function DispatchToTrackScreen() {
       </TouchableOpacity>
     );
   };
-
   useEffect(() => {
     if (currentPickup) {
       refetch();
     }
-  }, [currentPickup,refetch]);
+  }, [currentPickup, refetch]);
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, padding: 24 }}>
       {/* Search Bar */}
@@ -126,7 +151,7 @@ export default function DispatchToTrackScreen() {
           }
         />
       )}
-
+      {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
       {/* Track Button (enabled if pending selected) */}
       {selectedParcels.length > 0 && (
         <TouchableOpacity
@@ -189,11 +214,12 @@ export default function DispatchToTrackScreen() {
               <Text style={{ color: '#fff', fontWeight: '600' }}>✕</Text>
             </TouchableOpacity>
           </View>
-          <ParcelIntakeScreen />
+          <ParcelIntakeScreen refetch={refetch} onClose = {()=>{setShowIntakeModal(false)}} />
         </View>
       </Modal>
 
       {/* Track Modal */}
+
       <Modal visible={showTrackModal} animationType="slide" transparent>
         <View
           style={{
@@ -208,94 +234,75 @@ export default function DispatchToTrackScreen() {
               backgroundColor: colors.card,
               borderRadius: 12,
               padding: 20,
+              maxHeight: '80%', // ✅ prevents overflow
             }}
           >
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: '700',
-                color: colors.text,
-                marginBottom: 12,
-              }}
-            >
-              Vehicle & Driver Details
-            </Text>
-            <TextInput
-              style={{
-                borderWidth: 1,
-                borderColor: colors.border,
-                backgroundColor: colors.background,
-                borderRadius: 8,
-                padding: 10,
-                marginBottom: 12,
-                color: colors.text,
-              }}
-              placeholder="Vehicle Registration"
-              placeholderTextColor={colors.secondary}
-              value={vehicleReg}
-              onChangeText={setVehicleReg}
-            />
-            <TextInput
-              style={{
-                borderWidth: 1,
-                borderColor: colors.border,
-                backgroundColor: colors.background,
-                borderRadius: 8,
-                padding: 10,
-                marginBottom: 12,
-                color: colors.text,
-              }}
-              placeholder="Driver Name"
-              placeholderTextColor={colors.secondary}
-              value={driverName}
-              onChangeText={setDriverName}
-            />
-            <TouchableOpacity
-              onPress={() => {
-                console.log(
-                  'Dispatching:',
-                  selectedParcels,
-                  vehicleReg,
-                  driverName,
-                );
-                setShowTrackModal(false);
-                setSelectedParcels([]);
-              }}
-              style={{
-                backgroundColor: colors.primary,
-                padding: 14,
-                borderRadius: 8,
-              }}
-            >
+            <ScrollView showsVerticalScrollIndicator={false}>
               <Text
                 style={{
-                  color: '#fff',
-                  textAlign: 'center',
-                  fontWeight: '600',
+                  fontSize: 18,
+                  fontWeight: '700',
+                  color: colors.text,
+                  marginBottom: 16,
                 }}
               >
-                Confirm Dispatch
+                Vehicle & Driver Details
               </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setShowTrackModal(false)}
-              style={{
-                marginTop: 10,
-                backgroundColor: colors.error,
-                padding: 12,
-                borderRadius: 8,
-              }}
-            >
-              <Text
-                style={{
-                  color: '#fff',
-                  textAlign: 'center',
-                  fontWeight: '600',
+
+              {/* Truck Selector */}
+              <View style={{ marginBottom: 20 }}>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: '600',
+                    color: colors.text,
+                    marginBottom: 8,
+                  }}
+                >
+                  {fetchingTrucks ? 'Loading trucks...' : 'Assign Truck'}
+                </Text>
+
+                <View
+                  style={{
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    borderRadius: 8,
+                    overflow: 'hidden', // ✅ fixes Android clipping
+                  }}
+                >
+                  <Picker
+                    selectedValue={vehicleReg}
+                    onValueChange={value => setVehicleReg(value)}
+                    style={{ color: colors.text }}
+                  >
+                    <Picker.Item label="Select Driver" value="" />
+                    {Vehicles.map((s: Truck) => (
+                      <Picker.Item key={s._id} label={s.plate} value={s._id} />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+
+              {/* Buttons */}
+              <PrimaryButton
+                title={dispatching ? 'Dispatching...' : 'Confirm Dispatch'}
+                onPress={async () => {
+                  console.log('Dispatching:', selectedParcels, vehicleReg);
+                  await dispatchParcel({ parcelIds: selectedParcels, truckId: vehicleReg });
+                  setShowTrackModal(false);
+                  setSelectedParcels([]);
+                  await refetch();
+                  setMsg({
+                    msg: 'Parcels dispatched successfully',
+                    state: 'success',
+                  });
                 }}
-              >
-                Cancel
-              </Text>
-            </TouchableOpacity>
+                disabled={dispatching || !vehicleReg}
+              />
+           <SecondaryButton onPress={() => setShowTrackModal(false)} title='Cancel' />
+
+            
+            </ScrollView>
           </View>
         </View>
       </Modal>
