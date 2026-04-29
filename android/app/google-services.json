@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "466728200114",
+    "project_id": "parcelapp-ae166",
+    "storage_bucket": "parcelapp-ae166.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:466728200114:android:ca4b3891378cc62c0da6ab",
+        "android_client_info": {
+          "package_name": "com.parcelmtaani"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDiwBODRZOXYu-rinZyKRYsLuU_AyX5ZVs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

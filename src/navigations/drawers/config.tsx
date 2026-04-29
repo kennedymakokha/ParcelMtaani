@@ -6,23 +6,34 @@ export const drawerConfig: Record<
 > = {
   superadmin: [
     { label: 'Dashboard', icon: 'stats-chart', screen: 'Dashboard' },
-    { label: 'Parcel Intake', icon: 'cube-outline', screen: 'Parcel Intake' },
+    {
+      label: 'Parcel Recieval & dispatch',
+      icon: 'cube-outline',
+      screen: 'Parcel Recieval & dispatch',
+    },
     { label: 'On Receiving', icon: 'qr-code-outline', screen: 'On Receiving' },
     { label: 'Delivery', icon: 'car-outline', screen: 'Delivery' },
     { label: 'Reports', icon: 'document-text-outline', screen: 'Reports' },
   ],
   admin: [
     { label: 'Dashboard', icon: 'stats-chart', screen: 'Dashboard' },
-   { label: 'Staff Management', icon: 'people-outline', screen: 'staff' },
-    { label: 'Trucks', icon: 'truck', screen: 'trucks' },
-    { label: 'Parcel Intake', icon: 'cube-outline', screen: 'Parcel Intake' },
-    { label: 'On Receiving', icon: 'qr-code-outline', screen: 'On Receiving' },
-    { label: 'Delivery', icon: 'car-outline', screen: 'Delivery' },
+    { label: 'Staff Management', icon: 'people-outline', screen: 'staff' },
+    { label: 'Vehicles Management', icon: 'bus-outline', screen: 'trucks' },
+    {
+      label: 'Parcel Recieval & Loading',
+      icon: 'cube-outline',
+      screen: 'Parcel Recieval & Loading',
+    },
+    { label: 'Offloading', icon: 'qr-code-outline', screen: 'On Receiving' },
+    // { label: 'Delivery', icon: 'car-outline', screen: 'Delivery' },
     { label: 'Reports', icon: 'document-text-outline', screen: 'Parcels' },
-
   ],
   staff: [
-    { label: 'Parcel Intake', icon: 'cube-outline', screen: 'Parcel Intake' },
+    {
+      label: 'Parcel Recieval & Loading',
+      icon: 'cube-outline',
+      screen: 'Parcel Recieval & Loading',
+    },
     { label: 'On Receiving', icon: 'qr-code-outline', screen: 'On Receiving' },
   ],
   agent: [{ label: 'Delivery', icon: 'car-outline', screen: 'Delivery' }],

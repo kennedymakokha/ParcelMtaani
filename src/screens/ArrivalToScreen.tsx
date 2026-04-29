@@ -1,5 +1,5 @@
 /* eslint-disable react-native/no-inline-styles */
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -14,21 +14,29 @@ import { useTheme } from '../contexts/themeContext';
 import {
   useFetchparcelQuery,
   useMarkParcelAsrrivedMutation,
+  useMarkParcerAsDeliveredMutation,
 } from '../services/apis/parcel.api';
 import { useSelector } from 'react-redux';
 import Toast from '../components/toast';
 import { PrimaryButton } from '../components/PrimaryButton';
 import Signature from 'react-native-signature-canvas';
+import { FormInput } from '../components/input.component';
 
 export default function ScannerScreen() {
   const { colors } = useTheme();
- 
-  const currentPickup = useSelector((state: any) => state.pickups.currentPickup);
+  const signatureRef = useRef<any>(null);
+  const currentPickup = useSelector(
+    (state: any) => state.pickups.currentPickup,
+  );
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [allParcels, setAllParcels] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [formData, setFormData] = useState({
+    reciever_signature: '',
+    reciever_ID: '',
+  });
 
   const [msg, setMsg] = useState({ msg: '', state: '' });
 
@@ -44,7 +52,8 @@ export default function ScannerScreen() {
     search,
   });
 
-  const [handleArrival] = useMarkParcelAsrrivedMutation();
+  const [handleArrival, { isLoading }] = useMarkParcelAsrrivedMutation();
+  const [handleCollected, { isLoading:collectionLoading }] = useMarkParcerAsDeliveredMutation();
 
   useEffect(() => {
     setPage(1);
@@ -80,10 +89,36 @@ export default function ScannerScreen() {
     try {
       const result: any = await scanQRCode();
       const parsed = JSON.parse(result);
+
       await handleArrival(parsed).unwrap();
       await refetch();
     } catch (err: any) {
       setMsg({ msg: err?.data?.message || 'Scan failed', state: 'error' });
+    }
+  };
+  console.log(selectedParcel);
+  const handleConfirmPickup = async () => {
+    if (!signatureData) {
+      setMsg({ msg: 'Please provide a signature', state: 'error' });
+      return;
+    }
+    try {
+      await handleCollected({
+        id: selectedParcel._id,
+        reciever_signature: signatureData,
+        reciever_ID: formData.reciever_ID,
+      }).unwrap();
+      setMsg({ msg: 'Pickup confirmed', state: 'success' });
+      setModalVisible(false);
+      setSelectedParcel(null);
+      setFormData({ reciever_signature: '', reciever_ID: '' });
+      await refetch();
+    } catch (err: any) {
+      console.log(err);
+      setMsg({
+        msg: err?.data?.message || 'Confirmation failed',
+        state: 'error',
+      });
     }
   };
 
@@ -152,7 +187,9 @@ export default function ScannerScreen() {
         data={allParcels}
         keyExtractor={item => item._id}
         renderItem={renderParcel}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
         ListEmptyComponent={
@@ -164,7 +201,9 @@ export default function ScannerScreen() {
 
       {/* 🖊️ Signature Modal */}
       <Modal visible={modalVisible} animationType="slide">
-        <View style={{ flex: 1, padding: 20, backgroundColor: colors.background }}>
+        <View
+          style={{ flex: 1, padding: 20, backgroundColor: colors.background }}
+        >
           <Text style={{ fontSize: 18, fontWeight: '600', color: colors.text }}>
             Confirm Pickup
           </Text>
@@ -174,30 +213,37 @@ export default function ScannerScreen() {
 
           {/* Signature Pad */}
           <View style={{ flex: 1, marginVertical: 20 }}>
+            <FormInput
+              keyboardType="numeric"
+              label="National ID"
+              value={formData.reciever_ID}
+              onChangeText={t =>
+                setFormData(prev => ({ ...prev, reciever_ID: t }))
+              }
+            />
             <Signature
-              onOK={(sig) => setSignatureData(sig)}
-              onEmpty={() => setMsg({ msg: "No signature captured", state: "error" })}
+              ref={signatureRef}
+              onOK={sig => {
+                setSignatureData(sig);
+              }}
+              onEmpty={() =>
+                setMsg({ msg: 'No signature captured', state: 'error' })
+              }
               descriptionText="Sign to confirm pickup"
-              clearText="Clear"
-              confirmText="Save"
               webStyle={`
-                .m-signature-pad--footer { display: none; }
-                .m-signature-pad { border: 1px solid ${colors.border}; }
-                .m-signature-pad--body { background: ${colors.card}; }
-              `}
+    .m-signature-pad--footer { display: none; }
+    .m-signature-pad { border: 1px solid ${colors.border}; }
+    .m-signature-pad--body { background: ${colors.card}; }
+  `}
             />
           </View>
 
           <PrimaryButton
-            onPress={() => {
-              if (signatureData) {
-                // TODO: send signatureData to backend with parcel info
-                setModalVisible(false);
-                setMsg({ msg: "Pickup confirmed", state: "success" });
-              } else {
-                setMsg({ msg: "Signature required", state: "error" });
-              }
+            onPress={async () => {
+              await signatureRef.current?.readSignature(); // 🔥 THIS is the key
+              await handleConfirmPickup();
             }}
+            loading={collectionLoading}
             title="Confirm Pickup"
           />
         </View>
@@ -206,24 +252,8 @@ export default function ScannerScreen() {
       {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
 
       {/* ➕ Scan Button */}
-      <TouchableOpacity
-        onPress={handleScan}
-        style={{
-          position: 'absolute',
-          bottom: 24,
-          right: 24,
-          backgroundColor: colors.primary,
-          paddingVertical: 16,
-          paddingHorizontal: 20,
-          borderRadius: 50,
-          shadowColor: "#000",
-          shadowOpacity: 0.3,
-          shadowRadius: 4,
-          elevation: 5,
-        }}
-      >
-        <Text style={{ color: colors.onPrimary, fontWeight: '600' }}>Scan New</Text>
-      </TouchableOpacity>
+      <PrimaryButton onPress={handleScan} title="Scan Parcel" loading={isLoading} />
+     
     </View>
   );
 }

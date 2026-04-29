@@ -1,3 +1,4 @@
+
 import { api } from '../index'
 
 export const injectEndpoints = api.injectEndpoints({
@@ -25,6 +26,9 @@ export const injectEndpoints = api.injectEndpoints({
         fetchStatusCount: builder.query({
             query: () => `/parcel/status/count`,
         }),
+        fetchDashboardStats: builder.query({
+            query: ({ pickupId, filterType, startDate, endDate }) => `/parcel/events/stats?pickupId=${pickupId}&filterType=${filterType}&startDate=${startDate}&endDate=${endDate}`,
+        }),
         dispatchParcel: builder.mutation({
             query: (data) => ({
                 url: '/parcel/dispatch/bulk',
@@ -35,6 +39,13 @@ export const injectEndpoints = api.injectEndpoints({
         markParcelAsrrived: builder.mutation({
             query: (data) => ({
                 url: `/parcel/${data.code}/arrive`,
+                method: 'PUT',
+                body: data,
+            }),
+        }),
+        markParcerAsDelivered: builder.mutation({
+            query: (data) => ({
+                url: `/parcel/${data.id}/collect`,
                 method: 'PUT',
                 body: data,
             }),
@@ -61,5 +72,7 @@ export const {
     useFetchparcelJourneyQuery,
     useFetchTruckCountQuery,
     useFetchStatusCountQuery,
-    useMarkParcelAsrrivedMutation
+    useMarkParcelAsrrivedMutation,
+    useMarkParcerAsDeliveredMutation,
+    useFetchDashboardStatsQuery
 } = injectEndpoints;

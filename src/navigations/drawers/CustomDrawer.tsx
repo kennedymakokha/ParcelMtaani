@@ -1,13 +1,7 @@
 /* eslint-disable react/no-unstable-nested-components */
 /* eslint-disable react-native/no-inline-styles */
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Modal,
-  FlatList,
-} from 'react-native';
+import { View, Text, TouchableOpacity, Modal, FlatList } from 'react-native';
 import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../../contexts/themeContext';
@@ -58,8 +52,16 @@ export default function CustomDrawerContent(props: any) {
         <View className="flex items-center justify-center">
           <Icon name="truck-fast" size={74} color="#fff" />
         </View>
-        <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>
-          ParcelMtaani
+        <Text
+          style={{
+            color: '#fff',
+            fontSize: 18,
+            textTransform: 'uppercase',
+            fontWeight: '800',
+            fontFamily: colors.fontSemiBold,
+          }}
+        >
+          Parcel Mtaani
         </Text>
         <Text style={{ color: '#e0e7ff' }}>
           {user?.pickup?.pickup_name?.toUpperCase()}
@@ -142,7 +144,10 @@ export default function CustomDrawerContent(props: any) {
             Settings
           </Text>
         </TouchableOpacity>
-        <TertiaryButton onPress={async()=>await AsyncStorage.clear()} title='Logout'/>
+        <TertiaryButton
+          onPress={async () => await AsyncStorage.clear()}
+          title="Logout"
+        />
         <TouchableOpacity
           style={{
             flexDirection: 'row',
