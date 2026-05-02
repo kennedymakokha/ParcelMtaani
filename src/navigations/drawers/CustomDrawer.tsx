@@ -1,6 +1,6 @@
 /* eslint-disable react/no-unstable-nested-components */
 /* eslint-disable react-native/no-inline-styles */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, FlatList } from 'react-native';
 import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -10,32 +10,75 @@ import { drawerConfig } from './config';
 import { useDispatch, useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/FontAwesome6';
 import { useGetPickupsQuery } from '../../services/apis/business.api';
-import { setCurrentPickup, setPickups } from '../../features/pickSlice';
-import { TertiaryButton } from '../../components/TertiaryButton';
+import {
+  addPickup,
+  setCurrentPickup,
+  setPickups,
+} from '../../features/pickSlice';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { logout } from '../../features/auth/authSlice';
+import { useSocket } from '../../contexts/socketContext';
+import { unsubscribeAllTopics } from '../../utils/topicSubsriptiptions';
+import {
+  subscribeToTopic,
+  unsubscribeFromTopic,
+} from '../../utils/subscribeUnsubscribe';
+
 export default function CustomDrawerContent(props: any) {
   const { colors } = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
-
   const { user } = useSelector((state: any) => state.auth);
   // Example: role fetched from context or props
-  const { data } = useGetPickupsQuery({});
+  const { data, refetch } = useGetPickupsQuery({});
   const userRole: UserRole = user?.role; // replace with dynamic value
   const pickups = useSelector((state: any) => state.pickups.pickups);
   const dispatch = useDispatch();
   const menuItems = drawerConfig[userRole];
+  const { socket } = useSocket();
+  const switchingRef = useRef(false);
+
   const currentPickup = useSelector(
     (state: any) => state.pickups.currentPickup,
   );
-  const handleSwitch = (point: any) => {
-    dispatch(setCurrentPickup(point));
-    setModalVisible(false);
-  };
 
+  const handleSwitch = async (point: any) => {
+    if (switchingRef.current) return;
+    switchingRef.current = true;
+
+    try {
+      await unsubscribeFromTopic(`pickup_${currentPickup?._id}_attendants`);
+      await subscribeToTopic(`pickup_${point._id}_attendants`);
+
+      dispatch(setCurrentPickup(point));
+      setModalVisible(false);
+    } finally {
+      switchingRef.current = false;
+    }
+  };
   useEffect(() => {
     dispatch(setPickups(data || {}));
   }, [data, dispatch]);
 
+  useEffect(() => {
+    if (!socket) return;
+
+    const onPickupCreated = async (newPickup: any) => {
+      console.log(newPickup);
+      //
+      dispatch(addPickup(newPickup));
+      await refetch();
+    };
+
+    socket.on('pickup_created', onPickupCreated);
+
+    return () => {
+      socket.off('pickup_created', onPickupCreated);
+    };
+  }, [socket, dispatch, refetch]);
+
+ 
+  
   return (
     <DrawerContentScrollView
       {...props}
@@ -144,15 +187,17 @@ export default function CustomDrawerContent(props: any) {
             Settings
           </Text>
         </TouchableOpacity>
-        <TertiaryButton
-          onPress={async () => await AsyncStorage.clear()}
-          title="Logout"
-        />
+
         <TouchableOpacity
           style={{
             flexDirection: 'row',
             alignItems: 'center',
             marginBottom: 12,
+          }}
+          onPress={async () => {
+            await unsubscribeAllTopics(user);
+            dispatch(logout());
+            await AsyncStorage.clear();
           }}
         >
           <Ionicons name="log-out-outline" size={20} color={colors.danger} />

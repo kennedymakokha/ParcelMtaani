@@ -6,23 +6,24 @@ export const drawerConfig: Record<
 > = {
   superadmin: [
     { label: 'Dashboard', icon: 'stats-chart', screen: 'Dashboard' },
-    {
-      label: 'Parcel Recieval & dispatch',
-      icon: 'cube-outline',
-      screen: 'Parcel Recieval & dispatch',
-    },
-    { label: 'On Receiving', icon: 'qr-code-outline', screen: 'On Receiving' },
-    { label: 'Delivery', icon: 'car-outline', screen: 'Delivery' },
-    { label: 'Reports', icon: 'document-text-outline', screen: 'Reports' },
-  ],
-  admin: [
-    { label: 'Dashboard', icon: 'stats-chart', screen: 'Dashboard' },
-    { label: 'Staff Management', icon: 'people-outline', screen: 'staff' },
+    { label: 'Pickup Management', icon: 'people-outline', screen: 'pickup management' },
     { label: 'Vehicles Management', icon: 'bus-outline', screen: 'trucks' },
     {
       label: 'Parcel Recieval & Loading',
       icon: 'cube-outline',
-      screen: 'Parcel Recieval & Loading',
+      screen: 'Parcel Intake',
+    },
+    { label: 'Offloading', icon: 'qr-code-outline', screen: 'On Receiving' },
+    // { label: 'Delivery', icon: 'car-outline', screen: 'Delivery' },
+    { label: 'Reports', icon: 'document-text-outline', screen: 'Parcels' },
+  ],
+  admin: [
+    { label: 'Dashboard', icon: 'stats-chart', screen: 'Dashboard' },
+    { label: 'Staff Management', icon: 'people-outline', screen: 'staff' },
+    {
+      label: 'Parcel Recieval & Loading',
+      icon: 'cube-outline',
+      screen: 'Parcel Intake',
     },
     { label: 'Offloading', icon: 'qr-code-outline', screen: 'On Receiving' },
     // { label: 'Delivery', icon: 'car-outline', screen: 'Delivery' },

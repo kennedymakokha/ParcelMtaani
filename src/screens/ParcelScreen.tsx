@@ -41,13 +41,20 @@ export default function ParcelScreen({ navigation }: any) {
   /** Main query */
   const { data, isLoading, refetch, isFetching } = useFetchgroupedparcelQuery({
     limit: 10,
-    pickupId: currentPickup,
+    pickupId: currentPickup._id,
     currentTruck: selectedTruck,
     page,
     status: selectedStatus,
     search,
   });
-
+  console.log({
+    limit: 10,
+    pickupId: currentPickup._id,
+    currentTruck: selectedTruck,
+    page,
+    status: selectedStatus,
+    search,
+  });
   /** ✅ Reset page when filters/search change */
   useEffect(() => {
     setPage(1);
@@ -142,7 +149,6 @@ export default function ParcelScreen({ navigation }: any) {
             size={22}
             color={colors.secondary}
           />
-         
         </View>
       </TouchableOpacity>
     );

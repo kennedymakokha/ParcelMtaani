@@ -10,6 +10,7 @@ export interface AuthUser {
   phone?: string;
   role: UserRole;
   avatar?: string;
+  pickup?:any
   token?: string; // optional JWT or session token
 }
 

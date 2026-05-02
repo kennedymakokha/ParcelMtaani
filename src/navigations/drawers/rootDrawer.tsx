@@ -8,6 +8,7 @@ import StaffManagementScreen from '../../screens/staffScreen';
 import TrucksManagementScreen from '../../screens/truckScreen';
 import CustomHeader from '../../components/customHeader';
 import ParcelStack from '../stacks/parcelStack';
+import PickupManagementScreen from '../../screens/PickupManagementScreen';
 
 const Drawer = createDrawerNavigator();
 
@@ -42,6 +43,13 @@ export default function RootDrawer() {
           header: () => <CustomHeader title="On Receiving" />,
         })}
         component={OnReceivingScreen}
+      />
+       <Drawer.Screen
+        name="pickup management"
+        options={() => ({
+          header: () => <CustomHeader title="Pickup Management" />,
+        })}
+        component={PickupManagementScreen}
       />
       <Drawer.Screen
         name="Parcels"

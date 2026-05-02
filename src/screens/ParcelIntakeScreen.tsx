@@ -40,7 +40,7 @@ export default function DispatchToTrackScreen() {
   );
   const { data, isLoading, refetch } = useFetchparcelQuery({
     limit: 10,
-    sentFrom: currentPickup,
+    sentFrom: currentPickup._id,
     page: 1,
     status: 'Pending Dispatch',
     search,

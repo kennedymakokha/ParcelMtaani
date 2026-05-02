@@ -187,8 +187,11 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
           label="Sender Phone"
           keyboardType="phone-pad"
           value={formData.sender.phone}
+          withCountryCode
+          secureTextEntry
           onChangeText={t => updateField('sender', 'phone', t)}
         />
+
         {/* <FormInput
           label="Sender Address"
           value={formData.sender.address}
@@ -224,6 +227,8 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
           label="Recipient Phone"
           keyboardType="phone-pad"
           value={formData.receiver.phone}
+          withCountryCode
+          secureTextEntry
           onChangeText={t => updateField('receiver', 'phone', t)}
         />
       </View>

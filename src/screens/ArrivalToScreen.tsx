@@ -46,14 +46,15 @@ export default function ScannerScreen() {
 
   const { data, isFetching, refetch } = useFetchparcelQuery({
     limit: 10,
-    sentTo: currentPickup,
+    sentTo: currentPickup._id,
     page,
     status: 'Pending Collection',
     search,
   });
 
   const [handleArrival, { isLoading }] = useMarkParcelAsrrivedMutation();
-  const [handleCollected, { isLoading:collectionLoading }] = useMarkParcerAsDeliveredMutation();
+  const [handleCollected, { isLoading: collectionLoading, isSuccess }] =
+    useMarkParcerAsDeliveredMutation();
 
   useEffect(() => {
     setPage(1);
@@ -96,7 +97,7 @@ export default function ScannerScreen() {
       setMsg({ msg: err?.data?.message || 'Scan failed', state: 'error' });
     }
   };
-  console.log(selectedParcel);
+
   const handleConfirmPickup = async () => {
     if (!signatureData) {
       setMsg({ msg: 'Please provide a signature', state: 'error' });
@@ -243,7 +244,7 @@ export default function ScannerScreen() {
               await signatureRef.current?.readSignature(); // 🔥 THIS is the key
               await handleConfirmPickup();
             }}
-            loading={collectionLoading}
+            loading={collectionLoading || !isSuccess}
             title="Confirm Pickup"
           />
         </View>
@@ -252,8 +253,11 @@ export default function ScannerScreen() {
       {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
 
       {/* ➕ Scan Button */}
-      <PrimaryButton onPress={handleScan} title="Scan Parcel" loading={isLoading} />
-     
+      <PrimaryButton
+        onPress={handleScan}
+        title="Scan Parcel"
+        loading={isLoading}
+      />
     </View>
   );
 }

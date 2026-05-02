@@ -28,18 +28,23 @@ const pickupSlice = createSlice({
       state.totalPages = action.payload.totalPages;
 
       // optional: auto-set first pickup if none selected
-    //   if (!state.currentPickup && action.payload?.pickups?.length > 0) {
-    //     state.currentPickup = action.payload?.pickups[0];
-    //   }
+      //   if (!state.currentPickup && action.payload?.pickups?.length > 0) {
+      //     state.currentPickup = action.payload?.pickups[0];
+      //   }
     },
 
     setCurrentPickup: (state, action: PayloadAction<Pickup>) => {
       state.currentPickup = action.payload;
     },
-
-    addPickup: (state, action: PayloadAction<Pickup>) => {
-      state.pickups.push(action.payload);
+    addPickup: (state, action) => {
+      const exists = state.pickups.some(p => p._id === action.payload._id);
+      if (!exists) {
+        state.pickups.unshift(action.payload);
+      }
     },
+    // addPickup: (state, action: PayloadAction<Pickup>) => {
+    //   state.pickups.push(action.payload);
+    // },
 
     clearPickups: (state) => {
       state.pickups = [];

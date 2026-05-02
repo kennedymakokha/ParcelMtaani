@@ -1,27 +1,24 @@
 /* eslint-disable react-native/no-inline-styles */
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
 import { useTheme } from '../contexts/themeContext';
-
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MultiLineChart from '../components/analytics/Linegraph';
-import { useFetchDashboardStatsQuery } from '../services/apis/parcel.api';
-import { useSelector } from 'react-redux';
+// import { useSelector } from 'react-redux';
 
 export default function DashboardScreen() {
   const { colors } = useTheme();
-  const currentPickup = useSelector(
-    (state: any) => state.pickups.currentPickup,
-  );
+  // const currentPickup = useSelector(
+  //   (state: any) => state.pickups.currentPickup,
+  // );
 
-  const { data: dashboardStats, refetch } = useFetchDashboardStatsQuery({
-    pickupId: currentPickup, // You can replace this with the actual pickup ID or "current" for the current pickup
-    filterType: '', // Options: 'daily', 'weekly', 'monthly'
-    startDate: '', // Optional: Start date for filtering (YYYY-MM-DD)
-    endDate: '', // Optional: End date for filtering (YYYY-MM-DD)
-  });
-  const stats = dashboardStats?.kpis || {};
-  console.log(stats);
+  // const { data: dashboardStats, refetch } = useFetchDashboardStatsQuery({
+  //   pickupId: currentPickup, // You can replace this with the actual pickup ID or "current" for the current pickup
+  //   filterType: '', // Options: 'daily', 'weekly', 'monthly'
+  //   startDate: '', // Optional: Start date for filtering (YYYY-MM-DD)
+  //   endDate: '', // Optional: End date for filtering (YYYY-MM-DD)
+  // });
+  // const stats = dashboardStats?.kpis || {};
+  // console.log(stats);
   // 📊 Static KPI Data
   const kpis = [
     {
@@ -81,7 +78,7 @@ export default function DashboardScreen() {
       data: hourlyData.map(d => ({ ...d, value: d.value - 15 })),
     },
   ];
-
+ 
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: colors.background }}
@@ -125,18 +122,7 @@ export default function DashboardScreen() {
           </View>
         ))}
       </View>
-      <TouchableOpacity onPress={async() => await refetch()}>
-        <Text
-          style={{
-            color: colors.primary,
-            fontWeight: '600',
-            textAlign: 'center',
-            marginBottom: 16,
-          }}
-        >
-          Refresh Data
-        </Text>
-      </TouchableOpacity>
+     
       {/* Chart */}
       <MultiLineChart
         title="Hourly Parcel Trends"

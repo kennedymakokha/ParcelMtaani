@@ -1,67 +1,116 @@
-import React from "react";
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  StyleSheet, 
+/* eslint-disable react-native/no-inline-styles */
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
   KeyboardTypeOptions,
   StyleProp,
-  ViewStyle
-} from "react-native";
-import { useTheme } from "../contexts/themeContext";
+  ViewStyle,
+  TouchableOpacity,
+} from 'react-native';
+import { useTheme } from '../contexts/themeContext';
+import { COUNTRIES } from '../utils/countryCodes';
+import { CountryPickerModal } from './modals/countryCodePicker';
+
+interface Country {
+  name: string;
+  dialCode: string;
+  flag: string;
+}
 
 interface FormInputProps {
   label: string;
-  placeholder?: string; // Optional to prevent strict errors if missing
-  keyboardType?: KeyboardTypeOptions; // Use built-in RN types
+  placeholder?: string;
+  keyboardType?: KeyboardTypeOptions;
   multiline?: boolean;
   value?: string;
+  secureTextEntry?: boolean;
   onChangeText?: (text: string) => void;
-  containerStyle?: StyleProp<ViewStyle>; // Allow layout overrides
+  containerStyle?: StyleProp<ViewStyle>;
+
+  // ✅ controlled country props
+  withCountryCode?: boolean;
+  selectedCountry?: Country;
+  onSelectCountry?: (country: Country) => void | any;
 }
 
 export const FormInput: React.FC<FormInputProps> = ({
   label,
   placeholder,
-  keyboardType = "default",
+  secureTextEntry = false,
+  keyboardType = 'default',
   multiline = false,
   value,
   onChangeText,
   containerStyle,
+
+  withCountryCode = false,
+  selectedCountry,
+  onSelectCountry,
 }) => {
   const { colors } = useTheme();
+  const [showModal, setShowModal] = useState(false);
+
+  const isPhoneInput = keyboardType === 'phone-pad' && withCountryCode;
 
   return (
     <View style={[styles.container, containerStyle]}>
-      <Text
+      <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
+
+      <View
         style={[
-          styles.label,
-          { color: colors.text }
-        ]}
-      >
-        {label}
-      </Text>
-      <TextInput
-        style={[
-          styles.input,
+          styles.inputWrapper,
           {
             borderColor: colors.border,
-            color: colors.text,
-             backgroundColor: colors.card,
-            // backgroundColor: colors.background,
-            // Adjust height for multiline
-            minHeight: multiline ? 80 : 48,
-            textAlignVertical: multiline ? "top" : "center",
+            backgroundColor: colors.card,
           },
         ]}
-        placeholder={placeholder}
-        placeholderTextColor={colors.textSecondary || "#999"}
-        keyboardType={keyboardType}
-        multiline={multiline}
-        value={value}
-        onChangeText={onChangeText}
-        autoCapitalize="none"
-      />
+      >
+        {isPhoneInput && selectedCountry && (
+          <TouchableOpacity
+            style={styles.countryCodeContainer}
+            onPress={() => setShowModal(true)}
+          >
+            <Text style={styles.flag}>{selectedCountry.flag}</Text>
+            <Text style={[styles.code, { color: colors.text }]}>
+              {selectedCountry.dialCode}
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        <TextInput
+          style={[
+            styles.input,
+            {
+              color: colors.text,
+              minHeight: multiline ? 80 : 48,
+              textAlignVertical: multiline ? 'top' : 'center',
+            },
+          ]}
+          placeholder={placeholder}
+          placeholderTextColor={colors.textSecondary || '#999'}
+          keyboardType={keyboardType}
+          multiline={multiline}
+          secureTextEntry={secureTextEntry}
+          value={value}
+          onChangeText={onChangeText}
+          autoCapitalize="none"
+        />
+      </View>
+
+      {isPhoneInput && (
+        <CountryPickerModal
+          visible={showModal}
+          onClose={() => setShowModal(false)}
+          countries={COUNTRIES}
+          onSelect={country => {
+            onSelectCountry?.(country);
+            setShowModal(false);
+          }}
+        />
+      )}
     </View>
   );
 };
@@ -72,12 +121,32 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: '600',
     marginBottom: 6,
   },
-  input: {
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
     borderRadius: 8,
+  },
+  countryCodeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    borderRightWidth: 1,
+    borderColor: '#ccc',
+  },
+  flag: {
+    fontSize: 18,
+    marginRight: 6,
+  },
+  code: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  input: {
+    flex: 1,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 16,
