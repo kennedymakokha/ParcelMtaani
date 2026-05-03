@@ -20,6 +20,7 @@ import { Truck } from '../../types';
 import Toast from '../components/toast';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { SecondaryButton } from '../components/SecondaryButton';
+import { Fab } from '../components/buttons/fab';
 
 export default function DispatchToTrackScreen() {
   const { colors } = useTheme();
@@ -171,27 +172,8 @@ export default function DispatchToTrackScreen() {
         </TouchableOpacity>
       )}
 
-      {/* Floating Action Button to open Intake Modal */}
-      <TouchableOpacity
-        onPress={() => setShowIntakeModal(true)}
-        style={{
-          position: 'absolute',
-          bottom: 24,
-          right: 24,
-          backgroundColor: colors.primary,
-          paddingVertical: 16,
-          paddingHorizontal: 20,
-          borderRadius: 50,
-          shadowColor: '#000',
-          shadowOpacity: 0.3,
-          shadowRadius: 4,
-          elevation: 5,
-        }}
-      >
-        <Text style={{ color: '#fff', fontWeight: '600', fontSize: 20 }}>
-          ＋
-        </Text>
-      </TouchableOpacity>
+      
+       <Fab onPress={() => setShowIntakeModal(true)}/>
 
       {/* Intake Modal */}
       <Modal visible={showIntakeModal} animationType="slide">

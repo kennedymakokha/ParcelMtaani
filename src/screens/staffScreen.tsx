@@ -10,10 +10,25 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '../contexts/themeContext';
-import { useGetUsersQuery, useSignupMutation } from '../services/apis/auth.api';
+import {
+  useDeleteUserMutation,
+  useGetUsersQuery,
+  useSignupMutation,
+} from '../services/apis/auth.api';
 import { Picker } from '@react-native-picker/picker';
 import { rolesData } from '../utils/roles';
 import FilterChips from '../components/horizontalScroller';
+import { useSelector } from 'react-redux';
+import { PhoneInput } from '../components/phoneinput';
+import { FormInput } from '../components/input.component';
+import { COUNTRIES } from '../utils/countryCodes';
+import { PrimaryButton } from '../components/PrimaryButton';
+import { SecondaryButton } from '../components/SecondaryButton';
+import { Fab } from '../components/buttons/fab';
+import { SearchBar } from '../components/ui/SearchBar';
+import { ActionButton } from '../components/buttons/actionButtons';
+import ConfirmModal from '../components/modals/confirmDelete';
+import { SectionHeader } from '../components/ui/sectionHeader';
 
 interface Staff {
   _id: string;
@@ -28,27 +43,31 @@ export default function StaffManagementScreen() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
     null,
   );
-
+  const [DeleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-
   const [page, setPage] = useState(1);
   const [allStaff, setAllStaff] = useState<Staff[]>([]);
   const [hasMore, setHasMore] = useState(true);
-
   const [showModal, setShowModal] = useState(false);
   const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
-
+  const [country, setCountry] = useState(COUNTRIES[0]);
   const [name, setName] = useState('');
   const [role, setRole] = useState('');
   const [identification_No, setIdentification_No] = useState('');
   const [phone, setPhone] = useState('');
-
   const [signUp, { isLoading: isCreating }] = useSignupMutation();
-
+  const { user } = useSelector((state: any) => state.auth);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
+  const currentPickup = useSelector(
+    (state: any) => state.pickups.currentPickup,
+  );
   const { data, isLoading, isFetching, refetch } = useGetUsersQuery({
     page,
     search: debouncedSearch,
+    pickup: currentPickup._id,
+    role,
   });
   console.log('Staff data:', data);
   // ✅ debounce search (prevents too many API calls)
@@ -62,18 +81,35 @@ export default function StaffManagementScreen() {
   }, [search]);
 
   // ✅ merge paginated data
+  const handleDelete = async () => {
+    if (!selectedStaffId) return;
+
+    try {
+      await DeleteUser(selectedStaffId).unwrap();
+      setShowDeleteModal(false);
+      setSelectedStaffId(null);
+
+      refetch();
+    } catch (error) {
+      console.log(error);
+    }
+  };
   useEffect(() => {
     if (data?.users) {
-      if (page === 1) {
-        setAllStaff(data.users);
-      } else {
-        setAllStaff(prev => [...prev, ...data.users]);
-      }
+      setAllStaff(prev => {
+        const merged = page === 1 ? data.users : [...prev, ...data.users];
+        // ✅ remove duplicates by _id
+        const unique = merged.filter(
+          (item: any, index: any, self: any) =>
+            index === self.findIndex((s: any) => s._id === item._id),
+        );
+
+        return unique;
+      });
 
       setHasMore(data.page < data.totalPages);
     }
   }, [data, page]);
-
   const loadMore = () => {
     if (!isFetching && hasMore) {
       setPage(prev => prev + 1);
@@ -111,7 +147,8 @@ export default function StaffManagementScreen() {
       }).unwrap();
 
       setPage(1);
-      refetch();
+      await refetch();
+      setRole('');
     }
 
     setShowModal(false);
@@ -140,21 +177,6 @@ export default function StaffManagementScreen() {
 
       <View style={{ flexDirection: 'row', marginTop: 12 }}>
         <TouchableOpacity
-          onPress={async () => {
-            openModal(item);
-            await refetch();
-          }}
-          style={{
-            backgroundColor: colors.primary,
-            padding: 10,
-            borderRadius: 8,
-            marginRight: 8,
-          }}
-        >
-          <Text style={{ color: '#fff' }}>Edit</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
           style={{
             backgroundColor: colors.error,
             padding: 10,
@@ -163,6 +185,23 @@ export default function StaffManagementScreen() {
         >
           <Text style={{ color: '#fff' }}>Delete</Text>
         </TouchableOpacity>
+
+        <ActionButton
+          title="Edit"
+          type="primary"
+          onPress={async () => {
+            openModal(item);
+            await refetch();
+          }}
+        />
+        <ActionButton
+          title="Delete"
+          type="error"
+          onPress={() => {
+            setSelectedStaffId(item._id);
+            setShowDeleteModal(true);
+          }}
+        />
       </View>
     </View>
   );
@@ -173,35 +212,24 @@ export default function StaffManagementScreen() {
       ListHeaderComponent=
       {
         <View style={{ marginBottom: 16 }}>
-          <FilterChips
-            data={rolesData}
-            selected={selectedCategoryId}
-            onSelect={setSelectedCategoryId}
-            labelExtractor={item => item}
-            showAllOption
-            allLabel="All Roles"
-          />
-
-          <TextInput
-            style={{
-              borderWidth: 1,
-              borderColor: colors.border,
-              backgroundColor: colors.card,
-              borderRadius: 8,
-              paddingHorizontal: 14,
-              paddingVertical: 10,
-              fontSize: 16,
-              color: colors.text,
-              marginTop: 12,
-            }}
-            placeholder="Search staff..."
-            placeholderTextColor={colors.secondary}
+          {user.role === 'superAdmin' && (
+            <FilterChips
+              data={rolesData}
+              selected={selectedCategoryId}
+              onSelect={setSelectedCategoryId}
+              labelExtractor={item => item}
+              showAllOption
+              allLabel="All Roles"
+            />
+          )}
+          <SearchBar
             value={search}
             onChangeText={setSearch}
+            onClear={() => setSearch('')}
+            placeholder="Search Fleet..."
           />
         </View>
       }
-      
       {/* 📋 List */}
       <FlatList
         contentContainerStyle={{
@@ -213,11 +241,42 @@ export default function StaffManagementScreen() {
         )}
         keyExtractor={item => item._id}
         renderItem={renderStaff}
+        ListHeaderComponent={
+          user.role === 'superAdmin' ? (
+            <View style={{ marginBottom: 16 }}>
+              <FilterChips
+                data={rolesData}
+                selected={selectedCategoryId}
+                onSelect={setSelectedCategoryId}
+                labelExtractor={item => item}
+                showAllOption
+                allLabel="All Roles"
+              />
+
+              <TextInput
+                style={{
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  backgroundColor: colors.card,
+                  borderRadius: 8,
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                  fontSize: 16,
+                  color: colors.text,
+                  marginTop: 12,
+                }}
+                placeholder="Search staff..."
+                placeholderTextColor={colors.secondary}
+                value={search}
+                onChangeText={setSearch}
+              />
+            </View>
+          ) : null
+        }
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
         onRefresh={handleRefresh}
         refreshing={isLoading && page === 1}
-        
         ListFooterComponent={
           isFetching ? <ActivityIndicator style={{ margin: 10 }} /> : null
         }
@@ -233,114 +292,67 @@ export default function StaffManagementScreen() {
           </Text>
         }
       />
-      {/* ➕ FAB */}
-      <TouchableOpacity
-        onPress={() => openModal()}
-        style={{
-          position: 'absolute',
-          bottom: 24,
-          right: 24,
-          backgroundColor: colors.primary,
-          padding: 16,
-          borderRadius: 50,
-        }}
-      >
-        <Text style={{ color: '#fff', fontSize: 20 }}>＋</Text>
-      </TouchableOpacity>
-      {/* 🧾 Modal */}
+      <Fab onPress={() => openModal()} />
       <Modal visible={showModal} animationType="slide">
         <View
           style={{ flex: 1, padding: 24, backgroundColor: colors.background }}
         >
-          <Text style={{ fontSize: 20, marginBottom: 16 }}>
-            {editingStaff ? 'Edit Staff' : 'Add Staff'}
-          </Text>
+          <SectionHeader title={editingStaff ? 'Edit Staff' : 'Add Staff'} />
 
-          <TextInput
+          <FormInput
+            label="Name"
             placeholder="Name"
             value={name}
             onChangeText={setName}
-            style={{
-              borderWidth: 1,
-              borderColor: colors.border,
-              padding: 10,
-              marginBottom: 12,
-              borderRadius: 8,
-              color: colors.text,
-            }}
           />
 
-          <View
-            style={{
-              borderWidth: 1,
-              borderColor: colors.border,
-              borderRadius: 8,
-              marginBottom: 12,
-            }}
-          >
-            <Picker selectedValue={role} onValueChange={setRole}>
-              <Picker.Item label="Select role" value="" />
-              {rolesData.map(r => (
-                <Picker.Item key={r} label={r} value={r} />
-              ))}
-            </Picker>
-          </View>
-
-          <TextInput
+          {user.role === 'superAdmin' && (
+            <View
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 8,
+                marginBottom: 12,
+              }}
+            >
+              <Picker selectedValue={role} onValueChange={setRole}>
+                <Picker.Item label="Select role" value="" />
+                {rolesData.map(r => (
+                  <Picker.Item key={r} label={r} value={r} />
+                ))}
+              </Picker>
+            </View>
+          )}
+          <FormInput
+            label="Identification Number"
             placeholder="ID No"
             value={identification_No}
             onChangeText={setIdentification_No}
-            style={{
-              borderWidth: 1,
-              borderColor: colors.border,
-              padding: 10,
-              marginBottom: 12,
-              borderRadius: 8,
-              color: colors.text,
-            }}
           />
 
-          <TextInput
-            placeholder="Phone"
+          <PhoneInput
+            label="Phone Number"
             value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
-            style={{
-              borderWidth: 1,
-              borderColor: colors.border,
-              padding: 10,
-              marginBottom: 12,
-              borderRadius: 8,
-              color: colors.text,
-            }}
+            country={country}
+            onChangeCountry={setCountry}
+            onChange={full => setPhone(full)}
           />
 
-          <TouchableOpacity
+          <PrimaryButton
+            title={isCreating ? 'Saving...' : 'Save'}
             onPress={saveStaff}
-            style={{
-              backgroundColor: colors.primary,
-              padding: 14,
-              borderRadius: 8,
-              marginBottom: 12,
-            }}
-          >
-            <Text style={{ color: '#fff', textAlign: 'center' }}>
-              {isCreating ? 'Saving...' : 'Save'}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => setShowModal(false)}
-            style={{
-              backgroundColor: colors.error,
-              padding: 14,
-              borderRadius: 8,
-            }}
-          >
-            <Text style={{ color: '#fff', textAlign: 'center' }}>Cancel</Text>
-          </TouchableOpacity>
+          />
+          <SecondaryButton title="Cancel" onPress={() => setShowModal(false)} />
         </View>
       </Modal>
+      <ConfirmModal
+        visible={showDeleteModal}
+        title="Delete Truck"
+        message="This will remove the truck permanently."
+        onConfirm={handleDelete}
+        loading={isDeleting}
+        onCancel={() => setShowDeleteModal(false)}
+      />
     </View>
   );
 }

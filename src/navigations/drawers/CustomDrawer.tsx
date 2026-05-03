@@ -69,16 +69,21 @@ export default function CustomDrawerContent(props: any) {
       dispatch(addPickup(newPickup));
       await refetch();
     };
+    const onSuccessfullDelivery = async (newPickup: any) => {
+      console.log(newPickup);
+      //
+      dispatch(addPickup(newPickup));
+      await refetch();
+    };
 
     socket.on('pickup_created', onPickupCreated);
-
+    socket.on('Successful Delivery', onSuccessfullDelivery);
     return () => {
       socket.off('pickup_created', onPickupCreated);
+      socket.off('Successful Delivery', onSuccessfullDelivery);
     };
   }, [socket, dispatch, refetch]);
 
- 
-  
   return (
     <DrawerContentScrollView
       {...props}

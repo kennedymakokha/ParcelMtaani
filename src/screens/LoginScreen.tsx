@@ -18,30 +18,29 @@ import { subscribeToTopics } from '../utils/topicSubsriptiptions';
 import { FormInput } from '../components/input.component';
 import { useTheme } from '../contexts/themeContext';
 import { COUNTRIES } from '../utils/countryCodes';
+import { PhoneInput } from '../components/phoneinput';
 
 export default function LoginScreen({ navigation }: any) {
- 
-  const [phone_number, setPhoneNumber] = useState('790226514');
+  const [phone_number, setPhoneNumber] = useState('+254790226514');
   const [password, setPassword] = useState('+254790226514');
   const [FCM_token, setFCM_token] = useState('');
   const { setUser } = useAuth();
   const [msg, setMsg] = useState({ msg: '', state: '' });
   const dispatch = useDispatch();
-  const [loginUser, { error, isLoading: loading }] = useLoginMutation();
+  const [loginUser, {  isLoading: loading }] = useLoginMutation();
   const { colors } = useTheme();
   const [country, setCountry] = useState(COUNTRIES[0]); // default
   const handleLogin = async () => {
     try {
       setMsg({ msg: '', state: '' });
-    
+ 
       if (!phone_number || !password) {
         setMsg({ msg: 'Both fields are required', state: 'error' });
         return;
       }
 
-     
       const data = await loginUser({
-        phone_number:`${country.dialCode}${phone_number}`,
+        phone_number,
         password,
         FCM_token,
       }).unwrap();
@@ -62,11 +61,11 @@ export default function LoginScreen({ navigation }: any) {
         setMsg({ msg: 'Login failed, please try again', state: 'error' });
       }
     } catch (err: any) {
+      console.log(err);
       setMsg({
         msg:
           err.message ||
           err.data?.message ||
-          error ||
           'Error occurred, try again ',
         state: 'error',
       });
@@ -141,19 +140,14 @@ export default function LoginScreen({ navigation }: any) {
         >
           Welcome Back
         </Text>
-
-      
-        <FormInput
+        <PhoneInput
           label="Phone Number"
-          placeholder="712345678"
-          keyboardType="phone-pad"
-          withCountryCode
           value={phone_number}
-          onChangeText={setPhoneNumber}
-          selectedCountry={country}
-          onSelectCountry={setCountry}
+          country={country}
+          onChangeCountry={setCountry}
+          onChange={full => setPhoneNumber(full)}
         />
-
+       
         <FormInput
           label="Password"
           placeholder="********"
@@ -162,7 +156,7 @@ export default function LoginScreen({ navigation }: any) {
           onChangeText={setPassword}
         />
 
-        {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
+      
 
         <PrimaryButton title="Login" onPress={handleLogin} loading={loading} />
 
@@ -170,7 +164,6 @@ export default function LoginScreen({ navigation }: any) {
           <TertiaryButton
             title="Forgot Password?"
             onPress={() => navigation.goBack()}
-            
             color={colors.primary}
           />
         </View>
@@ -185,6 +178,7 @@ export default function LoginScreen({ navigation }: any) {
           </Text>
         </Text>
       </View>
+        {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
     </View>
   );
 }

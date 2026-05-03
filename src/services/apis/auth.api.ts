@@ -48,7 +48,7 @@ export const injectEndpoints = api.injectEndpoints({
             query: () => '/auth',
         }),
         getUsers: builder.query({
-            query: ({ role, page }) => `/auth/users?role ? { role } : {}&page=${page}`,
+            query: ({ role, page, pickup }) => `/auth/users?role=${role}&page=${page}&pickup=${pickup}`,
         }),
         fetchuser: builder.query({
             query: () => `auth/active-user`
@@ -66,6 +66,12 @@ export const injectEndpoints = api.injectEndpoints({
                 method: 'POST',
             }),
         }),
+          deleteUser: builder.mutation({
+            query: (id) => ({
+                url: `/auth/${id}`,
+                method: 'DELETE',
+            }),
+        }),
     }),
 });
 
@@ -81,4 +87,5 @@ export const {
     useLoginMutation,
     useGetSessionQuery,
     useLogoutMutation,
+    useDeleteUserMutation,
 } = injectEndpoints;

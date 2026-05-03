@@ -28,6 +28,7 @@ interface FormInputProps {
   value?: string;
   secureTextEntry?: boolean;
   onChangeText?: (text: string) => void;
+  onFocus?: any;
   containerStyle?: StyleProp<ViewStyle>;
 
   // ✅ controlled country props
@@ -45,7 +46,7 @@ export const FormInput: React.FC<FormInputProps> = ({
   value,
   onChangeText,
   containerStyle,
-
+  onFocus,
   withCountryCode = false,
   selectedCountry,
   onSelectCountry,
@@ -96,6 +97,7 @@ export const FormInput: React.FC<FormInputProps> = ({
           secureTextEntry={secureTextEntry}
           value={value}
           onChangeText={onChangeText}
+          onFocus={onFocus}
           autoCapitalize="none"
         />
       </View>

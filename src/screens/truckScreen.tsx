@@ -3,16 +3,20 @@ import { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
+
   FlatList,
-  TouchableOpacity,
 } from 'react-native';
 import { useTheme } from '../contexts/themeContext';
 import TruckFormModal from '../components/modals/truckManagement';
-import { useDeleteTruckMutation, useGetTrucksQuery } from '../services/apis/trucks.api';
+import {
+  useDeleteTruckMutation,
+  useGetTrucksQuery,
+} from '../services/apis/trucks.api';
 import ConfirmModal from '../components/modals/confirmDelete';
 import { Truck } from '../../types';
-
+import { SearchBar } from '../components/ui/SearchBar';
+import { Fab } from '../components/buttons/fab';
+import { ActionButton } from '../components/buttons/actionButtons';
 
 export default function TrucksManagementScreen() {
   const { colors } = useTheme();
@@ -24,22 +28,23 @@ export default function TrucksManagementScreen() {
   const [editingTruck, setEditingTruck] = useState<Truck | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedTruckId, setSelectedTruckId] = useState<string | null>(null);
-  const  [deleteTruckMutation,{isLoading: isDeleting}] = useDeleteTruckMutation();
+  const [deleteTruckMutation, { isLoading: isDeleting }] =
+    useDeleteTruckMutation();
   const { data, isFetching, isLoading, refetch } = useGetTrucksQuery({
     page,
     limit: 10,
     search,
   });
-
-  const [item, setItem] = useState<any>({
-    plate: '',
-    model: '',
-    capacity: '',
-    driverId: '',
-  });
+const [item, setItem] = useState<any>({
+  plate: '',
+  model: '',
+  capacity: '',
+  driverId: '',
+  driverPhone: '',
+  driverIdNo: '',
+});
 
   const openModal = (truck?: Truck) => {
-    console.log(truck);
     if (truck) {
       setEditingTruck(truck);
       setItem({
@@ -67,7 +72,7 @@ export default function TrucksManagementScreen() {
       await deleteTruckMutation(selectedTruckId).unwrap();
       setShowDeleteModal(false);
       setSelectedTruckId(null);
-    
+
       refetch();
     } catch (error) {
       console.log(error);
@@ -93,31 +98,21 @@ export default function TrucksManagementScreen() {
       <Text style={{ color: colors.primary, marginTop: 4 }}>
         Capacity: {item.capacity}
       </Text>
+     
       <View style={{ flexDirection: 'row', marginTop: 12 }}>
-        <TouchableOpacity
+        <ActionButton
+          title="Edit"
+          type="primary"
           onPress={() => openModal(item)}
-          style={{
-            backgroundColor: colors.primary,
-            padding: 10,
-            borderRadius: 8,
-            marginRight: 8,
-          }}
-        >
-          <Text style={{ color: '#fff', fontWeight: '600' }}>Edit</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
+        />
+        <ActionButton
+          title="Delete"
+          type="error"
           onPress={() => {
             setSelectedTruckId(item._id);
             setShowDeleteModal(true);
           }}
-          style={{
-            backgroundColor: colors.error,
-            padding: 10,
-            borderRadius: 8,
-          }}
-        >
-          <Text style={{ color: '#fff', fontWeight: '600' }}>Delete</Text>
-        </TouchableOpacity>
+        />
       </View>
     </View>
   );
@@ -128,39 +123,28 @@ export default function TrucksManagementScreen() {
   };
   useEffect(() => {
     if (data?.trucks) {
-      if (page === 1) {
-        setAllTrucks(data.trucks);
-      } else {
-        setAllTrucks(prev => [...prev, ...data.trucks]);
-      }
+      setAllTrucks(prev => {
+        const merged = page === 1 ? data.trucks : [...prev, ...data.trucks];
+
+        const unique = merged.filter(
+          (item: any, index: any, self: any) =>
+            index === self.findIndex((t: any) => t._id === item._id),
+        );
+
+        return unique;
+      });
 
       setHasMore(data.page < data.totalPages);
     }
   }, [data, page]);
-  useEffect(() => {
-    setPage(1);
-  }, [search]);
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, padding: 24 }}>
-    
-
       {/* Search Bar */}
-      <TextInput
-        style={{
-          borderWidth: 1,
-          borderColor: colors.border,
-          backgroundColor: colors.card,
-          borderRadius: 8,
-          paddingHorizontal: 14,
-          paddingVertical: 10,
-          fontSize: 16,
-          color: colors.text,
-          marginBottom: 20,
-        }}
-        placeholder="Search trucks..."
-        placeholderTextColor={colors.secondary}
+      <SearchBar
         value={search}
         onChangeText={setSearch}
+        onClear={() => setSearch('')}
+        placeholder="Search Fleet..."
       />
 
       {/* Truck List */}
@@ -187,28 +171,7 @@ export default function TrucksManagementScreen() {
         }
       />
 
-      {/* Floating Action Button */}
-      <TouchableOpacity
-        onPress={() => openModal()}
-        style={{
-          position: 'absolute',
-          bottom: 24,
-          right: 24,
-          backgroundColor: colors.primary,
-          paddingVertical: 16,
-          paddingHorizontal: 20,
-          borderRadius: 50,
-          shadowColor: '#000',
-          shadowOpacity: 0.3,
-          shadowRadius: 4,
-          elevation: 5,
-        }}
-      >
-        <Text style={{ color: '#fff', fontWeight: '600', fontSize: 20 }}>
-          ＋
-        </Text>
-      </TouchableOpacity>
-
+      <Fab onPress={() => openModal()} />
       <TruckFormModal
         visible={showModal}
         onClose={async () => {

@@ -53,7 +53,7 @@ export default function ScannerScreen() {
   });
 
   const [handleArrival, { isLoading }] = useMarkParcelAsrrivedMutation();
-  const [handleCollected, { isLoading: collectionLoading, isSuccess }] =
+  const [handleCollected, { isLoading: collectionLoading, }] =
     useMarkParcerAsDeliveredMutation();
 
   useEffect(() => {
@@ -244,7 +244,7 @@ export default function ScannerScreen() {
               await signatureRef.current?.readSignature(); // 🔥 THIS is the key
               await handleConfirmPickup();
             }}
-            loading={collectionLoading || !isSuccess}
+            loading={collectionLoading }
             title="Confirm Pickup"
           />
         </View>

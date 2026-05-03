@@ -7,7 +7,7 @@ export const drawerConfig: Record<
   superadmin: [
     { label: 'Dashboard', icon: 'stats-chart', screen: 'Dashboard' },
     { label: 'Pickup Management', icon: 'people-outline', screen: 'pickup management' },
-    { label: 'Vehicles Management', icon: 'bus-outline', screen: 'trucks' },
+    { label: 'Fleet Management', icon: 'bus-outline', screen: 'trucks' },
     {
       label: 'Parcel Recieval & Loading',
       icon: 'cube-outline',

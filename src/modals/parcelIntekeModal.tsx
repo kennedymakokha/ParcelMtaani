@@ -19,10 +19,13 @@ import { printToPrinter } from '../services /printer.service';
 import { useRegisterParcelMutation } from '../services/apis/parcel.api';
 import { useSelector } from 'react-redux';
 import Toast from '../components/toast';
+import { SectionHeader } from '../components/ui/sectionHeader';
+import { COUNTRIES } from '../utils/countryCodes';
+import { PhoneInput } from '../components/phoneinput';
 
 export default function ParcelIntakeScreen({ onClose, refetch }: any) {
   const { colors } = useTheme();
-
+  const [country, setCountry] = useState(COUNTRIES[0]);
   // State with strict types
   const { user } = useSelector((state: any) => state.auth);
 
@@ -159,6 +162,8 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
         paddingTop: 20,
       }}
     >
+      {' '}
+      <SectionHeader title="New parcel" />
       {/* Sender Details */}
       <View
         style={{
@@ -183,22 +188,15 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
           value={formData.sender.name}
           onChangeText={t => updateField('sender', 'name', t)}
         />
-        <FormInput
+         <PhoneInput
           label="Sender Phone"
-          keyboardType="phone-pad"
           value={formData.sender.phone}
-          withCountryCode
-          secureTextEntry
-          onChangeText={t => updateField('sender', 'phone', t)}
+          country={country}
+          onChangeCountry={setCountry}
+          onChange={t => updateField('sender', 'phone', t)}
         />
-
-        {/* <FormInput
-          label="Sender Address"
-          value={formData.sender.address}
-          onChangeText={t => updateField('sender', 'address', t)}
-        /> */}
+       
       </View>
-
       {/* Receiver Details */}
       <View
         style={{
@@ -223,14 +221,14 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
           value={formData.receiver.name}
           onChangeText={t => updateField('receiver', 'name', t)}
         />
-        <FormInput
+        <PhoneInput
           label="Recipient Phone"
-          keyboardType="phone-pad"
           value={formData.receiver.phone}
-          withCountryCode
-          secureTextEntry
-          onChangeText={t => updateField('receiver', 'phone', t)}
+          country={country}
+          onChangeCountry={setCountry}
+          onChange={t => updateField('receiver', 'phone', t)}
         />
+        
       </View>
       {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
       {/* Parcel Details */}
@@ -321,7 +319,6 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
           </Picker>
         </View>
       </View>
-
       <TouchableOpacity
         onPress={handleSubmit}
         style={{

@@ -1,3 +1,3 @@
-export const rolesData =[
-    "admin", "storemanager","dispatcher", "sales","driver"
+export const rolesData = [
+    "attendant", "driver"
 ]
