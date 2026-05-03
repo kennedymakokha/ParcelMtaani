@@ -52,7 +52,6 @@ export default function DispatchToTrackScreen() {
 
   const toggleSelect = (item: any) => {
     if (item.status !== 'Pending Dispatch') return;
-
     setSelectedParcels(prev =>
       prev.includes(item._id)
         ? prev.filter(id => id !== item._id)

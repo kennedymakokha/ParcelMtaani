@@ -3,51 +3,62 @@ import { View, Text, ScrollView } from 'react-native';
 import { useTheme } from '../contexts/themeContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MultiLineChart from '../components/analytics/Linegraph';
-// import { useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
+import MultiBarChart from '../components/analytics/multiBarChart';
+import PieChart from '../components/analytics/pieChart';
+import { useFetchDashboardStatsQuery } from '../services/apis/parcel.api';
+
 
 export default function DashboardScreen() {
   const { colors } = useTheme();
-  // const currentPickup = useSelector(
-  //   (state: any) => state.pickups.currentPickup,
-  // );
+  const currentPickup = useSelector(
+    (state: any) => state.pickups.currentPickup,
+  );
+  const {
+    data: dashboardStats, 
+    isSuccess,
+  } = useFetchDashboardStatsQuery({
+    pickupId: currentPickup._id, // You can replace this with the actual pickup ID or "current" for the current pickup
+    filterType: '', // Options: 'daily', 'weekly', 'monthly'
+    startDate: '', // Optional: Start date for filtering (YYYY-MM-DD)
+    endDate: '', // Optional: End date for filtering (YYYY-MM-DD)
+  });
+  const KPIdata = dashboardStats ? dashboardStats : {};
 
-  // const { data: dashboardStats, refetch } = useFetchDashboardStatsQuery({
-  //   pickupId: currentPickup, // You can replace this with the actual pickup ID or "current" for the current pickup
-  //   filterType: '', // Options: 'daily', 'weekly', 'monthly'
-  //   startDate: '', // Optional: Start date for filtering (YYYY-MM-DD)
-  //   endDate: '', // Optional: End date for filtering (YYYY-MM-DD)
-  // });
-  // const stats = dashboardStats?.kpis || {};
-  // console.log(stats);
-  // 📊 Static KPI Data
   const kpis = [
     {
       label: 'Total Parcels',
-      value: 1280,
+      value: KPIdata?.pickupStats?.totalParcels,
       icon: 'cube-outline',
       color: colors.primary,
     },
     {
-      label: 'Delivered Today',
-      value: 320,
+      label: 'Delivered',
+      value: KPIdata.pickupStats?.delivered,
       icon: 'checkmark-done-outline',
       color: colors.success,
     },
     {
       label: 'Pending',
-      value: 88,
+      value: KPIdata.pickupStats?.pending,
       icon: 'time-outline',
       color: colors.warning,
     },
     {
       label: 'collected',
-      value: 88,
+      value: KPIdata.pickupStats?.collected,
       icon: 'time-outline',
       color: colors.warning,
     },
     {
       label: 'Cancelled',
-      value: 12,
+      value: KPIdata.pickupStats?.cancelled,
+      icon: 'close-circle-outline',
+      color: colors.error,
+    },
+    {
+      label: 'On Transit',
+      value: KPIdata.pickupStats?.ontransit,
       icon: 'close-circle-outline',
       color: colors.error,
     },
@@ -78,51 +89,57 @@ export default function DashboardScreen() {
       data: hourlyData.map(d => ({ ...d, value: d.value - 15 })),
     },
   ];
- 
+
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: colors.background }}
       contentContainerStyle={{ padding: 16 }}
     >
       {/* KPI Cards */}
-      <View
-        style={{
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{
           flexDirection: 'row',
-          flexWrap: 'wrap',
-          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 4,
+          paddingRight: 16, // 👈 important
         }}
       >
         {kpis.map((kpi, index) => (
           <View
             key={index}
             style={{
-              width: '48%',
+              width: 120, // or Dimensions-based
               backgroundColor: colors.card,
               borderRadius: 14,
               padding: 16,
               marginBottom: 12,
+              marginRight: 8, // instead of gap for better support
               borderWidth: 1,
               borderColor: colors.border,
             }}
           >
-            <Ionicons name={kpi.icon} size={26} color={kpi.color} />
-            <Text style={{ color: colors.text, fontSize: 14, marginTop: 8 }}>
-              {kpi.label}
-            </Text>
-            <Text
-              style={{
-                color: kpi.color,
-                fontSize: 22,
-                fontWeight: '700',
-                marginTop: 4,
-              }}
-            >
-              {kpi.value}
-            </Text>
+            <View className="flex flex-col items-center justify-center">
+              <Ionicons name={kpi.icon} size={26} color={kpi.color} />
+              <Text style={{ color: colors.text, fontSize: 14, marginTop: 8 }}>
+                {kpi.label}
+              </Text>
+              <Text
+                style={{
+                  color: kpi.color,
+                  fontSize: 22,
+                  fontWeight: '700',
+                  marginTop: 4,
+                }}
+              >
+                {kpi.value}
+              </Text>
+            </View>
           </View>
         ))}
-      </View>
-     
+      </ScrollView>
       {/* Chart */}
       <MultiLineChart
         title="Hourly Parcel Trends"
@@ -130,7 +147,12 @@ export default function DashboardScreen() {
         startHour={8}
         endHour={16}
       />
-
+      {isSuccess && (
+        <PieChart
+          title="Pickup KPI Breakdown"
+          data={KPIdata.pickupStats} // pass one pickup object
+        />
+      )}
       {/* Another Chart Example */}
       <MultiLineChart
         title="Delivery Performance"
@@ -152,6 +174,13 @@ export default function DashboardScreen() {
         startHour={8}
         endHour={16}
       />
+
+      {isSuccess && (
+        <MultiBarChart
+          title="Business Pickup KPIs"
+          data={KPIdata.groupedByPickup}
+        />
+      )}
     </ScrollView>
   );
 }

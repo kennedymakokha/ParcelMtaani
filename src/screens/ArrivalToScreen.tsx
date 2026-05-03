@@ -90,7 +90,6 @@ export default function ScannerScreen() {
     try {
       const result: any = await scanQRCode();
       const parsed = JSON.parse(result);
-
       await handleArrival(parsed).unwrap();
       await refetch();
     } catch (err: any) {
