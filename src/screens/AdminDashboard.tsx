@@ -7,24 +7,37 @@ import { useSelector } from 'react-redux';
 import MultiBarChart from '../components/analytics/multiBarChart';
 import PieChart from '../components/analytics/pieChart';
 import { useFetchDashboardStatsQuery } from '../services/apis/parcel.api';
-
-
+import RadialFab from '../components/buttons/radialFab';
+import { useCallback, useState } from 'react';
+import DateTimePicker from '@react-native-community/datetimepicker';
 export default function DashboardScreen() {
   const { colors } = useTheme();
   const currentPickup = useSelector(
     (state: any) => state.pickups.currentPickup,
   );
+  const { user } = useSelector((state: any) => state.auth);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [filter, setFilter] = useState('today');
+  const [customDate, setCustomDate] = useState('today');
   const {
-    data: dashboardStats, 
+    data: dashboardStats,
     isSuccess,
+    refetch,
   } = useFetchDashboardStatsQuery({
     pickupId: currentPickup._id, // You can replace this with the actual pickup ID or "current" for the current pickup
-    filterType: '', // Options: 'daily', 'weekly', 'monthly'
+    filterType: filter, // Options: 'daily', 'weekly', 'monthly'
     startDate: '', // Optional: Start date for filtering (YYYY-MM-DD)
-    endDate: '', // Optional: End date for filtering (YYYY-MM-DD)
+    endDate: customDate, // Optional: End date for filtering (YYYY-MM-DD)
   });
+  console.log(currentPickup);
   const KPIdata = dashboardStats ? dashboardStats : {};
-
+  const fetchAnalytics = useCallback(async () => {
+    try {
+      await refetch();
+    } catch (err) {
+      console.error('Analytics Error:', err);
+    }
+  }, []);
   const kpis = [
     {
       label: 'Total Parcels',
@@ -91,96 +104,159 @@ export default function DashboardScreen() {
   ];
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: colors.background }}
-      contentContainerStyle={{ padding: 16 }}
-    >
-      {/* KPI Cards */}
-
+    <View style={{ flex: 1 }}>
       <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 4,
-          paddingRight: 16, // 👈 important
-        }}
+        style={{ flex: 1, backgroundColor: colors.background }}
+        contentContainerStyle={{ padding: 16 }}
       >
-        {kpis.map((kpi, index) => (
-          <View
-            key={index}
-            style={{
-              width: 120, // or Dimensions-based
-              backgroundColor: colors.card,
-              borderRadius: 14,
-              padding: 16,
-              marginBottom: 12,
-              marginRight: 8, // instead of gap for better support
-              borderWidth: 1,
-              borderColor: colors.border,
-            }}
-          >
-            <View className="flex flex-col items-center justify-center">
-              <Ionicons name={kpi.icon} size={26} color={kpi.color} />
-              <Text style={{ color: colors.text, fontSize: 14, marginTop: 8 }}>
-                {kpi.label}
-              </Text>
-              <Text
-                style={{
-                  color: kpi.color,
-                  fontSize: 22,
-                  fontWeight: '700',
-                  marginTop: 4,
-                }}
-              >
-                {kpi.value}
-              </Text>
+        {/* KPI Cards */}
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 4,
+            paddingRight: 16, // 👈 important
+          }}
+        >
+          {kpis.map((kpi, index) => (
+            <View
+              key={index}
+              style={{
+                width: 120, // or Dimensions-based
+                backgroundColor: colors.card,
+                borderRadius: 14,
+                padding: 16,
+                marginBottom: 12,
+                marginRight: 8, // instead of gap for better support
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <View className="flex flex-col items-center justify-center">
+                <Ionicons name={kpi.icon} size={26} color={kpi.color} />
+                <Text
+                  style={{ color: colors.text, fontSize: 14, marginTop: 8 }}
+                >
+                  {kpi.label}
+                </Text>
+                <Text
+                  style={{
+                    color: kpi.color,
+                    fontSize: 22,
+                    fontWeight: '700',
+                    marginTop: 4,
+                  }}
+                >
+                  {kpi.value}
+                </Text>
+              </View>
             </View>
-          </View>
-        ))}
-      </ScrollView>
-      {/* Chart */}
-      <MultiLineChart
-        title="Hourly Parcel Trends"
-        datasets={datasets}
-        startHour={8}
-        endHour={16}
-      />
-      {isSuccess && (
-        <PieChart
-          title="Pickup KPI Breakdown"
-          data={KPIdata.pickupStats} // pass one pickup object
+          ))}
+        </ScrollView>
+        {/* Chart */}
+
+        {isSuccess && (
+          <PieChart
+            title="Pickup KPI Breakdown"
+            data={KPIdata.pickupStats} // pass one pickup object
+          />
+        )}
+        {/* Another Chart Example */}
+        <MultiLineChart
+          title="Delivery Performance"
+          datasets={[
+            {
+              label: 'Delivered',
+              color: colors.success,
+              data: hourlyData.map(d => ({ ...d, value: d.value + 10 })),
+            },
+            {
+              label: 'Failed',
+              color: colors.error,
+              data: hourlyData.map(d => ({
+                ...d,
+                value: Math.max(0, d.value - 60),
+              })),
+            },
+          ]}
+          startHour={8}
+          endHour={16}
         />
-      )}
-      {/* Another Chart Example */}
-      <MultiLineChart
-        title="Delivery Performance"
-        datasets={[
+
+        {user.role === 'superadmin' && isSuccess && (
+          <MultiBarChart
+            title="Business Pickup KPIs"
+            data={KPIdata.groupedByPickup}
+          />
+        )}
+        {/* {showDatePicker && (
+        <DateTimePicker
+          value={new Date()}
+          mode="date"
+          display="default"
+          onChange={async (event: any, date: any) => {
+            setShowDatePicker(false);
+            if (date) {
+              const formattedDate = date.toISOString().split('T')[0];
+              console.log(formattedDate);
+              setCustomDate(formattedDate);
+              setFilter('month');
+              await fetchAnalytics();
+
+              // await fetchAnalytics('custom', formattedDate);
+            }
+          }}
+        />
+      )} */}
+      </ScrollView>
+      <RadialFab
+        mainColor={colors.primary}
+        mainIcon="filter-outline"
+        radius={120}
+        angle={90}
+        actions={[
           {
-            label: 'Delivered',
-            color: colors.success,
-            data: hourlyData.map(d => ({ ...d, value: d.value + 10 })),
+            icon: 'today-outline',
+            label: 'Today',
+            onPress: async () => {
+              setFilter('today');
+              await fetchAnalytics();
+            },
           },
           {
-            label: 'Failed',
-            color: colors.error,
-            data: hourlyData.map(d => ({
-              ...d,
-              value: Math.max(0, d.value - 60),
-            })),
+            icon: 'calendar-outline',
+            label: 'Week',
+            onPress: async () => {
+              setFilter('week');
+              await fetchAnalytics();
+            },
+          },
+          {
+            icon: 'stats-chart-outline',
+            label: 'Month',
+            onPress: async () => {
+              setFilter('month');
+              await fetchAnalytics();
+            },
+          },
+          {
+            icon: 'bar-chart-outline',
+            label: 'Year',
+            onPress: async () => {
+              setFilter('year');
+              await fetchAnalytics();
+            },
+          },
+          {
+            icon: 'time-outline',
+            label: 'Date',
+            onPress: () => setShowDatePicker(true),
           },
         ]}
-        startHour={8}
-        endHour={16}
       />
-
-      {isSuccess && (
-        <MultiBarChart
-          title="Business Pickup KPIs"
-          data={KPIdata.groupedByPickup}
-        />
-      )}
-    </ScrollView>
+    </View>
   );
 }

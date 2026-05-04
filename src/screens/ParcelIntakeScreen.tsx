@@ -12,7 +12,10 @@ import {
 } from 'react-native';
 import { useTheme } from '../contexts/themeContext';
 import ParcelIntakeScreen from '../modals/parcelIntekeModal';
-import { useDispatchParcelMutation, useFetchparcelQuery } from '../services/apis/parcel.api';
+import {
+  useDispatchParcelMutation,
+  useFetchparcelQuery,
+} from '../services/apis/parcel.api';
 import { useSelector } from 'react-redux';
 import { Picker } from '@react-native-picker/picker';
 import { useGetTrucksQuery } from '../services/apis/trucks.api';
@@ -25,11 +28,12 @@ import { Fab } from '../components/buttons/fab';
 export default function DispatchToTrackScreen() {
   const { colors } = useTheme();
   const [search, setSearch] = useState('');
-  const [showIntakeModal, setShowIntakeModal] = useState(false);
+  const [showIntakeModal, setShowIntakeModal] = useState(true);
   const [showTrackModal, setShowTrackModal] = useState(false);
   const [selectedParcels, setSelectedParcels] = useState<any[]>([]);
   const [msg, setMsg] = useState({ msg: '', state: '' });
-  const [dispatchParcel, { isLoading: dispatching }] = useDispatchParcelMutation();
+  const [dispatchParcel, { isLoading: dispatching }] =
+    useDispatchParcelMutation();
   const { data: trucks, isFetching: fetchingTrucks } = useGetTrucksQuery({
     page: 1,
     limit: 1000,
@@ -171,8 +175,12 @@ export default function DispatchToTrackScreen() {
         </TouchableOpacity>
       )}
 
-      
-       <Fab onPress={() => setShowIntakeModal(true)}/>
+      <Fab
+        onPress={() => {
+          setShowIntakeModal(true);
+          console.log('opening');
+        }}
+      />
 
       {/* Intake Modal */}
       <Modal visible={showIntakeModal} animationType="slide">
@@ -195,7 +203,12 @@ export default function DispatchToTrackScreen() {
               <Text style={{ color: '#fff', fontWeight: '600' }}>✕</Text>
             </TouchableOpacity>
           </View>
-          <ParcelIntakeScreen refetch={refetch} onClose = {()=>{setShowIntakeModal(false)}} />
+          <ParcelIntakeScreen
+            refetch={refetch}
+            onClose={() => {
+              setShowIntakeModal(false);
+            }}
+          />
         </View>
       </Modal>
 
@@ -268,8 +281,10 @@ export default function DispatchToTrackScreen() {
               <PrimaryButton
                 title={dispatching ? 'Dispatching...' : 'Confirm Dispatch'}
                 onPress={async () => {
-                  console.log('Dispatching:', selectedParcels, vehicleReg);
-                  await dispatchParcel({ parcelIds: selectedParcels, truckId: vehicleReg });
+                  await dispatchParcel({
+                    parcelIds: selectedParcels,
+                    truckId: vehicleReg,
+                  });
                   setShowTrackModal(false);
                   setSelectedParcels([]);
                   await refetch();
@@ -280,9 +295,10 @@ export default function DispatchToTrackScreen() {
                 }}
                 disabled={dispatching || !vehicleReg}
               />
-           <SecondaryButton onPress={() => setShowTrackModal(false)} title='Cancel' />
-
-            
+              <SecondaryButton
+                onPress={() => setShowTrackModal(false)}
+                title="Cancel"
+              />
             </ScrollView>
           </View>
         </View>
