@@ -28,7 +28,7 @@ import { Fab } from '../components/buttons/fab';
 export default function DispatchToTrackScreen() {
   const { colors } = useTheme();
   const [search, setSearch] = useState('');
-  const [showIntakeModal, setShowIntakeModal] = useState(true);
+  const [showIntakeModal, setShowIntakeModal] = useState(false);
   const [showTrackModal, setShowTrackModal] = useState(false);
   const [selectedParcels, setSelectedParcels] = useState<any[]>([]);
   const [msg, setMsg] = useState({ msg: '', state: '' });

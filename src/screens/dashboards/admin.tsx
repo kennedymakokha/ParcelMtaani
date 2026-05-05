@@ -1,35 +1,35 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-native/no-inline-styles */
 import { View, Text, ScrollView } from 'react-native';
-import { useTheme } from '../contexts/themeContext';
+import { useTheme } from './../../contexts/themeContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import MultiLineChart from '../components/analytics/Linegraph';
+import MultiLineChart from './../../components/analytics/Linegraph';
 import { useSelector } from 'react-redux';
-import MultiBarChart from '../components/analytics/multiBarChart';
-import PieChart from '../components/analytics/pieChart';
-import { useFetchDashboardStatsQuery } from '../services/apis/parcel.api';
-import RadialFab from '../components/buttons/radialFab';
-import { useCallback, useState } from 'react';
-import DateTimePicker from '@react-native-community/datetimepicker';
-export default function DashboardScreen() {
+import MultiBarChart from './../../components/analytics/multiBarChart';
+import PieChart from './../../components/analytics/pieChart';
+import { useFetchDashboardStatsQuery } from './../../services/apis/parcel.api';
+import RadialFab from './../../components/buttons/radialFab';
+import { useCallback, useEffect, useState } from 'react';
+import { useSocket } from './../../contexts/socketContext';
+export default function AdminDashboard() {
   const { colors } = useTheme();
   const currentPickup = useSelector(
     (state: any) => state.pickups.currentPickup,
   );
+  const { socket } = useSocket();
   const { user } = useSelector((state: any) => state.auth);
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [filter, setFilter] = useState('today');
-  const [customDate, setCustomDate] = useState('today');
   const {
     data: dashboardStats,
     isSuccess,
     refetch,
   } = useFetchDashboardStatsQuery({
-    pickupId: currentPickup._id, // You can replace this with the actual pickup ID or "current" for the current pickup
+    pickupId: currentPickup?._id, // You can replace this with the actual pickup ID or "current" for the current pickup
     filterType: filter, // Options: 'daily', 'weekly', 'monthly'
     startDate: '', // Optional: Start date for filtering (YYYY-MM-DD)
-    endDate: customDate, // Optional: End date for filtering (YYYY-MM-DD)
+    endDate: '', // Optional: End date for filtering (YYYY-MM-DD)
   });
-  console.log(currentPickup);
+ 
   const KPIdata = dashboardStats ? dashboardStats : {};
   const fetchAnalytics = useCallback(async () => {
     try {
@@ -57,12 +57,7 @@ export default function DashboardScreen() {
       icon: 'time-outline',
       color: colors.warning,
     },
-    {
-      label: 'collected',
-      value: KPIdata.pickupStats?.collected,
-      icon: 'time-outline',
-      color: colors.warning,
-    },
+
     {
       label: 'Cancelled',
       value: KPIdata.pickupStats?.cancelled,
@@ -73,7 +68,19 @@ export default function DashboardScreen() {
       label: 'On Transit',
       value: KPIdata.pickupStats?.ontransit,
       icon: 'close-circle-outline',
-      color: colors.error,
+      color: colors.secondary,
+    },
+    {
+      label: 'Waiting',
+      value: KPIdata.pickupStats?.awaiting,
+      icon: 'close-circle-outline',
+      color: colors.text,
+    },
+    {
+      label: 'collected',
+      value: KPIdata.pickupStats?.collected,
+      icon: 'time-outline',
+      color: colors.warning,
     },
   ];
 
@@ -90,18 +97,21 @@ export default function DashboardScreen() {
     { key: '16', value: 110 },
   ];
 
-  const datasets = [
-    {
-      label: 'Intake',
-      color: colors.primary,
-      data: hourlyData,
-    },
-    {
-      label: 'Delivered',
-      color: colors.success,
-      data: hourlyData.map(d => ({ ...d, value: d.value - 15 })),
-    },
-  ];
+  useEffect(() => {
+    if (!socket) return;
+
+    const onCanceledParcel = async (parcel: any) => {
+      console.log(parcel);
+      //
+
+      await refetch();
+    };
+
+    socket.on('Parcel-change', onCanceledParcel);
+    return () => {
+      socket.off('Parcel-change', onCanceledParcel);
+    };
+  }, [socket, refetch]);
 
   return (
     <View style={{ flex: 1 }}>
@@ -249,11 +259,6 @@ export default function DashboardScreen() {
               setFilter('year');
               await fetchAnalytics();
             },
-          },
-          {
-            icon: 'time-outline',
-            label: 'Date',
-            onPress: () => setShowDatePicker(true),
           },
         ]}
       />

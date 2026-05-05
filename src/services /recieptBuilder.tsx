@@ -1,3 +1,5 @@
+
+
 export const buildReceiptText = ({
   receiptNo,
   invoiceId,
@@ -57,6 +59,8 @@ export const buildReceiptText = ({
 
   text += `Date: ${new Date().toLocaleString()}\n`;
 
+  // Build tracking URL
+
   // Sender / Receiver
   text += line;
   text += `SENDER\n`;
@@ -93,7 +97,7 @@ export const buildReceiptText = ({
 
   text += formatLine('TOTAL', formatMoney(totalAmount));
   text += line;
-
+ 
   if (customerPin) {
     text += formatLine('Net (Excl VAT)', formatMoney(net));
     text += formatLine('VAT (16%)', formatMoney(vat));

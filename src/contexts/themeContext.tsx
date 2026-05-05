@@ -22,7 +22,8 @@ interface Theme {
     fontMedium?: string;
     fontSemiBold?: string;
     fontBold?: string;
-    shadow?:string
+    shadow?: string;
+    overlay?: string;
   };
   typography: {
     heading: string;
@@ -48,7 +49,8 @@ const lightTheme: Theme = {
     success: '#15803d', // Green for success messages
     warning: '#d97706', // Amber for warning messages
     successLight: '#d1fae5', // Lighter green for success states
-shadow:'#000',
+
+    shadow: '#000',
     fontRegular: 'Inter-Regular',
     fontMedium: 'Inter-Medium',
     fontSemiBold: 'Inter-SemiBold',
@@ -82,7 +84,7 @@ const darkTheme: Theme = {
     fontMedium: 'Inter-Medium',
     fontSemiBold: 'Inter-SemiBold',
     fontBold: 'Inter-Bold',
-    shadow:'#000'
+    shadow: '#000',
   },
   typography: {
     heading: 'text-2xl font-bold',

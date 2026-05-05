@@ -1,6 +1,6 @@
 /* eslint-disable react/no-unstable-nested-components */
 import { createDrawerNavigator } from '@react-navigation/drawer';
-import AdminDashboard from '../../screens/AdminDashboard';
+import AdminDashboard from '../../screens/Dashboard';
 import ParcelIntakeScreen from '../../screens/ParcelIntakeScreen';
 import OnReceivingScreen from '../../screens/ArrivalToScreen';
 import CustomDrawerContent from './CustomDrawer';
@@ -9,6 +9,8 @@ import TrucksManagementScreen from '../../screens/truckScreen';
 import CustomHeader from '../../components/customHeader';
 import ParcelStack from '../stacks/parcelStack';
 import PickupManagementScreen from '../../screens/PickupManagementScreen';
+import businessStack from '../stacks/businessStack';
+import SuperSalesManagementScreen from '../../screens/superSalesScreen';
 
 const Drawer = createDrawerNavigator();
 
@@ -37,6 +39,13 @@ export default function RootDrawer() {
         })}
         component={ParcelIntakeScreen}
       />
+       <Drawer.Screen
+        name="sales person management"
+        options={() => ({
+          header: () => <CustomHeader title="Super Sales" />,
+        })}
+        component={SuperSalesManagementScreen}
+      />
       <Drawer.Screen
         name="On Receiving"
         options={() => ({
@@ -44,7 +53,12 @@ export default function RootDrawer() {
         })}
         component={OnReceivingScreen}
       />
-       <Drawer.Screen
+      <Drawer.Screen
+        name="Business"
+        options={{ headerShown: false }}
+        component={businessStack}
+      />
+      <Drawer.Screen
         name="pickup management"
         options={() => ({
           header: () => <CustomHeader title="Pickup Management" />,
@@ -53,7 +67,7 @@ export default function RootDrawer() {
       />
       <Drawer.Screen
         name="Parcels"
-        options={{headerShown:false}}
+        options={{ headerShown: false }}
         component={ParcelStack}
       />
       <Drawer.Screen

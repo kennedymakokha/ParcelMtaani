@@ -13,9 +13,30 @@ export const injectEndpoints = api.injectEndpoints({
         getPickups: builder.query({
             query: () => '/business/get/pickups',
         }),
-        deletePickup: builder.mutation({
+        getBusinessById: builder.query({
+            query: (id) => `/business/${id}/pickups`,
+        }),
+        AddBusiness: builder.mutation({
+            query: (body) => ({
+                url: '/business',
+                method: 'POST',
+                body,
+            }),
+        }),
+        getBusinesses: builder.query({
+            query: () => '/business',
+        }),
+        UpdateBusiness: builder.mutation({
+            query: (data: any) => ({
+                url: `/business/${data.id}`,
+                method: 'PUT',
+                data,
+            }),
+        }),
+
+        DeleteBusiness: builder.mutation({
             query: (id) => ({
-                url: `/business/delete/pickup/${id}`,
+                url: `/business/${id}`,
                 method: 'DELETE',
             }),
         }),
@@ -25,6 +46,11 @@ export const injectEndpoints = api.injectEndpoints({
 
 export const {
     useRegisterPickupMutation,
+    useUpdateBusinessMutation,
+    useAddBusinessMutation,
     useGetPickupsQuery,
-    useDeletePickupMutation,
+    useGetBusinessByIdQuery,
+    useGetBusinessesQuery,
+    useDeleteBusinessMutation,
+
 } = injectEndpoints;

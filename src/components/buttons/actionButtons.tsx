@@ -29,7 +29,7 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
       ? colors.text
       : type === 'error'
       ? colors.text
-      : colors.secondary;
+      : colors.text;
 
   return (
     <TouchableOpacity

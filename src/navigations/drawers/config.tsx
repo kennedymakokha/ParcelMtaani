@@ -4,9 +4,25 @@ export const drawerConfig: Record<
   UserRole,
   { label: string; icon: string; screen: string }[]
 > = {
+   superuser: [
+    { label: 'Dashboard', icon: 'stats-chart', screen: 'Dashboard' },
+    { label: 'Business Management', icon: 'bus-outline', screen: 'Business' },
+     { label: 'Sales Persons', icon: 'people-outline', screen: 'sales person management' },
+   
+  ],
+   supersales: [
+    { label: 'Dashboard', icon: 'stats-chart', screen: 'Dashboard' },
+    { label: 'Business Management', icon: 'bus-outline', screen: 'Business' },
+   
+  ],
   superadmin: [
     { label: 'Dashboard', icon: 'stats-chart', screen: 'Dashboard' },
-    { label: 'Pickup Management', icon: 'people-outline', screen: 'pickup management' },
+    { label: 'Fleet Management', icon: 'bus-outline', screen: 'Business' },
+    {
+      label: 'Pickup Management',
+      icon: 'people-outline',
+      screen: 'pickup management',
+    },
     { label: 'Fleet Management', icon: 'bus-outline', screen: 'trucks' },
     {
       label: 'Parcel Recieval & Loading',
@@ -19,6 +35,7 @@ export const drawerConfig: Record<
   ],
   admin: [
     { label: 'Dashboard', icon: 'stats-chart', screen: 'Dashboard' },
+    
     { label: 'Staff Management', icon: 'people-outline', screen: 'staff' },
     {
       label: 'Parcel Recieval & Loading',

@@ -18,6 +18,7 @@ import { useSelector } from 'react-redux';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import FilterChipsFDB from '../components/horizontalScrollerFromDb';
+import { useSocket } from '../contexts/socketContext';
 
 export default function ParcelScreen({ navigation }: any) {
   const { colors } = useTheme();
@@ -34,7 +35,7 @@ export default function ParcelScreen({ navigation }: any) {
   /** Fetch filters */
   const { data: trucksData } = useFetchTruckCountQuery({});
   const trucks = trucksData?.data || [];
-
+  const { socket } = useSocket();
   const { data: statesData } = useFetchStatusCountQuery({});
   const statusData = statesData?.data || [];
 
@@ -91,7 +92,22 @@ export default function ParcelScreen({ navigation }: any) {
       setPage(prev => prev + 1);
     }
   }, [isFetching, page, data?.totalPages]);
-  console.log(selectedTruck);
+  useEffect(() => {
+    if (!socket) return;
+
+    const onCanceledParcel = async (parcel: any) => {
+      console.log(parcel);
+      //
+
+      await refetch();
+    };
+
+    socket.on('Parcel-change', onCanceledParcel);
+    return () => {
+      socket.off('Parcel-change', onCanceledParcel);
+    };
+  }, [socket, refetch]);
+
   /** ✅ Render parcel */
   const renderParcel = ({ item }: { item: any }) => {
     return (
@@ -204,11 +220,11 @@ export default function ParcelScreen({ navigation }: any) {
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
         ListEmptyComponent={
-          !isLoading && (
+          !isLoading ? (
             <Text style={{ textAlign: 'center', color: colors.secondary }}>
               No parcels found
             </Text>
-          )
+          ) : null
         }
       />
     </View>

@@ -1,5 +1,5 @@
 // src/types/auth.ts
-export type UserRole = "superadmin" | "staff" | "agent" | "customer"|"admin";
+export type UserRole = "superadmin" | "staff" | "agent" | "customer"|"admin"|"superuser"|"supersales";
 
 
 export interface ParcelFormData {

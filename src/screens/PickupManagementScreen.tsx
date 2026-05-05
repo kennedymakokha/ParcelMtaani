@@ -10,7 +10,6 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useTheme } from '../contexts/themeContext';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
   useCreatePickupMutation,
   useDeletePickupMutation,
@@ -21,6 +20,7 @@ import { PrimaryButton } from '../components/PrimaryButton';
 import { SecondaryButton } from '../components/SecondaryButton';
 import { FormInput } from '../components/input.component';
 import PickupSkeleton from '../components/skeletons/pickupSkeleton';
+import { ActionButton } from '../components/buttons/actionButtons';
 
 export default function PickupManagementScreen() {
   const { colors } = useTheme();
@@ -152,18 +152,16 @@ export default function PickupManagementScreen() {
       </Text>
 
       <View style={{ flexDirection: 'row', marginTop: 10 }}>
-        <TouchableOpacity
+        <ActionButton
+          title="Edit"
+          type="primary"
           onPress={() => openModal(item)}
-          style={[styles.button]}
-        >
-          <Ionicons name="create-outline" size={18} color={colors.text} />
-        </TouchableOpacity>
-        <TouchableOpacity
+        />
+        <ActionButton
+          title="Delete"
+          type="error"
           onPress={() => removePickup(item._id)}
-          style={[styles.button]}
-        >
-          <Ionicons name="trash-outline" size={18} color={colors.error} />
-        </TouchableOpacity>
+        />
       </View>
     </View>
   );

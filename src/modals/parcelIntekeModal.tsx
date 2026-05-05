@@ -7,6 +7,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Switch,
+  Platform,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { FormInput } from '../components/input.component';
@@ -22,6 +23,7 @@ import Toast from '../components/toast';
 import { SectionHeader } from '../components/ui/sectionHeader';
 import { COUNTRIES } from '../utils/countryCodes';
 import { PhoneInput } from '../components/phoneinput';
+import { PermissionsAndroid } from 'react-native';
 
 export default function ParcelIntakeScreen({ onClose, refetch }: any) {
   const { colors } = useTheme();
@@ -100,6 +102,11 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
       const receiptNo = `INV${sixDigitNumber}`;
       await postParcel(updatedFormData).unwrap();
       // 1. Build Text Payload
+      // 1. Build the Receipt Text
+      const currentPickup = pickups.find((p: any) => p._id === pickup);
+      const pickupShortCode = currentPickup?.short_code || '';
+      const pickupFullName = currentPickup?.pickup_name || '';
+
       const receiptText = buildReceiptText({
         receiptNo,
         invoiceId: receiptNo,
@@ -108,33 +115,33 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
         parcel: formData.parcel,
         sixDigitNumber,
         from: `${user?.pickup?.pickup_name || ''}`,
-        pickupName: pickups.filter((p: any) => p._id === pickup)[0].pickup_name,
+        pickupName: pickupFullName,
         paid: Number(formData.parcel.price) || 0,
         paidCash: Number(formData.parcel.price) || 0,
         totals: { finalTotal: Number(formData.parcel.price) || 0 },
         user: { name: 'Admin' },
       });
 
-      // 2. Build QR Data
+      // 2. Build QR Data (Stringified JSON for the bottom QR)
       const qrData = JSON.stringify({
         id: receiptNo,
         reciever: formData.receiver,
-        pickupName: pickups.filter((p: any) => p._id === pickup)[0].pickup_name,
-        code: `${
-          pickups.filter((p: any) => p._id === pickup)[0].short_code
-        }-${sixDigitNumber}`,
+        pickupName: pickupFullName,
+        code: `${pickupShortCode}-${sixDigitNumber}`,
         from: `${user?.pickup?.pickup_name || ''}`,
       });
-      // const qrData = `${receiptNo}|${pickup}|${sixDigitNumber}`;
 
-      // 3. Print (Handled by our strict service)
+      // 3. Print
+      // Note: We added 'receiptNo' at the end to be used for the TOP BARCODE
       const success = await printToPrinter(
         selectedPrinterMac,
-        pickups.filter((p: any) => p._id === pickup)[0].short_code,
+        pickupShortCode,
         receiptText,
         qrData,
         sixDigitNumber,
-        true,
+
+        true, // printQr
+        receiptNo, // <--- This maps to barcodeData in your function
       );
 
       if (success) {
@@ -146,13 +153,83 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
         });
       }
     } catch (error: any) {
+      console.log(error);
       setMsg({
         msg: error?.data?.message || 'An unknown error occurred',
         state: 'error',
       });
     }
   };
+  const requestBluetoothPermissions = async () => {
+    if (Platform.OS !== 'android') return true;
 
+    if (Platform.Version >= 31) {
+      const granted = await PermissionsAndroid.requestMultiple([
+        PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+        PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+      ]);
+
+      const scanGranted =
+        granted[PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN] ===
+        PermissionsAndroid.RESULTS.GRANTED;
+
+      const connectGranted =
+        granted[PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT] ===
+        PermissionsAndroid.RESULTS.GRANTED;
+
+      return scanGranted && connectGranted;
+    } else {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+      );
+
+      return granted === PermissionsAndroid.RESULTS.GRANTED;
+    }
+  };
+  const requestLocationPermission = async () => {
+    if (Platform.OS === 'android') {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+      );
+
+      return granted === PermissionsAndroid.RESULTS.GRANTED;
+    }
+    return true;
+  };
+  useEffect(() => {
+    const initLocation = async () => {
+      try {
+        const hasPermission = await requestLocationPermission();
+
+        if (!hasPermission) {
+          console.log('❌ Location permission denied');
+          return;
+        }
+      } catch (err) {
+        console.log('🔥 Location error:', err);
+      }
+    };
+
+    initLocation();
+  }, []);
+  useEffect(() => {
+ 
+  const init = async () => {
+    const hasPermission = await requestBluetoothPermissions();
+
+    if (!hasPermission) {
+      console.log("❌ Bluetooth permission denied");
+      return;
+    }
+
+    console.log("✅ Bluetooth permission granted");
+
+    // 👉 Start scanning for printers here
+    
+  };
+
+  init();
+}, []);
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: colors.background }}
@@ -188,14 +265,13 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
           value={formData.sender.name}
           onChangeText={t => updateField('sender', 'name', t)}
         />
-         <PhoneInput
+        <PhoneInput
           label="Sender Phone"
           value={formData.sender.phone}
           country={country}
           onChangeCountry={setCountry}
           onChange={t => updateField('sender', 'phone', t)}
         />
-       
       </View>
       {/* Receiver Details */}
       <View
@@ -228,7 +304,6 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
           onChangeCountry={setCountry}
           onChange={t => updateField('receiver', 'phone', t)}
         />
-        
       </View>
       {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
       {/* Parcel Details */}

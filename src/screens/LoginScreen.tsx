@@ -1,7 +1,7 @@
 /* eslint-disable no-unreachable */
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { TertiaryButton } from '../components/TertiaryButton';
@@ -14,26 +14,26 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setCurrentPickup } from '../features/pickSlice';
 import Toast from '../components/toast';
 import { getMessaging, getToken } from '@react-native-firebase/messaging';
-import { subscribeToTopics } from '../utils/topicSubsriptiptions';
 import { FormInput } from '../components/input.component';
 import { useTheme } from '../contexts/themeContext';
 import { COUNTRIES } from '../utils/countryCodes';
 import { PhoneInput } from '../components/phoneinput';
+import { subscribeToTopic } from '../utils/subscribeUnsubscribe';
 
 export default function LoginScreen({ navigation }: any) {
-  const [phone_number, setPhoneNumber] = useState('+254790226514');
-  const [password, setPassword] = useState('+254790226514');
+  const [phone_number, setPhoneNumber] = useState('+254700000000');
+  const [password, setPassword] = useState('+254790226510');
   const [FCM_token, setFCM_token] = useState('');
   const { setUser } = useAuth();
   const [msg, setMsg] = useState({ msg: '', state: '' });
   const dispatch = useDispatch();
-  const [loginUser, {  isLoading: loading }] = useLoginMutation();
+  const [loginUser, { isLoading: loading }] = useLoginMutation();
   const { colors } = useTheme();
   const [country, setCountry] = useState(COUNTRIES[0]); // default
   const handleLogin = async () => {
     try {
       setMsg({ msg: '', state: '' });
- 
+
       if (!phone_number || !password) {
         setMsg({ msg: 'Both fields are required', state: 'error' });
         return;
@@ -53,7 +53,18 @@ export default function LoginScreen({ navigation }: any) {
 
         if (data.exp) {
           await AsyncStorage.setItem('tokenExpiry', data.exp.toString());
-          await subscribeToTopics(data);
+          const pickup = data?.user?.pickup;
+          await subscribeToTopic(`pickup_${pickup._id}_attendants`);
+          if (data.user.role === 'superuser') {
+            await subscribeToTopic(`superuser`);
+          }
+          if (data.user.role === 'supersales') {
+            await subscribeToTopic(`supersales`);
+          }
+          if (data.user.role === 'admin') {
+            await subscribeToTopic(`admin`);
+          }
+
           setUser(data.user);
         }
         setMsg({ msg: 'Login successful! Redirecting...', state: 'success' });
@@ -63,10 +74,7 @@ export default function LoginScreen({ navigation }: any) {
     } catch (err: any) {
       console.log(err);
       setMsg({
-        msg:
-          err.message ||
-          err.data?.message ||
-          'Error occurred, try again ',
+        msg: err.message || err.data?.message || 'Error occurred, try again ',
         state: 'error',
       });
     }
@@ -147,7 +155,7 @@ export default function LoginScreen({ navigation }: any) {
           onChangeCountry={setCountry}
           onChange={full => setPhoneNumber(full)}
         />
-       
+
         <FormInput
           label="Password"
           placeholder="********"
@@ -155,8 +163,6 @@ export default function LoginScreen({ navigation }: any) {
           value={password}
           onChangeText={setPassword}
         />
-
-      
 
         <PrimaryButton title="Login" onPress={handleLogin} loading={loading} />
 
@@ -178,7 +184,7 @@ export default function LoginScreen({ navigation }: any) {
           </Text>
         </Text>
       </View>
-        {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
+      {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
     </View>
   );
 }
