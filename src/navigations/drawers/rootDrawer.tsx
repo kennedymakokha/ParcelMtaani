@@ -11,6 +11,7 @@ import ParcelStack from '../stacks/parcelStack';
 import PickupManagementScreen from '../../screens/PickupManagementScreen';
 import businessStack from '../stacks/businessStack';
 import SuperSalesManagementScreen from '../../screens/superSalesScreen';
+import NotificationPage from '../../screens/notificationScreen';
 
 const Drawer = createDrawerNavigator();
 
@@ -33,13 +34,20 @@ export default function RootDrawer() {
         component={AdminDashboard}
       />
       <Drawer.Screen
+        name="notifications"
+        options={() => ({
+          header: () => <CustomHeader title="Notifications" />,
+        })}
+        component={NotificationPage}
+      />
+      <Drawer.Screen
         name="Parcel Intake"
         options={() => ({
           header: () => <CustomHeader title="Parcel Intake" />,
         })}
         component={ParcelIntakeScreen}
       />
-       <Drawer.Screen
+      <Drawer.Screen
         name="sales person management"
         options={() => ({
           header: () => <CustomHeader title="Super Sales" />,

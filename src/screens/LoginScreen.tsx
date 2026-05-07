@@ -21,7 +21,7 @@ import { PhoneInput } from '../components/phoneinput';
 import { subscribeToTopic } from '../utils/subscribeUnsubscribe';
 
 export default function LoginScreen({ navigation }: any) {
-  const [phone_number, setPhoneNumber] = useState('+254700000000');
+  const [phone_number, setPhoneNumber] = useState('+254790226510');
   const [password, setPassword] = useState('+254790226510');
   const [FCM_token, setFCM_token] = useState('');
   const { setUser } = useAuth();
@@ -169,7 +169,7 @@ export default function LoginScreen({ navigation }: any) {
         <View style={{ marginTop: 16 }}>
           <TertiaryButton
             title="Forgot Password?"
-            onPress={() => navigation.goBack()}
+            onPress={() => navigation.navigate('forgot password')}
             color={colors.primary}
           />
         </View>

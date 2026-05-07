@@ -78,7 +78,21 @@ export default function ParcelScreen({ navigation }: any) {
       });
     }
   }, [data, page]);
+  useEffect(() => {
+    if (!socket) return;
 
+    const onCanceledParcel = async (parcel: any) => {
+      console.log(parcel);
+      //
+
+      await refetch();
+    };
+
+    socket.on('Parcel-change', onCanceledParcel);
+    return () => {
+      socket.off('Parcel-change', onCanceledParcel);
+    };
+  }, [socket, refetch]);
   /** ✅ Pull to refresh */
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

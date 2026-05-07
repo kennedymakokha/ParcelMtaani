@@ -1,5 +1,5 @@
 /* eslint-disable react/no-unstable-nested-components */
-import { DrawerActions, useNavigation } from '@react-navigation/native';
+import { DrawerActions, NavigationProp, useNavigation } from '@react-navigation/native';
 import {
   Text,
   View,
@@ -12,6 +12,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import { useState } from 'react';
 import { useTheme } from '../contexts/themeContext';
+import { useAppSelector } from '../hooks/storehooks';
 
 // Notification Badge
 const NotificationBadge = ({ count }: { count: number }) => {
@@ -43,11 +44,9 @@ function CustomHeader({
 }) {
   const navigation = useNavigation();
   const { colors } = useTheme();
-
   const [menuVisible, setMenuVisible] = useState(false);
-  const notificationCount = 5;
-
-
+  const notifications = useAppSelector(state => state.notifications.list);
+  console.log(notifications);
   const MenuOption = ({ icon, label, onPress, color }: any) => (
     <TouchableOpacity onPress={onPress} style={styles.menuItem}>
       <Ionicons name={icon} size={20} color={color} />
@@ -86,9 +85,8 @@ function CustomHeader({
 
       {!nodetails && (
         <View className="flex-row items-center gap-x-4">
-          
           <TouchableOpacity
-            //   onPress={() => navigation.navigate("Notifications" as any)}
+            onPress={() => navigation.navigate('notifications')}
             className="relative p-1"
           >
             <Ionicons
@@ -96,7 +94,9 @@ function CustomHeader({
               size={24}
               color={colors.secondary}
             />
-            <NotificationBadge count={notificationCount} />
+            <NotificationBadge
+              count={notifications.filter(e => !e.read).length}
+            />
           </TouchableOpacity>
           {/* <TouchableOpacity
             onPress={() => setMenuVisible(true)}

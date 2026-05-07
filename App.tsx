@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import './global.css';
 
@@ -7,7 +8,7 @@ import { ThemeProvider, useTheme } from './src/contexts/themeContext';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { persistor, store } from './store';
-import { Provider, useSelector } from 'react-redux';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 import { PersistGate } from 'redux-persist/lib/integration/react';
 import { SocketProvider, useSocket } from './src/contexts/socketContext';
 import AuthStack from './src/navigations/stacks/authStack';
@@ -16,12 +17,14 @@ import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import { Linking } from 'react-native';
 import { getMessaging } from '@react-native-firebase/messaging';
-
+import { addNotification } from './src/features/notificationsSlice';
+import messaging from '@react-native-firebase/messaging';
 function AppNavigator() {
   const { colors } = useTheme();
   // const { user } = useAuth();
-   const { socket } = useSocket();
+  const { socket } = useSocket();
   const { user } = useSelector((state: any) => state.auth);
+  const dispatch = useDispatch();
   const requestNotificationPermission = async () => {
     if (Platform.OS === 'android' && Platform.Version >= 33) {
       const status = await PermissionsAndroid.request(
@@ -56,13 +59,39 @@ function AppNavigator() {
         console.log('🔥 NEW FCM TOKEN:', token);
       });
   }, []);
+
   useEffect(() => {
-    const unsubscribe = getMessaging().onMessage(async remoteMessage => {
-      console.log('📩 Foreground message:', remoteMessage);
+    // Foreground
+    const unsubscribe = messaging().onMessage(async remoteMessage => {
+      dispatch(
+        addNotification({
+          id: remoteMessage.messageId || Date.now().toString(),
+          title: remoteMessage.notification?.title || 'Notification',
+          body: remoteMessage.notification?.body || '',
+          data: remoteMessage.data,
+          read: false,
+          createdAt: Date.now(),
+        }),
+      );
+    });
+
+    // Background / Quit
+    messaging().setBackgroundMessageHandler(async remoteMessage => {
+      dispatch(
+        addNotification({
+          id: remoteMessage.messageId || Date.now().toString(),
+          title: remoteMessage.notification?.title || 'Notification',
+          body: remoteMessage.notification?.body || '',
+          data: remoteMessage.data,
+          read: false,
+          createdAt: Date.now(),
+        }),
+      );
     });
 
     return unsubscribe;
-  }, []);
+  }, [dispatch]);
+ 
 
   useEffect(() => {
     const subscribe = async () => {
@@ -78,11 +107,9 @@ function AppNavigator() {
   useEffect(() => {
     if (!socket) return;
 
-    
     const onSuccessfullDelivery = async (newPickup: any) => {
       console.log(newPickup);
       //
-     
     };
 
     socket.on('Successful Delivery', onSuccessfullDelivery);

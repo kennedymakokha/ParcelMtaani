@@ -23,7 +23,7 @@ export default function ParcelStack() {
         header: () => (
           <CustomHeader
           back
-            title={route.params?.parcel?.code || "Parcel Details"}
+            title={(route.params as any)?.parcel?.code || "Parcel Details"}
           />
         ),
       })}

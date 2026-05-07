@@ -1,5 +1,5 @@
 /* eslint-disable react-native/no-inline-styles */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -31,7 +31,7 @@ interface FormInputProps {
   onFocus?: any;
   containerStyle?: StyleProp<ViewStyle>;
 
-  // ✅ controlled country props
+  // country props
   withCountryCode?: boolean;
   selectedCountry?: Country;
   onSelectCountry?: (country: Country) => void | any;
@@ -54,6 +54,14 @@ export const FormInput: React.FC<FormInputProps> = ({
   const { colors } = useTheme();
   const [showModal, setShowModal] = useState(false);
 
+  // ✅ state for password visibility
+  const [isSecure, setIsSecure] = useState(secureTextEntry);
+
+  // ✅ sync if prop changes
+  useEffect(() => {
+    setIsSecure(secureTextEntry);
+  }, [secureTextEntry]);
+
   const isPhoneInput = keyboardType === 'phone-pad' && withCountryCode;
 
   return (
@@ -69,6 +77,7 @@ export const FormInput: React.FC<FormInputProps> = ({
           },
         ]}
       >
+        {/* Country Code */}
         {isPhoneInput && selectedCountry && (
           <TouchableOpacity
             style={styles.countryCodeContainer}
@@ -81,6 +90,7 @@ export const FormInput: React.FC<FormInputProps> = ({
           </TouchableOpacity>
         )}
 
+        {/* Input */}
         <TextInput
           style={[
             styles.input,
@@ -94,14 +104,27 @@ export const FormInput: React.FC<FormInputProps> = ({
           placeholderTextColor={colors.textSecondary || '#999'}
           keyboardType={keyboardType}
           multiline={multiline}
-          secureTextEntry={secureTextEntry}
+          secureTextEntry={isSecure}
           value={value}
           onChangeText={onChangeText}
           onFocus={onFocus}
           autoCapitalize="none"
         />
+
+        {/* ✅ Show / Hide toggle */}
+        {secureTextEntry && (
+          <TouchableOpacity
+            onPress={() => setIsSecure(prev => !prev)}
+            style={styles.toggleBtn}
+          >
+            <Text style={{ color: colors.text, fontSize: 12 }}>
+              {isSecure ? 'Show' : 'Hide'}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
 
+      {/* Country Picker Modal */}
       {isPhoneInput && (
         <CountryPickerModal
           visible={showModal}
@@ -152,5 +175,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 16,
+  },
+  toggleBtn: {
+    paddingHorizontal: 10,
+    justifyContent: 'center',
   },
 });

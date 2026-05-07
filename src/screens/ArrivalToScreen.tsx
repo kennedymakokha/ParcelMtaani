@@ -21,6 +21,7 @@ import Toast from '../components/toast';
 import { PrimaryButton } from '../components/PrimaryButton';
 import Signature from 'react-native-signature-canvas';
 import { FormInput } from '../components/input.component';
+import { useSocket } from '../contexts/socketContext';
 
 export default function ScannerScreen() {
   const { colors } = useTheme();
@@ -39,7 +40,7 @@ export default function ScannerScreen() {
   });
 
   const [msg, setMsg] = useState({ msg: '', state: '' });
-
+  const { socket } = useSocket();
   const [selectedParcel, setSelectedParcel] = useState<any>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [signatureData, setSignatureData] = useState<string | null>(null);
@@ -53,7 +54,7 @@ export default function ScannerScreen() {
   });
 
   const [handleArrival, { isLoading }] = useMarkParcelAsrrivedMutation();
-  const [handleCollected, { isLoading: collectionLoading, }] =
+  const [handleCollected, { isLoading: collectionLoading }] =
     useMarkParcerAsDeliveredMutation();
 
   useEffect(() => {
@@ -72,7 +73,21 @@ export default function ScannerScreen() {
       });
     }
   }, [data, page]);
+  useEffect(() => {
+    if (!socket) return;
 
+    const onCanceledParcel = async (parcel: any) => {
+      console.log(parcel);
+      //
+
+      await refetch();
+    };
+
+    socket.on('Parcel-change', onCanceledParcel);
+    return () => {
+      socket.off('Parcel-change', onCanceledParcel);
+    };
+  }, [socket, refetch]);
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     setPage(1);
@@ -243,7 +258,7 @@ export default function ScannerScreen() {
               await signatureRef.current?.readSignature(); // 🔥 THIS is the key
               await handleConfirmPickup();
             }}
-            loading={collectionLoading }
+            loading={collectionLoading}
             title="Confirm Pickup"
           />
         </View>
