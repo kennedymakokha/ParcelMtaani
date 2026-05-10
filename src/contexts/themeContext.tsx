@@ -1,5 +1,8 @@
+/* eslint-disable react-native/no-inline-styles */
 import React, { createContext, useContext } from 'react';
-import { useColorScheme } from 'react-native';
+import { useColorScheme, View, Text } from 'react-native';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../store';
 
 interface Theme {
   colors: {
@@ -11,13 +14,13 @@ interface Theme {
     border: string;
     card: string;
     error: string;
-    subText?: string; // Optional for less prominent text
-    success?: string; // Optional for success messages
-    warning?: string; // Optional for warning messages
-    textSecondary?: string; // Optional for placeholder text and less prominent text
-    primaryLight?: string; // Optional lighter shade for selected states
-    errorLight?: string; // Optional lighter shade for error states
-    successLight?: string; // Optional lighter shade for success states
+    subText?: string;
+    success?: string;
+    warning?: string;
+    textSecondary?: string;
+    primaryLight?: string;
+    errorLight?: string;
+    successLight?: string;
     fontRegular?: string;
     fontMedium?: string;
     fontSemiBold?: string;
@@ -34,8 +37,8 @@ interface Theme {
 
 const lightTheme: Theme = {
   colors: {
-    primary: '#2563eb', // Blue accent
-    secondary: '#6b7280', // Neutral gray
+    primary: '#2563eb',
+    secondary: '#6b7280',
     danger: '#dc2626',
     background: '#f9fafb',
     text: '#111827',
@@ -44,12 +47,11 @@ const lightTheme: Theme = {
     card: '#ffffff',
     textSecondary: '#9ca3af',
     error: '#dc2626',
-    errorLight: '#fee2e2', // Lighter red for error states
-    primaryLight: '#3b82f6', // Lighter blue for selected states
-    success: '#15803d', // Green for success messages
-    warning: '#d97706', // Amber for warning messages
-    successLight: '#d1fae5', // Lighter green for success states
-
+    errorLight: '#fee2e2',
+    primaryLight: '#3b82f6',
+    success: '#15803d',
+    warning: '#d97706',
+    successLight: '#d1fae5',
     shadow: '#000',
     fontRegular: 'Inter-Regular',
     fontMedium: 'Inter-Medium',
@@ -65,21 +67,21 @@ const lightTheme: Theme = {
 
 const darkTheme: Theme = {
   colors: {
-    primary: '#3b82f6', // Slightly lighter blue for dark mode
-    secondary: '#9ca3af', // Gray
+    primary: '#3b82f6',
+    secondary: '#9ca3af',
     danger: '#f87171',
     background: '#111827',
     text: '#f9fafb',
     border: '#374151',
     subText: '#9ca3af',
     card: '#1f2937',
-    errorLight: '#fee2e2', // Lighter red for error states in dark mode
+    errorLight: '#fee2e2',
     textSecondary: '#6b7280',
     error: '#f87171',
-    primaryLight: '#60a5fa', // Even lighter blue for selected states in dark mode
-    success: '#22c55e', // Brighter green for success messages in dark mode
-    warning: '#fbbf24', // Brighter amber for warning messages in dark mode
-    successLight: '#d1fae5', // Lighter green for success states in dark mode
+    primaryLight: '#60a5fa',
+    success: '#22c55e',
+    warning: '#fbbf24',
+    successLight: '#d1fae5',
     fontRegular: 'Inter-Regular',
     fontMedium: 'Inter-Medium',
     fontSemiBold: 'Inter-SemiBold',
@@ -100,11 +102,79 @@ interface ThemeProviderProps {
 }
 
 export const ThemeProvider = ({ children }: ThemeProviderProps) => {
-  const scheme = useColorScheme(); // "light" or "dark"
-  const theme = scheme === 'dark' ? darkTheme : lightTheme;
+  const scheme = useColorScheme();
+
+  const baseTheme = scheme === 'dark' ? darkTheme : lightTheme;
+
+  const pickupState = useSelector(
+    (state: RootState) => state.pickupEvents.lastEvent,
+  );
+
+  const isPickupClosed = pickupState === 'pickup_shut';
+
+  // Muted / inactive theme when pickup is closed
+  const theme: Theme = {
+    ...baseTheme,
+    colors: {
+      ...baseTheme.colors,
+
+      primary: isPickupClosed ? '#9ca3af' : baseTheme.colors.primary,
+      primaryLight: isPickupClosed
+        ? '#d1d5db'
+        : baseTheme.colors.primaryLight,
+
+      success: isPickupClosed ? '#9ca3af' : baseTheme.colors.success,
+      warning: isPickupClosed ? '#9ca3af' : baseTheme.colors.warning,
+      danger: isPickupClosed ? '#9ca3af' : baseTheme.colors.danger,
+
+      text: isPickupClosed ? '#6b7280' : baseTheme.colors.text,
+      card: isPickupClosed ? '#f3f4f6' : baseTheme.colors.card,
+    },
+  };
 
   return (
-    <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>
+    <ThemeContext.Provider value={theme}>
+      <View style={{ flex: 1 }}>
+        {children}
+
+        {/* Inactive overlay */}
+        {isPickupClosed && (
+          <View
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(128,128,128,0.12)',
+              justifyContent: 'center',
+              alignItems: 'center',
+              zIndex: 999,
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: 'rgba(0,0,0,0.1)',
+                paddingHorizontal: 24,
+                paddingVertical: 14,
+                borderRadius: 12,
+              }}
+            >
+              <Text
+                style={{
+                  color: '#fff',
+                  fontSize: 18,
+                  fontWeight: '600',
+                }}
+              >
+                We Are  closed for today 
+              </Text>
+            </View>
+          </View>
+        )}
+      </View>
+    </ThemeContext.Provider>
   );
 };
 

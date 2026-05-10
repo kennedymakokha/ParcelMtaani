@@ -6,7 +6,7 @@ import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../../contexts/themeContext';
 import { UserRole } from '../../../types';
-import { drawerConfig } from './config';
+import { getDrawerConfig } from './config';
 import { useDispatch, useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/FontAwesome6';
 import { useGetPickupsQuery } from '../../services/apis/business.api';
@@ -28,14 +28,25 @@ import {
 export default function CustomDrawerContent(props: any) {
   const { colors } = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
+
   const { user } = useSelector((state: any) => state.auth);
-  // Example: role fetched from context or props
+
+  const pickupState = useSelector(
+    (state: any) => state.pickupEvents.lastEvent,
+  );
+
   const { data, refetch } = useGetPickupsQuery({});
-  const userRole: UserRole = user?.role; // replace with dynamic value
+
+  const userRole: UserRole = user?.role;
+
+  const menuItems = getDrawerConfig(pickupState)[userRole];
+
   const pickups = useSelector((state: any) => state.pickups.pickups);
+
   const dispatch = useDispatch();
-  const menuItems = drawerConfig[userRole];
+
   const { socket } = useSocket();
+
   const switchingRef = useRef(false);
 
   const currentPickup = useSelector(
@@ -44,18 +55,22 @@ export default function CustomDrawerContent(props: any) {
 
   const handleSwitch = async (point: any) => {
     if (switchingRef.current) return;
+
     switchingRef.current = true;
 
     try {
       await unsubscribeFromTopic(`pickup_${currentPickup?._id}_attendants`);
+
       await subscribeToTopic(`pickup_${point._id}_attendants`);
 
       dispatch(setCurrentPickup(point));
+
       setModalVisible(false);
     } finally {
       switchingRef.current = false;
     }
   };
+
   useEffect(() => {
     dispatch(setPickups(data || {}));
   }, [data, dispatch]);
@@ -65,21 +80,27 @@ export default function CustomDrawerContent(props: any) {
 
     const onPickupCreated = async (newPickup: any) => {
       console.log(newPickup);
-      //
+
       dispatch(addPickup(newPickup));
+
       await refetch();
     };
+
     const onSuccessfullDelivery = async (newPickup: any) => {
       console.log(newPickup);
-      //
+
       dispatch(addPickup(newPickup));
+
       await refetch();
     };
 
     socket.on('pickup_created', onPickupCreated);
+
     socket.on('Successful Delivery', onSuccessfullDelivery);
+
     return () => {
       socket.off('pickup_created', onPickupCreated);
+
       socket.off('Successful Delivery', onSuccessfullDelivery);
     };
   }, [socket, dispatch, refetch]);
@@ -100,6 +121,7 @@ export default function CustomDrawerContent(props: any) {
         <View className="flex items-center justify-center">
           <Icon name="truck-fast" size={74} color="#fff" />
         </View>
+
         <Text
           style={{
             color: '#fff',
@@ -111,9 +133,11 @@ export default function CustomDrawerContent(props: any) {
         >
           Parcel Mtaani
         </Text>
+
         <Text style={{ color: '#e0e7ff' }}>
           {user?.pickup?.pickup_name?.toUpperCase()}
         </Text>
+
         <View className="flex items-center justify-center px-4 py-1 border border-blue-500 rounded-md mt-2">
           <Text style={{ color: '#e0e7ff' }}>{userRole.toUpperCase()}</Text>
         </View>
@@ -135,9 +159,11 @@ export default function CustomDrawerContent(props: any) {
             onPress={() => setModalVisible(true)}
           >
             <Ionicons name="location-outline" size={18} color="#fff" />
+
             <Text style={{ color: '#fff', fontWeight: '600', marginLeft: 6 }}>
               {currentPickup?.pickup_name || 'Select Pickup'}
             </Text>
+
             <Ionicons
               name="chevron-down"
               size={16}
@@ -148,7 +174,7 @@ export default function CustomDrawerContent(props: any) {
         )}
       </View>
 
-      {/* Role‑based Drawer Items */}
+      {/* Drawer Items */}
       <View
         style={{ flex: 1, backgroundColor: colors.background, padding: 16 }}
       >
@@ -186,6 +212,7 @@ export default function CustomDrawerContent(props: any) {
             size={20}
             color={colors.secondary}
           />
+
           <Text
             style={{ marginLeft: 8, color: colors.text, fontWeight: '600' }}
           >
@@ -201,11 +228,14 @@ export default function CustomDrawerContent(props: any) {
           }}
           onPress={async () => {
             await unsubscribeAllTopics(user);
+
             dispatch(logout());
+
             await AsyncStorage.clear();
           }}
         >
           <Ionicons name="log-out-outline" size={20} color={colors.danger} />
+
           <Text
             style={{ marginLeft: 8, color: colors.danger, fontWeight: '600' }}
           >
@@ -214,7 +244,7 @@ export default function CustomDrawerContent(props: any) {
         </TouchableOpacity>
       </View>
 
-      {/* Pickup Point Modal for Super Admin */}
+      {/* Pickup Point Modal */}
       {userRole === 'superadmin' && (
         <Modal visible={modalVisible} animationType="slide" transparent>
           <View
@@ -243,6 +273,7 @@ export default function CustomDrawerContent(props: any) {
               >
                 Switch Pickup Point
               </Text>
+
               <FlatList
                 data={pickups}
                 keyExtractor={item => item._id}
@@ -261,6 +292,7 @@ export default function CustomDrawerContent(props: any) {
                   </TouchableOpacity>
                 )}
               />
+
               <TouchableOpacity
                 style={{
                   backgroundColor: colors.primary,

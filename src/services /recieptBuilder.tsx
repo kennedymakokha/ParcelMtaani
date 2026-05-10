@@ -128,14 +128,6 @@ export const buildReceiptText = ({
     text += `Notes: ${parcel.instructions}\n`;
   }
 
-  text += line;
-
-  if (parcel?.price) {
-    text += formatLine(
-      'Delivery Fee',
-      formatMoney(parcel.price),
-    );
-  }
 
   text += line;
 

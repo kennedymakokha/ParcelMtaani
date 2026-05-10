@@ -19,8 +19,10 @@ import { Linking } from 'react-native';
 import { getMessaging } from '@react-native-firebase/messaging';
 import { addNotification } from './src/features/notificationsSlice';
 import messaging from '@react-native-firebase/messaging';
+import { usePickupSocket } from './src/hooks/usePickupSocket';
 function AppNavigator() {
   const { colors } = useTheme();
+  usePickupSocket();
   // const { user } = useAuth();
   const { socket } = useSocket();
   const { user } = useSelector((state: any) => state.auth);
@@ -91,7 +93,6 @@ function AppNavigator() {
 
     return unsubscribe;
   }, [dispatch]);
- 
 
   useEffect(() => {
     const subscribe = async () => {

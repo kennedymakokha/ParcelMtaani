@@ -25,6 +25,7 @@ import { PrimaryButton } from '../components/PrimaryButton';
 import { SecondaryButton } from '../components/SecondaryButton';
 import { Fab } from '../components/buttons/fab';
 import { useSocket } from '../contexts/socketContext';
+import { RootState } from '../../store';
 
 export default function DispatchToTrackScreen() {
   const { colors } = useTheme();
@@ -33,8 +34,10 @@ export default function DispatchToTrackScreen() {
   const [showTrackModal, setShowTrackModal] = useState(false);
   const [selectedParcels, setSelectedParcels] = useState<any[]>([]);
   const [msg, setMsg] = useState({ msg: '', state: '' });
-  
-    const { socket } = useSocket();
+  const pickupState = useSelector(
+    (state: RootState) => state.pickupEvents.lastEvent,
+  );
+  const { socket } = useSocket();
   const [dispatchParcel, { isLoading: dispatching }] =
     useDispatchParcelMutation();
   const { data: trucks, isFetching: fetchingTrucks } = useGetTrucksQuery({
@@ -122,22 +125,22 @@ export default function DispatchToTrackScreen() {
       refetch();
     }
   }, [currentPickup, refetch]);
-   useEffect(() => {
-      if (!socket) return;
-  
-      const onCanceledParcel = async (parcel: any) => {
-        console.log(parcel);
-        //
-  
-        await refetch();
-      };
-  
-      socket.on('Parcel-change', onCanceledParcel);
-      return () => {
-        socket.off('Parcel-change', onCanceledParcel);
-      };
-    }, [socket, refetch]);
-  
+  useEffect(() => {
+    if (!socket) return;
+
+    const onCanceledParcel = async (parcel: any) => {
+      console.log(parcel);
+      //
+
+      await refetch();
+    };
+
+    socket.on('Parcel-change', onCanceledParcel);
+    return () => {
+      socket.off('Parcel-change', onCanceledParcel);
+    };
+  }, [socket, refetch]);
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, padding: 24 }}>
       {/* Search Bar */}
@@ -194,12 +197,14 @@ export default function DispatchToTrackScreen() {
         </TouchableOpacity>
       )}
 
-      <Fab
-        onPress={() => {
-          setShowIntakeModal(true);
-          console.log('opening');
-        }}
-      />
+      {pickupState === 'pickup_open' && (
+        <Fab
+          onPress={() => {
+            setShowIntakeModal(true);
+            console.log('opening');
+          }}
+        />
+      )}
 
       {/* Intake Modal */}
       <Modal visible={showIntakeModal} animationType="slide">

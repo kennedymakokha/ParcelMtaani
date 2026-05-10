@@ -29,7 +29,7 @@ export default function AdminDashboard() {
     startDate: '', // Optional: Start date for filtering (YYYY-MM-DD)
     endDate: '', // Optional: End date for filtering (YYYY-MM-DD)
   });
- 
+
   const KPIdata = dashboardStats ? dashboardStats : {};
   const fetchAnalytics = useCallback(async () => {
     try {
@@ -99,7 +99,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (!socket) return;
-
+    console.log(socket);
     const onCanceledParcel = async (parcel: any) => {
       console.log(parcel);
       //
@@ -108,8 +108,14 @@ export default function AdminDashboard() {
     };
 
     socket.on('Parcel-change', onCanceledParcel);
+    socket.on('pickup_shut', () => {
+      console.log('object');
+    });
     return () => {
       socket.off('Parcel-change', onCanceledParcel);
+      socket.off('pickup_shut', () => {
+        console.log('object');
+      });
     };
   }, [socket, refetch]);
 

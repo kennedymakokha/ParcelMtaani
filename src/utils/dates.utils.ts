@@ -32,7 +32,7 @@ export const FineDate = (timestamp: any) => {
   const date = new Date(year, month, day, hour, minute, second);
   return date.toString()
   // Format it
-  console.log(date.toString());
+
 }
 
 export function getDurationFromNow(createdAt: any) {
@@ -58,3 +58,16 @@ export const getDaysBetween = (futureDateStr: string): number => {
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   return diffDays;
 };
+
+
+const now = new Date();
+
+// If it's past midnight but before your cutoff hour,
+// use yesterday's date. Example cutoff: 6 AM.
+const cutoffHour = 16;
+
+export const displayDate = new Date(now);
+
+if (now.getHours() < cutoffHour) {
+  displayDate.setDate(displayDate.getDate() - 1);
+}

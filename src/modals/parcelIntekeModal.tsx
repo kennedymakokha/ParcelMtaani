@@ -390,7 +390,9 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
           }
 
           // wait before retry
-          await new Promise(resolve => setTimeout(() => resolve(undefined), 2000));
+          await new Promise(resolve =>
+            setTimeout(() => resolve(undefined), 2000),
+          );
         }
       }
 
@@ -581,13 +583,6 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
         />
 
         <FormInput
-          label="Price (KES)"
-          keyboardType="numeric"
-          value={formData.parcel.price}
-          onChangeText={t => updateField('parcel', 'price', t)}
-        />
-
-        <FormInput
           label="Special Instructions"
           multiline
           value={formData.parcel.instructions}
@@ -602,6 +597,8 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
           }}
         >
           <Picker selectedValue={pickup} onValueChange={v => setPickup(v)}>
+            {/* <option value=""></option> */}
+            <Picker.Item label="-- Select Destination --" value={null} />
             {pickups
               ?.filter((pickup: any) => pickup._id !== user.pickup?._id)
               .map((pickup: any) => (

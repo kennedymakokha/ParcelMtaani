@@ -29,6 +29,16 @@ export const injectEndpoints = api.injectEndpoints({
         fetchDashboardStats: builder.query({
             query: ({ pickupId, filterType, startDate, endDate }) => `/parcel/events/stats?pickupId=${pickupId}&filterType=${filterType}&startDate=${startDate}&endDate=${endDate}`,
         }),
+        fetchParcelCount: builder.query({
+            query: ({ pickupId, displayDate }) => ({
+                url: '/parcel/daily/count',
+                method: 'GET',
+                params: {
+                    pickupId,
+                    displayDate,
+                },
+            }),
+        }),
         dispatchParcel: builder.mutation({
             query: (data) => ({
                 url: '/parcel/dispatch/bulk',
@@ -74,5 +84,6 @@ export const {
     useFetchStatusCountQuery,
     useMarkParcelAsrrivedMutation,
     useMarkParcerAsDeliveredMutation,
-    useFetchDashboardStatsQuery
+    useFetchDashboardStatsQuery,
+    useFetchParcelCountQuery
 } = injectEndpoints;

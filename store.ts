@@ -6,7 +6,7 @@ import pickupReducer from "./src/features/pickSlice";
 import notificationsReducer from "./src/features/notificationsSlice"; // ✅ import
 import { persistReducer, persistStore } from "redux-persist";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import pickupEventsReducer from './src/features/pickupEventsSlice';
 const authPersistConfig = {
   key: "auth",
   storage: AsyncStorage,
@@ -30,6 +30,7 @@ export const store = configureStore({
   reducer: {
     auth: persistedAuthReducer,
     pickups: persistedPickupReducer,
+    pickupEvents: pickupEventsReducer, 
     notifications: persistedNotificationsReducer, // ✅ register here
     [api.reducerPath]: api.reducer,
   },

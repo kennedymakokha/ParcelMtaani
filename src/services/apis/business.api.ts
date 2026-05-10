@@ -9,6 +9,13 @@ export const injectEndpoints = api.injectEndpoints({
                 body,
             }),
         }),
+         openPickup: builder.mutation({
+            query: (body) => ({
+                url: '/business/pickup/opening',
+                method: 'POST',
+                body,
+            }),
+        }),
 
         getPickups: builder.query({
             query: () => '/business/get/pickups',
@@ -52,5 +59,6 @@ export const {
     useGetBusinessByIdQuery,
     useGetBusinessesQuery,
     useDeleteBusinessMutation,
+    useOpenPickupMutation
 
 } = injectEndpoints;

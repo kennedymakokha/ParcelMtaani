@@ -174,7 +174,7 @@ const Keypad = ({ value, onChange, activeField }: any) => {
           ))}
 
       {/* FOOTER CLEAR FOR NUMERIC MODE */}
-      {!isABC && (
+      {/* {!isABC && (
         <TouchableOpacity
           onPress={() => handlePress('C')}
           style={{
@@ -189,7 +189,7 @@ const Keypad = ({ value, onChange, activeField }: any) => {
             CLEAR ALL
           </Text>
         </TouchableOpacity>
-      )}
+      )} */}
     </View>
   );
 };

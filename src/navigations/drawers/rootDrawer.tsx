@@ -12,6 +12,8 @@ import PickupManagementScreen from '../../screens/PickupManagementScreen';
 import businessStack from '../stacks/businessStack';
 import SuperSalesManagementScreen from '../../screens/superSalesScreen';
 import NotificationPage from '../../screens/notificationScreen';
+import AdminDailyPaymentScreen from '../../screens/adminPaymentScreen';
+import { displayDate } from '../../utils/dates.utils';
 
 const Drawer = createDrawerNavigator();
 
@@ -39,6 +41,13 @@ export default function RootDrawer() {
           header: () => <CustomHeader title="Notifications" />,
         })}
         component={NotificationPage}
+      />
+      <Drawer.Screen
+        name="payments"
+        options={() => ({
+          header: () => <CustomHeader title={`${displayDate.toDateString()}`} />,
+        })}
+        component={AdminDailyPaymentScreen}
       />
       <Drawer.Screen
         name="Parcel Intake"
@@ -95,7 +104,7 @@ export default function RootDrawer() {
       <Drawer.Screen
         name="trucks"
         options={() => ({
-          header: () => <CustomHeader title="Trucks Management" />,
+          header: () => <CustomHeader title="Fleet Management" />,
         })}
         component={TrucksManagementScreen}
       />
