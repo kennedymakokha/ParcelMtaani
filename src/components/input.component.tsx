@@ -105,7 +105,9 @@ export const FormInput: React.FC<FormInputProps> = ({
           keyboardType={keyboardType}
           multiline={multiline}
           secureTextEntry={isSecure}
-          value={value}
+          value={value?.split(' ')
+              .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ')}
           onChangeText={onChangeText}
           onFocus={onFocus}
           autoCapitalize="none"
