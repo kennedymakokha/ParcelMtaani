@@ -110,25 +110,27 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
     (state: RootState) => state.pickupEvents.lastEvent,
   );
 
-  const isPickupClosed = pickupState === 'pickup_shut';
+  const user = useSelector((state: RootState) => state.auth.user);
 
-  // Muted / inactive theme when pickup is closed
+  const isPickupShut = pickupState === 'pickup_shut';
+  const isNotPaid = user?.pickup?.paid === false;
+
+  const isInactive = isPickupShut || isNotPaid;
+
   const theme: Theme = {
     ...baseTheme,
     colors: {
       ...baseTheme.colors,
 
-      primary: isPickupClosed ? '#9ca3af' : baseTheme.colors.primary,
-      primaryLight: isPickupClosed
-        ? '#d1d5db'
-        : baseTheme.colors.primaryLight,
+      primary: isInactive ? '#9ca3af' : baseTheme.colors.primary,
+      primaryLight: isInactive ? '#d1d5db' : baseTheme.colors.primaryLight,
 
-      success: isPickupClosed ? '#9ca3af' : baseTheme.colors.success,
-      warning: isPickupClosed ? '#9ca3af' : baseTheme.colors.warning,
-      danger: isPickupClosed ? '#9ca3af' : baseTheme.colors.danger,
+      success: isInactive ? '#9ca3af' : baseTheme.colors.success,
+      warning: isInactive ? '#9ca3af' : baseTheme.colors.warning,
+      danger: isInactive ? '#9ca3af' : baseTheme.colors.danger,
 
-      text: isPickupClosed ? '#6b7280' : baseTheme.colors.text,
-      card: isPickupClosed ? '#f3f4f6' : baseTheme.colors.card,
+      text: isInactive ? '#6b7280' : baseTheme.colors.text,
+      card: isInactive ? '#f3f4f6' : baseTheme.colors.card,
     },
   };
 
@@ -137,8 +139,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
       <View style={{ flex: 1 }}>
         {children}
 
-        {/* Inactive overlay */}
-        {isPickupClosed && (
+        {isInactive && (
           <View
             pointerEvents="none"
             style={{
@@ -155,7 +156,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
           >
             <View
               style={{
-                backgroundColor: 'rgba(0,0,0,0.1)',
+                backgroundColor: 'rgba(0,0,0,0.15)',
                 paddingHorizontal: 24,
                 paddingVertical: 14,
                 borderRadius: 12,
@@ -166,9 +167,12 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
                   color: '#fff',
                   fontSize: 18,
                   fontWeight: '600',
+                  textAlign: 'center',
                 }}
               >
-                We Are  closed for today 
+                {isPickupShut
+                  ? 'We are closed for today'
+                  : 'Payment required to continue'}
               </Text>
             </View>
           </View>

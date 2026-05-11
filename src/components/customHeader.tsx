@@ -46,7 +46,6 @@ function CustomHeader({
   const { colors } = useTheme();
   const [menuVisible, setMenuVisible] = useState(false);
   const notifications = useAppSelector(state => state.notifications.list);
-  console.log(notifications);
   const MenuOption = ({ icon, label, onPress, color }: any) => (
     <TouchableOpacity onPress={onPress} style={styles.menuItem}>
       <Ionicons name={icon} size={20} color={color} />

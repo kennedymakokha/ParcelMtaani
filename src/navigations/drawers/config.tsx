@@ -3,6 +3,7 @@ import { displayDate } from '../../utils/dates.utils';
 
 export const getDrawerConfig = (
   pickupState: string,
+  user:any,
 ): Record<UserRole, { label: string; icon: string; screen: string }[]> => ({
   superuser: [
     { label: 'Dashboard', icon: 'stats-chart', screen: 'Dashboard' },
@@ -52,7 +53,7 @@ export const getDrawerConfig = (
 
     { label: 'Reports', icon: 'document-text-outline', screen: 'Parcels' },
 
-    ...(pickupState === 'pickup_shut'
+    ...(pickupState === 'pickup_shut' ||user?.pickup?.paid === false
       ? [
           {
             label: `${displayDate.toDateString()} Subscription`,

@@ -30,28 +30,23 @@ import { buildReceiptText } from '../services /recieptBuilder';
 import { printToPrinter } from '../services /printer.service';
 import Keypad from '../components/keyPad';
 import { useMpesapayMutation } from '../services/apis/mpesa.api.ts';
+import { validateForm } from '../validations/parcel.ts';
 
 export default function ParcelIntakeScreen({ onClose, refetch }: any) {
   const { colors } = useTheme();
   const [lipaNaMpesa, { isLoading: paying }] = useMpesapayMutation();
   const { user } = useSelector((state: any) => state.auth);
   const pickups = useSelector((state: any) => state.pickups.pickups);
-
   const [country, setCountry] = useState(COUNTRIES[0]);
-
   const [pickup, setPickup] = useState<any>('');
-
   const [selectedPrinterMac, setSelectedPrinterMac] = useState<string | null>(
     null,
   );
-
   const [showPrinterModal, setShowPrinterModal] = useState(false);
-
   const [msg, setMsg] = useState({
     msg: '',
     state: '',
   });
-
   const [postParcel, { isLoading: submitting }] = useRegisterParcelMutation();
 
   // =========================
@@ -59,16 +54,14 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
   // =========================
 
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'MPESA'>('CASH');
-
   const [isSplitPayment, setIsSplitPayment] = useState(false);
-
   const [activeField, setActiveField] = useState<
     'PHONE' | 'CASH_AMT' | 'MPESA_AMT'
   >('CASH_AMT');
-
   const [phoneNumber, setPhoneNumber] = useState('');
   const [amountGiven, setAmountGiven] = useState('');
   const [mpesaPortion, setMpesaPortion] = useState('');
+  const isProcessing = paying || submitting;
 
   // =========================
   // FORM
@@ -224,21 +217,32 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
   // =========================
 
   const handleSubmit = async () => {
+    // prevent double submit
+    if (paying || submitting) return;
+
+    const isValid = validateForm({
+      formData,
+      phoneNumber,
+      mpesaPortion,
+      setMsg,
+      pickup,
+      paymentMethod,
+      isSplitPayment,
+      amountGiven,
+      parcelTotal,
+    });
+
+    if (!isValid) return;
+
     if (!selectedPrinterMac) {
       setShowPrinterModal(true);
       return;
     }
 
-    const sixDigitNumber = Math.floor(
-      100000 + Math.random() * 900000,
-    ).toString();
-
     const currentPickup = pickups.find((p: any) => p._id === pickup);
 
     const pickupShortCode = currentPickup?.short_code || '';
     const pickupFullName = currentPickup?.pickup_name || '';
-
-    const receiptNo = `INV${sixDigitNumber}`;
 
     let mpesaResponse: any = null;
 
@@ -262,8 +266,6 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
         ...formData.parcel,
 
         pickup,
-
-        code: `${pickupShortCode}-${sixDigitNumber}`,
       },
     };
 
@@ -276,6 +278,7 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
       if (paymentMethod === 'MPESA' || isSplitPayment) {
         mpesaResponse = await lipaNaMpesa({
           phone_number: phoneNumber,
+
           amount:
             paymentMethod === 'MPESA' ? parcelTotal : Number(mpesaPortion || 0),
 
@@ -291,16 +294,35 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
 
       /**
        * =========================
+       * SAVE PARCEL FIRST
+       * =========================
+       */
+
+      const response = await postParcel(updatedFormData).unwrap();
+
+      const savedParcel = response?.parcel || response;
+
+      const parcelCode = savedParcel?.parcel?.code || savedParcel?.code;
+
+      /**
+       * =========================
        * BUILD RECEIPT
        * =========================
        */
+      const receiptNo = `INV${parcelCode}`;
+
       const receiptText = buildReceiptText({
         receiptNo,
         invoiceId: receiptNo,
 
         sender: formData.sender,
+
         reciever: formData.receiver,
-        parcel: updatedFormData.parcel,
+
+        parcel: {
+          ...savedParcel?.parcel,
+          code: parcelCode,
+        },
 
         method: isSplitPayment ? 'SPLIT' : paymentMethod,
 
@@ -333,6 +355,8 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
         user: {
           name: user?.name || 'Admin',
         },
+
+        business: user.business,
       });
 
       const qrData = JSON.stringify({
@@ -342,21 +366,21 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
 
         pickupName: pickupFullName,
 
-        code: `${pickupShortCode}-${sixDigitNumber}`,
+        code: parcelCode,
 
         from: `${user?.pickup?.pickup_name || ''}`,
       });
 
       /**
        * =========================
-       * FORCE PRINT SUCCESS
+       * TRY PRINTING
        * =========================
-       * Since payment is already done,
-       * DO NOT navigate away until print succeeds.
        */
 
       let printed = false;
+
       let attempts = 0;
+
       const MAX_RETRIES = 5;
 
       while (!printed && attempts < MAX_RETRIES) {
@@ -368,9 +392,9 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
             pickupShortCode,
             receiptText,
             qrData,
-            sixDigitNumber,
+            parcelCode,
             true,
-            receiptNo,
+          
           );
 
           if (!printed) {
@@ -380,16 +404,48 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
           console.log(`Print attempt ${attempts} failed`, printErr);
 
           if (attempts >= MAX_RETRIES) {
-            setMsg({
-              msg: 'Payment received but printing failed. Please reconnect printer and retry.',
+            /**
+             * =========================
+             * SAVE FAILED PRINT LOCALLY
+             * =========================
+             */
 
-              state: 'error',
+            try {
+              const storedPrints = await AsyncStorage.getItem('failed_prints');
+
+              const failedPrints = storedPrints ? JSON.parse(storedPrints) : [];
+
+              failedPrints.push({
+                parcelId: savedParcel?._id,
+                receiptText,
+                qrData,
+                code: parcelCode,
+                receiptNo,
+                pickupShortCode,
+                printerMac: selectedPrinterMac,
+                createdAt: new Date().toISOString(),
+              });
+
+              await AsyncStorage.setItem(
+                'failed_prints',
+                JSON.stringify(failedPrints),
+              );
+            } catch (storageError) {
+              console.log('Failed to save failed print locally', storageError);
+            }
+            setMsg({
+              msg: 'Parcel saved successfully but printing failed. You can retry printing later.',
+
+              state: 'warning',
             });
+
+            await refetch();
+
+            await onClose();
 
             return;
           }
 
-          // wait before retry
           await new Promise(resolve =>
             setTimeout(() => resolve(undefined), 2000),
           );
@@ -398,10 +454,9 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
 
       /**
        * =========================
-       * ONLY POST AFTER PRINT SUCCESS
+       * SUCCESS
        * =========================
        */
-      await postParcel(updatedFormData).unwrap();
 
       await refetch();
 
@@ -423,7 +478,6 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
       });
     }
   };
-
   return (
     <ScrollView
       style={{
@@ -588,7 +642,12 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
           value={formData.parcel.instructions}
           onChangeText={t => updateField('parcel', 'instructions', t)}
         />
-
+        <FormInput
+          label="Charges"
+          keyboardType="numeric"
+          value={formData.parcel.price}
+          onChangeText={t => updateField('parcel', 'price', t)}
+        />
         <View
           style={{
             borderWidth: 1,
@@ -597,7 +656,6 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
           }}
         >
           <Picker selectedValue={pickup} onValueChange={v => setPickup(v)}>
-            {/* <option value=""></option> */}
             <Picker.Item label="-- Select Destination --" value={null} />
             {pickups
               ?.filter((pickup: any) => pickup._id !== user.pickup?._id)
@@ -884,15 +942,21 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
       {/* ========================= */}
 
       <TouchableOpacity
+        disabled={isProcessing}
         onPress={handleSubmit}
         style={{
-          backgroundColor: selectedPrinterMac ? colors.primary : colors.error,
+          backgroundColor: isProcessing
+            ? colors.border
+            : selectedPrinterMac
+            ? colors.primary
+            : colors.error,
 
           padding: 18,
           borderRadius: 12,
+          opacity: isProcessing ? 0.7 : 1,
         }}
       >
-        {(paymentMethod === 'MPESA' || isSplitPayment ? paying : submitting) ? (
+        {isProcessing ? (
           <ActivityIndicator color="#fff" />
         ) : (
           <Text

@@ -99,9 +99,9 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (!socket) return;
-    console.log(socket);
+  
     const onCanceledParcel = async (parcel: any) => {
-      console.log(parcel);
+    
       //
 
       await refetch();
@@ -109,7 +109,7 @@ export default function AdminDashboard() {
 
     socket.on('Parcel-change', onCanceledParcel);
     socket.on('pickup_shut', () => {
-      console.log('object');
+     
     });
     return () => {
       socket.off('Parcel-change', onCanceledParcel);

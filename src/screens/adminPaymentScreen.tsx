@@ -7,10 +7,11 @@ import { useSelector } from 'react-redux';
 import { useFetchParcelCountQuery } from '../services/apis/parcel.api';
 import { displayDate } from '../utils/dates.utils';
 import { useOpenPickupMutation } from '../services/apis/business.api';
+import { SectionHeader } from '../components/ui/sectionHeader';
 
-export default function AdminDailyPaymentScreen() {
+export default function AdminDailyPaymentScreen({ navigation }: any) {
   const { colors } = useTheme();
-  const [useStkPush, setUseStkPush] = useState(false);
+  const [useStkPush, setUseStkPush] = useState(true);
   const [phone, setPhone] = useState('');
   const [restorePickup, { isLoading }] = useOpenPickupMutation();
   const {
@@ -38,6 +39,7 @@ export default function AdminDailyPaymentScreen() {
         // TODO: show instructions or call backend standard payment API
       }
       await restorePickup({ pickup: pickup?._id });
+      navigation.navigate('Dashboard');
     } catch (error) {
       console.log(error);
     }
@@ -45,16 +47,7 @@ export default function AdminDailyPaymentScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, padding: 16 }}>
-      <Text
-        style={{
-          fontSize: 22,
-          fontWeight: '700',
-          color: colors.primary,
-          marginBottom: 12,
-        }}
-      >
-        Daily Usage Payment
-      </Text>
+      <SectionHeader title=" Daily Usage Payment" />
 
       {/* Amount Card */}
       <View

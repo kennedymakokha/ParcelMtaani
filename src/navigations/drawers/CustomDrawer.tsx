@@ -28,9 +28,7 @@ import {
 export default function CustomDrawerContent(props: any) {
   const { colors } = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
-
   const { user } = useSelector((state: any) => state.auth);
-
   const pickupState = useSelector(
     (state: any) => state.pickupEvents.lastEvent,
   );
@@ -39,7 +37,7 @@ export default function CustomDrawerContent(props: any) {
 
   const userRole: UserRole = user?.role;
 
-  const menuItems = getDrawerConfig(pickupState)[userRole];
+  const menuItems = getDrawerConfig(pickupState,user)[userRole];
 
   const pickups = useSelector((state: any) => state.pickups.pickups);
 

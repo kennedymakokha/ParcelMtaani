@@ -4,7 +4,7 @@ import { Buffer } from 'buffer';
 /**
  * Build Barcode Buffer (CODE128)
  */
-const buildBarcodeBuffer = (barcodeData: string): Buffer => {
+export const buildBarcodeBuffer = (barcodeData: string): Buffer => {
   const ESC = 0x1b;
   const GS = 0x1d;
 
@@ -52,8 +52,8 @@ const buildQrBuffer = (
     data,
     Buffer.from([GS, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x51, 0x30]), // Print
     Buffer.from('\n\n'),
-    Buffer.from([ESC, 0x61, 0x01, ESC, 0x21, 0x30]), // Big text
-    Buffer.from(`${pickup}-${sixDigitNumber}\n`, 'ascii'),
+    Buffer.from([ESC, 0x61, 0x01, ESC, 0x21, 0x25]), // Big text
+    Buffer.from(`${sixDigitNumber}\n`, 'ascii'),
     Buffer.from([ESC, 0x21, 0x00]), // Reset
   ]);
 };
@@ -65,7 +65,7 @@ export const printToPrinter = async (
   qrData?: string,
   sixDigitNumber: string = '',
   printQr: boolean = false,
-  barcodeData?: string // <--- Added barcodeData parameter
+  // barcodeData?: string // <--- Added barcodeData parameter
 ): Promise<boolean> => {
   if (!macAddress) throw new Error('No printer selected');
 
@@ -85,10 +85,10 @@ export const printToPrinter = async (
     };
 
     // Prepare Barcode Buffer
-    let barcodeBuffer = Buffer.alloc(0);
-    if (barcodeData) {
-      barcodeBuffer = buildBarcodeBuffer(barcodeData);
-    }
+    // let barcodeBuffer = Buffer.alloc(0);
+    // if (barcodeData) {
+    //   barcodeBuffer = buildBarcodeBuffer(barcodeData);
+    // }
 
     // Prepare QR Buffer
     let qrBuffer = Buffer.alloc(0);
@@ -106,7 +106,7 @@ export const printToPrinter = async (
       commands.leftAlign,
       Buffer.from(text, 'utf8'),
        Buffer.from('\n'),
-       barcodeBuffer,
+      //  barcodeBuffer,
       Buffer.from('\n'),
 
       // 3. QR CODE AT BOTTOM

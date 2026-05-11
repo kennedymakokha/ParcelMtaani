@@ -20,6 +20,7 @@ import { getMessaging } from '@react-native-firebase/messaging';
 import { addNotification } from './src/features/notificationsSlice';
 import messaging from '@react-native-firebase/messaging';
 import { usePickupSocket } from './src/hooks/usePickupSocket';
+import PickupUserSync from './src/screens/syncUserNevents';
 function AppNavigator() {
   const { colors } = useTheme();
   usePickupSocket();
@@ -132,6 +133,7 @@ function AppNavigator() {
         },
       }}
     >
+        <PickupUserSync />
       <StatusBar animated backgroundColor={colors.primary} />
       {user ? <RootStack /> : <AuthStack />}
     </NavigationContainer>
@@ -146,6 +148,7 @@ export default function App() {
           <ThemeProvider>
             <AuthProvider>
               <SocketProvider>
+
                 <AppNavigator />
               </SocketProvider>
             </AuthProvider>

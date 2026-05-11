@@ -1,3 +1,4 @@
+import { setCredentials } from '../../features/auth/authSlice';
 import { api } from './../index'
 
 export const injectEndpoints = api.injectEndpoints({
@@ -50,8 +51,25 @@ export const injectEndpoints = api.injectEndpoints({
         getUsers: builder.query({
             query: ({ role, page, pickup }) => `/auth/users?role=${role}&page=${page}&pickup=${pickup}`,
         }),
-        fetchuser: builder.query({
-            query: () => `auth/active-user`
+        fetchUser: builder.query({
+            query: () => 'auth/active-user',
+
+            async onQueryStarted(_, { dispatch, queryFulfilled, getState }) {
+                try {
+                    const { data } = await queryFulfilled;
+
+                    const state = getState() as any;
+
+                    dispatch(
+                        setCredentials({
+                            token: state.auth.token,
+                            user: data.user,
+                        }),
+                    );
+                } catch (err) {
+                    console.log(err);
+                }
+            },
         }),
         updateuser: builder.mutation({
             query: (data) => ({
@@ -66,7 +84,7 @@ export const injectEndpoints = api.injectEndpoints({
                 method: 'POST',
             }),
         }),
-          deleteUser: builder.mutation({
+        deleteUser: builder.mutation({
             query: (id) => ({
                 url: `/auth/${id}`,
                 method: 'DELETE',
@@ -79,7 +97,6 @@ export const {
     useResetPasswordMutation,
     useVerifyMutation,
     useRequestOTPMutation,
-    useFetchuserQuery,
     useGetUsersQuery,
     useUpdateuserMutation,
     useActivateMutation,
@@ -88,4 +105,5 @@ export const {
     useGetSessionQuery,
     useLogoutMutation,
     useDeleteUserMutation,
+    useLazyFetchUserQuery
 } = injectEndpoints;
