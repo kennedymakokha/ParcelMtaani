@@ -14,23 +14,21 @@ import {
 import { Picker } from '@react-native-picker/picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSelector } from 'react-redux';
-
 import { useTheme } from '../contexts/themeContext';
 import { FormInput } from '../components/input.component';
 import { PhoneInput } from '../components/phoneinput';
 import { PrinterSelectionModal } from '../modals/printerSelect.model';
 import { SectionHeader } from '../components/ui/sectionHeader';
 import Toast from '../components/toast';
-
 import { COUNTRIES } from '../utils/countryCodes';
 import { ParcelFormState } from '../../types';
-
 import { useRegisterParcelMutation } from '../services/apis/parcel.api';
 import { buildReceiptText } from '../services /recieptBuilder';
-import { printToPrinter } from '../services /printer.service';
+import { printQrCode, printToPrinter } from '../services /printer.service';
 import Keypad from '../components/keyPad';
 import { useMpesapayMutation } from '../services/apis/mpesa.api.ts';
 import { validateForm } from '../validations/parcel.ts';
+import { PrimaryButton } from '../components/PrimaryButton.tsx';
 
 export default function ParcelIntakeScreen({ onClose, refetch }: any) {
   const { colors } = useTheme();
@@ -39,6 +37,7 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
   const pickups = useSelector((state: any) => state.pickups.pickups);
   const [country, setCountry] = useState(COUNTRIES[0]);
   const [pickup, setPickup] = useState<any>('');
+  const [qrPrintData, setQrPrintData] = useState<any>(null);
   const [selectedPrinterMac, setSelectedPrinterMac] = useState<string | null>(
     null,
   );
@@ -124,7 +123,26 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
   // =========================
   // LOAD PRINTER
   // =========================
-
+  const printQr = async () => {
+    try {
+      await printQrCode(
+        selectedPrinterMac!,
+        qrPrintData.qrData,
+        qrPrintData.parcelCode,
+      );
+      await onClose();
+      setMsg({
+        msg: 'QR Code printed successfully',
+        state: 'success',
+      });
+    } catch (error: any) {
+      console.log('object', error);
+      setMsg({
+        msg: 'Failed to print QR code',
+        state: 'error',
+      });
+    }
+  };
   useEffect(() => {
     const loadPrinter = async () => {
       const saved = await AsyncStorage.getItem('SELECTED_PRINTER_MAC');
@@ -387,16 +405,11 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
         attempts++;
 
         try {
-          printed = await printToPrinter(
-            selectedPrinterMac,
-            pickupShortCode,
-            receiptText,
+          printed = await printToPrinter(selectedPrinterMac, receiptText);
+          setQrPrintData({
             qrData,
             parcelCode,
-            true,
-          
-          );
-
+          });
           if (!printed) {
             throw new Error('Printing failed');
           }
@@ -465,8 +478,6 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
 
         state: 'success',
       });
-
-      await onClose();
     } catch (error: any) {
       console.log(error);
 
@@ -940,39 +951,43 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
       {/* ========================= */}
       {/* SUBMIT */}
       {/* ========================= */}
+      
+      {qrPrintData ? (
+        <PrimaryButton onPress={printQr} title="Print QR Code" />
+      ) : (
+        <TouchableOpacity
+          disabled={isProcessing}
+          onPress={handleSubmit}
+          style={{
+            backgroundColor: isProcessing
+              ? colors.border
+              : selectedPrinterMac
+              ? colors.primary
+              : colors.error,
 
-      <TouchableOpacity
-        disabled={isProcessing}
-        onPress={handleSubmit}
-        style={{
-          backgroundColor: isProcessing
-            ? colors.border
-            : selectedPrinterMac
-            ? colors.primary
-            : colors.error,
-
-          padding: 18,
-          borderRadius: 12,
-          opacity: isProcessing ? 0.7 : 1,
-        }}
-      >
-        {isProcessing ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text
-            style={{
-              color: '#fff',
-              textAlign: 'center',
-              fontWeight: 'bold',
-              fontSize: 16,
-            }}
-          >
-            {selectedPrinterMac
-              ? 'Generate & Print Receipt'
-              : 'Select Printer First'}
-          </Text>
-        )}
-      </TouchableOpacity>
+            padding: 18,
+            borderRadius: 12,
+            opacity: isProcessing ? 0.7 : 1,
+          }}
+        >
+          {isProcessing ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text
+              style={{
+                color: '#fff',
+                textAlign: 'center',
+                fontWeight: 'bold',
+                fontSize: 16,
+              }}
+            >
+              {selectedPrinterMac
+                ? 'Generate & Print Receipt'
+                : 'Select Printer First'}
+            </Text>
+          )}
+        </TouchableOpacity>
+      )}
 
       {/* ========================= */}
       {/* PRINTER MODAL */}
