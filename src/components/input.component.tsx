@@ -30,7 +30,7 @@ interface FormInputProps {
   onChangeText?: (text: string) => void;
   onFocus?: any;
   containerStyle?: StyleProp<ViewStyle>;
-
+  capitalize?: boolean;
   // country props
   withCountryCode?: boolean;
   selectedCountry?: Country;
@@ -45,6 +45,7 @@ export const FormInput: React.FC<FormInputProps> = ({
   multiline = false,
   value,
   onChangeText,
+  capitalize = false,
   containerStyle,
   onFocus,
   withCountryCode = false,
@@ -105,9 +106,14 @@ export const FormInput: React.FC<FormInputProps> = ({
           keyboardType={keyboardType}
           multiline={multiline}
           secureTextEntry={isSecure}
-          value={value?.split(' ')
-              .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-              .join(' ')}
+          value={
+            capitalize
+              ? value
+                  ?.split(' ')
+                  .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(' ')
+              : value
+          }
           onChangeText={onChangeText}
           onFocus={onFocus}
           autoCapitalize="none"

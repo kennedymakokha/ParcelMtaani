@@ -26,6 +26,7 @@ import { SecondaryButton } from '../components/SecondaryButton';
 import { Fab } from '../components/buttons/fab';
 import { useSocket } from '../contexts/socketContext';
 import { RootState } from '../../store';
+import { ParcelCard } from '../components/parcekCard';
 
 export default function DispatchToTrackScreen() {
   const { colors } = useTheme();
@@ -34,6 +35,7 @@ export default function DispatchToTrackScreen() {
   const [showTrackModal, setShowTrackModal] = useState(false);
   const [selectedParcels, setSelectedParcels] = useState<any[]>([]);
   const [msg, setMsg] = useState({ msg: '', state: '' });
+  const { user } = useSelector((state: any) => state.auth);
   const pickupState = useSelector(
     (state: RootState) => state.pickupEvents.lastEvent,
   );
@@ -51,7 +53,7 @@ export default function DispatchToTrackScreen() {
   );
   const { data, isLoading, refetch } = useFetchparcelQuery({
     limit: 10,
-    sentFrom: currentPickup._id,
+    sentFrom: user?.pickup?._id,
     page: 1,
     status: 'Pending Dispatch',
     search,
@@ -69,57 +71,6 @@ export default function DispatchToTrackScreen() {
     );
   };
 
-  const renderParcel = ({ item }: { item: any }) => {
-    const isSelected = selectedParcels.includes(item._id);
-
-    return (
-      <TouchableOpacity
-        onPress={() => toggleSelect(item)}
-        style={{
-          backgroundColor: isSelected ? colors.primary + '20' : colors.card,
-          borderRadius: 12,
-          padding: 16,
-          marginBottom: 12,
-          borderWidth: isSelected ? 1 : 0,
-          borderColor: isSelected ? colors.primary : 'transparent',
-          shadowOpacity: 0.1,
-        }}
-      >
-        <Text style={{ fontSize: 16, fontWeight: '600', color: colors.text }}>
-          From: {item.sentFrom?.pickup_name}
-        </Text>
-
-        <Text style={{ color: colors.secondary, marginTop: 4 }}>
-          Pickup: {item.pickup?.pickup_name}
-        </Text>
-
-        <Text
-          style={{
-            color: colors.primary,
-            marginTop: 4,
-            fontWeight: '500',
-          }}
-        >
-          Code: {item.code}
-        </Text>
-
-        <Text
-          style={{
-            marginTop: 8,
-            fontWeight: '600',
-            color:
-              item.status === 'Delivered'
-                ? colors.success
-                : item.status === 'In Transit'
-                ? colors.warning
-                : colors.danger,
-          }}
-        >
-          Status: {item.status}
-        </Text>
-      </TouchableOpacity>
-    );
-  };
   useEffect(() => {
     if (currentPickup) {
       refetch();
@@ -169,7 +120,13 @@ export default function DispatchToTrackScreen() {
         <FlatList
           data={parcels}
           keyExtractor={item => item._id}
-          renderItem={renderParcel}
+          renderItem={({ item }: { item: any }) => (
+            <ParcelCard
+              item={item}
+              onPress={() => toggleSelect(item)}
+              colors={colors}
+            />
+          )}
           ListEmptyComponent={
             <Text style={{ color: colors.secondary, textAlign: 'center' }}>
               No parcels found
@@ -201,7 +158,6 @@ export default function DispatchToTrackScreen() {
         <Fab
           onPress={() => {
             setShowIntakeModal(true);
-            console.log('opening');
           }}
         />
       )}
@@ -317,7 +273,7 @@ export default function DispatchToTrackScreen() {
                     state: 'success',
                   });
                 }}
-                disabled={dispatching || !vehicleReg}
+                loading={dispatching || !vehicleReg}
               />
               <SecondaryButton
                 onPress={() => setShowTrackModal(false)}

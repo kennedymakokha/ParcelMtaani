@@ -10,7 +10,7 @@ export const injectEndpoints = api.injectEndpoints({
             }),
         }),
 
-        getPickups: builder.query({
+        fetchPickups: builder.query({
             query: ({ page, limit, search }: { page: number; limit: number; search: string }) => {
                 const params = new URLSearchParams();
                 params.append('page', page.toString());
@@ -21,16 +21,21 @@ export const injectEndpoints = api.injectEndpoints({
                 return `/business/create/pickup?${params.toString()}`;
             },
         }),
-        editPickup: builder.mutation({
-            query: ({ data }) => ({
-                url: `/business/create/pickup/${data._id}`,
-                method: 'PUT',
-                data,
-            }),
+        updatePickup: builder.mutation({
+            query: (data) => {
+                
+                return (
+                    ({
+                        url: `/business/pickup/${data.id}`,
+                        method: 'PUT',
+                        body: data,
+                    })
+                )
+            },
         }),
-        deletePickup: builder.mutation({
+        TrashPickup: builder.mutation({
             query: (id) => ({
-                url: `/business/create/pickup/${id}`,
+                url: `/business/pickup/${id}`,
                 method: 'DELETE',
             }),
         }),
@@ -40,7 +45,7 @@ export const injectEndpoints = api.injectEndpoints({
 
 export const {
     useCreatePickupMutation,
-    useDeletePickupMutation,
-    useEditPickupMutation,
-    useGetPickupsQuery
+    useTrashPickupMutation,
+    useUpdatePickupMutation,
+    useFetchPickupsQuery
 } = injectEndpoints;

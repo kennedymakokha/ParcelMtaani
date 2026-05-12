@@ -22,7 +22,7 @@ import { subscribeToTopic } from '../utils/subscribeUnsubscribe';
 
 export default function LoginScreen({ navigation }: any) {
   const [phone_number, setPhoneNumber] = useState('+254790226510');
-  const [password, setPassword] = useState('+254790226510');
+  const [password, setPassword] = useState('');
   const [FCM_token, setFCM_token] = useState('');
   const { setUser } = useAuth();
   const [msg, setMsg] = useState({ msg: '', state: '' });

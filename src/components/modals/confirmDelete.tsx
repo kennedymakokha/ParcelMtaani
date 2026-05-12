@@ -5,7 +5,6 @@ import { useTheme } from '../../contexts/themeContext';
 import { PrimaryButton } from '../PrimaryButton';
 import { SecondaryButton } from '../SecondaryButton';
 
-
 interface ConfirmModalProps {
   visible: boolean;
   title?: string;
@@ -17,7 +16,7 @@ interface ConfirmModalProps {
   cancelText?: string;
 }
 
-export default function ConfirmModal({
+export default function ConfirmDeleteModal({
   visible,
   title = 'Confirm Action',
   message = 'Are you sure you want to proceed?',
@@ -67,6 +66,7 @@ export default function ConfirmModal({
           </Text>
 
           <PrimaryButton
+            variant="danger"
             title={confirmText}
             onPress={onConfirm}
             loading={loading}

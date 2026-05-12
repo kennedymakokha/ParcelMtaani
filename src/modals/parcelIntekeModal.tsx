@@ -87,6 +87,7 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
     refetch,
 
     onSuccess: data => {
+
       setQrPrintData(data);
     },
   });

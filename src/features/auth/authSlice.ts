@@ -2,7 +2,12 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface AuthState {
     token: string | null;
-    user: any | null;
+    user: {
+        name?: string;
+        email?: string;
+        profilePic?: string;
+        [key: string]: any;
+    } | null;
 }
 
 const initialState: AuthState = {
@@ -25,8 +30,19 @@ const authSlice = createSlice({
             state.token = null;
             state.user = null;
         },
+        updateProfile: (
+            state,
+            action: PayloadAction<{ name?: string; email?: string; profilePic?: string }>
+        ) => {
+            if (state.user) {
+                state.user = {
+                    ...state.user,
+                    ...action.payload, // merge updated fields into user object
+                };
+            }
+        },
     },
 });
 
-export const { setCredentials, logout } = authSlice.actions;
+export const { setCredentials, logout, updateProfile } = authSlice.actions;
 export default authSlice.reducer;

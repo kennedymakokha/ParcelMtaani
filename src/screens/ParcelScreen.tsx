@@ -31,7 +31,7 @@ export default function ParcelScreen({ navigation }: any) {
   const currentPickup = useSelector(
     (state: any) => state.pickups.currentPickup,
   );
-
+  const { user } = useSelector((state: any) => state.auth);
   /** Fetch filters */
   const { data: trucksData } = useFetchTruckCountQuery({});
   const trucks = trucksData?.data || [];
@@ -42,20 +42,13 @@ export default function ParcelScreen({ navigation }: any) {
   /** Main query */
   const { data, isLoading, refetch, isFetching } = useFetchgroupedparcelQuery({
     limit: 10,
-    pickupId: currentPickup._id,
+    pickupId: user?.pickup?._id,
     currentTruck: selectedTruck,
     page,
     status: selectedStatus,
     search,
   });
-  console.log({
-    limit: 10,
-    pickupId: currentPickup._id,
-    currentTruck: selectedTruck,
-    page,
-    status: selectedStatus,
-    search,
-  });
+ 
   /** ✅ Reset page when filters/search change */
   useEffect(() => {
     setPage(1);

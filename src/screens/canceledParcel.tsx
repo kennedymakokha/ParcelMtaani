@@ -1,24 +1,22 @@
 /* eslint-disable react-native/no-inline-styles */
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, FlatList, RefreshControl, TextInput } from 'react-native';
-import { scanQRCode } from '../../modules/react-native-qr-scanner/src';
 import { useTheme } from '../contexts/themeContext';
 import {
   useFetchparcelQuery,
-  useMarkParcelAsrrivedMutation,
   useMarkParcerAsDeliveredMutation,
 } from '../services/apis/parcel.api';
 import { useSelector } from 'react-redux';
 import Toast from '../components/toast';
-import { PrimaryButton } from '../components/PrimaryButton';
 import { useSocket } from '../contexts/socketContext';
+import { useFocusEffect } from '@react-navigation/native';
 import { ParcelCard } from '../components/parcekCard';
 import { ParcelCollectionModal } from '../modals/ParcelCollection.model';
 
 export default function ScannerScreen() {
   const { colors } = useTheme();
   const signatureRef = useRef<any>(null);
-
+ 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [allParcels, setAllParcels] = useState<any[]>([]);
@@ -33,19 +31,22 @@ export default function ScannerScreen() {
   const [selectedParcel, setSelectedParcel] = useState<any>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [signatureData, setSignatureData] = useState<string | null>(null);
+
   const { data, isFetching, refetch } = useFetchparcelQuery({
     limit: 10,
-    sentTo: user?.pickup?._id,
+    sentFrom: user?.pickup?._id,
     page,
-    status: 'Pending Collection',
+    status: 'Cancelled',
     search,
   });
-  const [handleArrival, { isLoading }] = useMarkParcelAsrrivedMutation();
+
   const [handleCollected, { isLoading: collectionLoading }] =
     useMarkParcerAsDeliveredMutation();
+
   useEffect(() => {
     setPage(1);
   }, [search]);
+
   useEffect(() => {
     if (!data?.parcels) return;
     if (page === 1) {
@@ -60,8 +61,11 @@ export default function ScannerScreen() {
   }, [data, page]);
   useEffect(() => {
     if (!socket) return;
+
     const onCanceledParcel = async (parcel: any) => {
       console.log(parcel);
+      //
+
       await refetch();
     };
 
@@ -70,27 +74,25 @@ export default function ScannerScreen() {
       socket.off('Parcel-change', onCanceledParcel);
     };
   }, [socket, refetch]);
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch]),
+  );
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     setPage(1);
     await refetch();
     setRefreshing(false);
   }, [refetch]);
+
   const loadMore = useCallback(() => {
     if (!isFetching && page < (data?.totalPages || 1)) {
       setPage(prev => prev + 1);
     }
   }, [isFetching, page, data?.totalPages]);
-  const handleScan = async () => {
-    try {
-      const result: any = await scanQRCode();
-      const parsed = JSON.parse(result);
-      await handleArrival(parsed).unwrap();
-      await refetch();
-    } catch (err: any) {
-      setMsg({ msg: err?.data?.message || 'Scan failed', state: 'error' });
-    }
-  };
+
   const handleConfirmPickup = async () => {
     if (!signatureData) {
       setMsg({ msg: 'Please provide a signature', state: 'error' });
@@ -115,6 +117,7 @@ export default function ScannerScreen() {
       });
     }
   };
+
   const openParcel = (item: any) => {
     setSelectedParcel(item);
     setModalVisible(true);
@@ -137,6 +140,8 @@ export default function ScannerScreen() {
         }}
         placeholderTextColor={colors.secondary}
       />
+
+      {/* 📦 List */}
       <FlatList
         contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
         data={allParcels}
@@ -159,6 +164,7 @@ export default function ScannerScreen() {
           </Text>
         }
       />
+
       <ParcelCollectionModal
         modalVisible={modalVisible}
         selectedParcel={selectedParcel}
@@ -171,12 +177,8 @@ export default function ScannerScreen() {
         collectionLoading={collectionLoading}
         setMsg={setMsg}
       />
+
       {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
-      <PrimaryButton
-        onPress={handleScan}
-        title="Scan Parcel"
-        loading={isLoading}
-      />
     </View>
   );
 }

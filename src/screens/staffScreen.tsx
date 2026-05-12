@@ -56,14 +56,13 @@ export default function StaffManagementScreen() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
   const [msg, setMsg] = useState({ msg: '', state: '' });
-  const currentPickup = useSelector(
-    (state: any) => state.pickups.currentPickup,
-  );
+
+  
 
   const { data, isLoading, isFetching, refetch } = useGetUsersQuery({
     page,
     search: debouncedSearch,
-    pickup: currentPickup._id,
+    pickup: user?.pickup?._id,
     role,
   });
 

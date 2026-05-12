@@ -7,9 +7,10 @@ import {
   Modal,
   ActivityIndicator,
   Alert,
- 
 } from 'react-native';
-import RNBluetoothClassic, { BluetoothDevice } from 'react-native-bluetooth-classic';
+import RNBluetoothClassic, {
+  BluetoothDevice,
+} from 'react-native-bluetooth-classic';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
@@ -34,11 +35,15 @@ export const PrinterSelectionModal = ({
       const unpaired = await RNBluetoothClassic.startDiscovery();
       const all = [...paired, ...unpaired];
       const unique = all.filter(
-        (v, i, a) => a.findIndex((t) => t.address === v.address) === i
+        (v, i, a) => a.findIndex(t => t.address === v.address) === i,
       );
       setDevices(unique);
-    } catch (err:any) {
-      Alert.alert("Connection Error", "Please ensure Bluetooth and Location services are enabled.");
+    } catch (err: any) {
+      console.log(err);
+      Alert.alert(
+        'Connection Error',
+        'Please ensure Bluetooth and Location services are enabled.',
+      );
     } finally {
       setLoading(false);
     }
@@ -76,9 +81,18 @@ export const PrinterSelectionModal = ({
   );
 
   return (
-    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="fade"
+      transparent
+      onRequestClose={onClose}
+    >
       <View className="flex-1 bg-black/60 justify-end">
-        <TouchableOpacity className="flex-1" onPress={onClose} activeOpacity={1} />
+        <TouchableOpacity
+          className="flex-1"
+          onPress={onClose}
+          activeOpacity={1}
+        />
 
         <View className="rounded-t-3xl bg-white px-5 pt-3 pb-8 h-[70%]">
           {/* Drag Handle */}
@@ -87,8 +101,12 @@ export const PrinterSelectionModal = ({
           {/* Header */}
           <View className="flex-row justify-between items-center mb-6">
             <View>
-              <Text className="text-xl font-bold text-gray-900">Available Printers</Text>
-              <Text className="text-sm text-gray-500">Select a bluetooth thermal printer</Text>
+              <Text className="text-xl font-bold text-gray-900">
+                Available Printers
+              </Text>
+              <Text className="text-sm text-gray-500">
+                Select a bluetooth thermal printer
+              </Text>
             </View>
             {loading && <ActivityIndicator color="#2563eb" />}
           </View>
@@ -96,12 +114,16 @@ export const PrinterSelectionModal = ({
           {/* Device List */}
           <FlatList
             data={devices}
-            keyExtractor={(item) => item.address}
+            keyExtractor={item => item.address}
             contentContainerStyle={{ paddingBottom: 20 }}
             ListEmptyComponent={
               !loading ? (
                 <View className="items-center justify-center mt-16">
-                  <Ionicons name="bluetooth-outline" size={48} color="#9ca3af" />
+                  <Ionicons
+                    name="bluetooth-outline"
+                    size={48}
+                    color="#9ca3af"
+                  />
                   <Text className="text-gray-500 mt-3">No devices found</Text>
                 </View>
               ) : null
@@ -123,7 +145,12 @@ export const PrinterSelectionModal = ({
               disabled={loading}
               className="flex-1 h-12 rounded-lg bg-blue-600 flex-row justify-center items-center"
             >
-              <Ionicons name="refresh" size={18} color="#fff" style={{ marginRight: 6 }} />
+              <Ionicons
+                name="refresh"
+                size={18}
+                color="#fff"
+                style={{ marginRight: 6 }}
+              />
               <Text className="text-white font-bold">Rescan</Text>
             </TouchableOpacity>
           </View>

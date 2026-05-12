@@ -3,7 +3,7 @@ import { displayDate } from '../../utils/dates.utils';
 
 export const getDrawerConfig = (
   pickupState: string,
-  user:any,
+  
 ): Record<UserRole, { label: string; icon: string; screen: string }[]> => ({
   superuser: [
     { label: 'Dashboard', icon: 'stats-chart', screen: 'Dashboard' },
@@ -22,7 +22,7 @@ export const getDrawerConfig = (
 
   superadmin: [
     { label: 'Dashboard', icon: 'stats-chart', screen: 'Dashboard' },
-    { label: 'Fleet Management', icon: 'bus-outline', screen: 'Business' },
+    
     {
       label: 'Pickup Management',
       icon: 'people-outline',
@@ -50,10 +50,14 @@ export const getDrawerConfig = (
     },
 
     { label: 'Offloading', icon: 'qr-code-outline', screen: 'On Receiving' },
-
+    {
+      label: 'Cancelled Parcels',
+      icon: 'people-outline',
+      screen: 'Cancelled Parcels',
+    },
     { label: 'Reports', icon: 'document-text-outline', screen: 'Parcels' },
 
-    ...(pickupState === 'pickup_shut' ||user?.pickup?.paid === false
+    ...(pickupState === 'pickup_shut' 
       ? [
           {
             label: `${displayDate.toDateString()} Subscription`,
@@ -64,14 +68,14 @@ export const getDrawerConfig = (
       : []),
   ],
 
-  staff: [
+  attendant: [
     {
       label: 'Parcel Recieval & Loading',
       icon: 'cube-outline',
       screen: 'Parcel Recieval & Loading',
     },
     {
-      label: 'On Receiving',
+      label: 'Offloading & dispatch',
       icon: 'qr-code-outline',
       screen: 'On Receiving',
     },

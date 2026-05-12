@@ -9,7 +9,7 @@ import { UserRole } from '../../../types';
 import { getDrawerConfig } from './config';
 import { useDispatch, useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/FontAwesome6';
-import { useGetPickupsQuery } from '../../services/apis/business.api';
+import { useFetchPickupsQuery } from '../../services/apis/business.api';
 import {
   addPickup,
   setCurrentPickup,
@@ -29,15 +29,13 @@ export default function CustomDrawerContent(props: any) {
   const { colors } = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
   const { user } = useSelector((state: any) => state.auth);
-  const pickupState = useSelector(
-    (state: any) => state.pickupEvents.lastEvent,
-  );
+  const pickupState = useSelector((state: any) => state.pickupEvents.lastEvent);
 
-  const { data, refetch } = useGetPickupsQuery({});
+  const { data, refetch } = useFetchPickupsQuery({});
 
   const userRole: UserRole = user?.role;
 
-  const menuItems = getDrawerConfig(pickupState,user)[userRole];
+  const menuItems = getDrawerConfig(pickupState)[userRole];
 
   const pickups = useSelector((state: any) => state.pickups.pickups);
 
@@ -186,6 +184,14 @@ export default function CustomDrawerContent(props: any) {
             onPress={() => props.navigation.navigate(item.screen)}
           />
         ))}
+        <View className="  h-[1px] w-full bg-red-200"></View>
+        <DrawerItem
+          label="User Profile"
+          icon={({ color, size }) => (
+            <Ionicons name="person-outline" size={size} color={color} />
+          )}
+          onPress={() => props.navigation.navigate('Profile')}
+        />
       </View>
 
       {/* Footer */}
@@ -228,8 +234,8 @@ export default function CustomDrawerContent(props: any) {
             await unsubscribeAllTopics(user);
 
             dispatch(logout());
-
-            await AsyncStorage.clear();
+            await AsyncStorage.removeItem('accessToken');
+            await AsyncStorage.removeItem('userId');
           }}
         >
           <Ionicons name="log-out-outline" size={20} color={colors.danger} />

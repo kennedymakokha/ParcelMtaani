@@ -9,7 +9,7 @@ export const SenderSection = ({
   updateField,
   country,
   setCountry,
-  colors
+  colors,
 }: any) => {
   return (
     <View
@@ -28,7 +28,7 @@ export const SenderSection = ({
           marginBottom: 12,
         }}
       >
-        Receiver Details
+        Sender Details
       </Text>
 
       <FormInput
@@ -47,5 +47,3 @@ export const SenderSection = ({
     </View>
   );
 };
-
-

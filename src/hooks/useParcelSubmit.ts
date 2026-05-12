@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRegisterParcelMutation } from '../services/apis/parcel.api';
-import { useMpesapayMutation } from '../services/apis/mpesa.api.ts';
+import { useCreatepaymentMutation, useMpesapayMutation } from '../services/apis/mpesa.api.ts';
 import { buildReceiptText } from '../services /recieptBuilder.tsx';
 import { printToPrinter } from '../services /printer.service.ts';
 
@@ -36,7 +36,7 @@ export const useParcelSubmit = () => {
 
   const [lipaNaMpesa, { isLoading: paying }] =
     useMpesapayMutation();
-
+  const [createPayment] = useCreatepaymentMutation()
   const isProcessing = submitting || paying;
 
   const submitParcel = async ({
@@ -132,7 +132,7 @@ export const useParcelSubmit = () => {
         ) {
           throw new Error(
             mpesaResponse?.message ||
-              'Mpesa payment failed',
+            'Mpesa payment failed',
           );
         }
       }
@@ -150,6 +150,87 @@ export const useParcelSubmit = () => {
       const savedParcel =
         response?.parcel || response;
 
+      /**
+* =========================
+* SAVE PAYMENTS
+* =========================
+*/
+
+      const payments = [];
+
+      /**
+       * SPLIT PAYMENT
+       */
+
+      if (isSplitPayment) {
+
+        // CASH
+        if (Number(amountGiven) > 0) {
+          payments.push({
+            method: 'CASH',
+
+            amount: Number(amountGiven),
+          });
+        }
+
+        // MPESA
+        if (Number(mpesaPortion) > 0) {
+          payments.push({
+            method: 'MPESA',
+
+            amount: Number(mpesaPortion),
+
+            phone: phoneNumber,
+
+            customer_name:
+              formData?.sender?.name ||
+              'Unknown Customer',
+
+            receiptNumber:
+              mpesaResponse?.MpesaReceiptNumber || '',
+          });
+        }
+
+      } else {
+
+        /**
+         * CASH ONLY
+         */
+
+        if (paymentMethod === 'CASH') {
+          payments.push({
+            method: 'CASH',
+
+            amount: Number(parcelTotal),
+          });
+        }
+
+        /**
+         * MPESA ONLY
+         */
+
+        if (paymentMethod === 'MPESA') {
+          payments.push({
+            method: 'MPESA',
+
+            amount: Number(parcelTotal),
+
+            phone: phoneNumber,
+
+            customer_name:
+              formData?.sender?.name ||
+              'Unknown Customer',
+
+            receiptNumber:
+              mpesaResponse?.MpesaReceiptNumber || '',
+          });
+        }
+      }
+
+      /**
+       * POST PAYMENTS
+       */
+
       const parcelCode =
         savedParcel?.parcel?.code ||
         savedParcel?.code;
@@ -160,7 +241,14 @@ export const useParcelSubmit = () => {
        * =========================
        */
 
-      const receiptNo = `INV${parcelCode}`;
+      const receiptNo = `${parcelCode}`;
+      await createPayment({
+        parcel: savedParcel?._id,
+        pickup: currentPickup._id,
+        payments,
+        receiptNo,
+      }).unwrap();
+
 
       const receiptText = buildReceiptText({
         receiptNo,
@@ -328,7 +416,7 @@ export const useParcelSubmit = () => {
             return;
           }
 
-          await new Promise((resolve:any) =>
+          await new Promise((resolve: any) =>
             setTimeout(resolve, 2000),
           );
         }

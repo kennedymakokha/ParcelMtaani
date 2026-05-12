@@ -3,7 +3,6 @@
 import { View, Text, ScrollView } from 'react-native';
 import { useTheme } from './../../contexts/themeContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import MultiLineChart from './../../components/analytics/Linegraph';
 import { useSelector } from 'react-redux';
 import MultiBarChart from './../../components/analytics/multiBarChart';
 import PieChart from './../../components/analytics/pieChart';
@@ -13,23 +12,21 @@ import { useCallback, useEffect, useState } from 'react';
 import { useSocket } from './../../contexts/socketContext';
 export default function AdminDashboard() {
   const { colors } = useTheme();
-  const currentPickup = useSelector(
-    (state: any) => state.pickups.currentPickup,
-  );
+
   const { socket } = useSocket();
   const { user } = useSelector((state: any) => state.auth);
   const [filter, setFilter] = useState('today');
+
   const {
     data: dashboardStats,
     isSuccess,
     refetch,
   } = useFetchDashboardStatsQuery({
-    pickupId: currentPickup?._id, // You can replace this with the actual pickup ID or "current" for the current pickup
+    pickupId: user?.pickup._id, // You can replace this with the actual pickup ID or "current" for the current pickup
     filterType: filter, // Options: 'daily', 'weekly', 'monthly'
     startDate: '', // Optional: Start date for filtering (YYYY-MM-DD)
     endDate: '', // Optional: End date for filtering (YYYY-MM-DD)
   });
-
   const KPIdata = dashboardStats ? dashboardStats : {};
   const fetchAnalytics = useCallback(async () => {
     try {
@@ -84,33 +81,19 @@ export default function AdminDashboard() {
     },
   ];
 
-  // 📈 Static Chart Data
-  const hourlyData = [
-    { key: '08', value: 20 },
-    { key: '09', value: 35 },
-    { key: '10', value: 50 },
-    { key: '11', value: 45 },
-    { key: '12', value: 60 },
-    { key: '13', value: 80 },
-    { key: '14', value: 75 },
-    { key: '15', value: 90 },
-    { key: '16', value: 110 },
-  ];
 
   useEffect(() => {
     if (!socket) return;
-  
+
     const onCanceledParcel = async (parcel: any) => {
-    
+      console.log(parcel);
       //
 
       await refetch();
     };
 
     socket.on('Parcel-change', onCanceledParcel);
-    socket.on('pickup_shut', () => {
-     
-    });
+    socket.on('pickup_shut', () => {});
     return () => {
       socket.off('Parcel-change', onCanceledParcel);
       socket.off('pickup_shut', () => {
@@ -181,7 +164,7 @@ export default function AdminDashboard() {
           />
         )}
         {/* Another Chart Example */}
-        <MultiLineChart
+        {/* <MultiLineChart
           title="Delivery Performance"
           datasets={[
             {
@@ -200,7 +183,7 @@ export default function AdminDashboard() {
           ]}
           startHour={8}
           endHour={16}
-        />
+        /> */}
 
         {user.role === 'superadmin' && isSuccess && (
           <MultiBarChart

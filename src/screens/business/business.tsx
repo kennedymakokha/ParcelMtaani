@@ -1,19 +1,8 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-native/no-inline-styles */
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  Modal,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Keyboard,
-} from 'react-native';
+import { useState, useEffect, useRef } from 'react';
+import { View, Text, FlatList, ActivityIndicator } from 'react-native';
 import { useTheme } from '../../contexts/themeContext';
-import { FormInput } from '../../components/input.component';
-import { PrimaryButton } from '../../components/PrimaryButton';
-import { SecondaryButton } from '../../components/SecondaryButton';
 import Toast from '../../components/toast';
 import {
   useAddBusinessMutation,
@@ -21,46 +10,39 @@ import {
   useGetBusinessesQuery,
   useUpdateBusinessMutation,
 } from '../../services/apis/business.api';
-import { PhoneInput } from '../../components/phoneinput';
 import { COUNTRIES } from '../../utils/countryCodes';
 import { Fab } from '../../components/buttons/fab';
 import { ActionButton } from '../../components/buttons/actionButtons';
-import { SectionHeader } from '../../components/ui/sectionHeader';
-import { Platform } from 'react-native';
-import { TouchableWithoutFeedback } from 'react-native';
+import { AddBusinessModal } from './addModal';
+import ConfirmDeleteModal from '../../components/modals/confirmDelete';
 
 export default function BusinessManagementScreen({ navigation }: any) {
   const { colors } = useTheme();
-
   const [page, setPage] = useState(1);
   const [allBusinesses, setAllBusinesses] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-
   const onEndReachedCalledDuringMomentum = useRef(false);
-
-  const { data, isLoading, isFetching } = useGetBusinessesQuery({ page });
-
+  const { data, isLoading, isFetching, refetch } = useGetBusinessesQuery({
+    page,
+  });
   const businesses = data?.businesses ?? [];
-
   const [addBusiness, { isLoading: savingbusiness }] = useAddBusinessMutation();
-  const [updateBusiness] = useUpdateBusinessMutation();
-  const [deleteBusiness] = useDeleteBusinessMutation();
+  const [updateBusiness, { isLoading: editing }] = useUpdateBusinessMutation();
+  const [deleteBusiness, { isLoading: deleting }] = useDeleteBusinessMutation();
 
   const [country, setCountry] = useState(COUNTRIES[0]);
-
-  const [form, setForm] = useState({
+  const initialState = {
     id: '',
     business_name: '',
     phone_number: '',
     postal_address: '',
     contact_number: '',
     kra_pin: '',
-  });
-
+  };
+  const [form, setForm] = useState(initialState);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [msg, setMsg] = useState({ msg: '', state: '' });
-
   const [showFormModal, setShowFormModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -107,9 +89,11 @@ export default function BusinessManagementScreen({ navigation }: any) {
 
       if (editingId) {
         await updateBusiness(form).unwrap();
+        await refetch();
         setMsg({ msg: 'Business updated successfully', state: 'success' });
       } else {
         await addBusiness(form).unwrap();
+        await refetch();
         setMsg({ msg: 'Business added successfully', state: 'success' });
       }
 
@@ -127,7 +111,10 @@ export default function BusinessManagementScreen({ navigation }: any) {
 
       setPage(1); // ✅ single refresh trigger
     } catch (err: any) {
-      setMsg({ msg: err.message || 'Error occurred', state: 'error' });
+      setMsg({
+        msg: err.message || err.data?.message || 'Error occurred, try again ',
+        state: 'error',
+      });
     }
   };
 
@@ -153,7 +140,10 @@ export default function BusinessManagementScreen({ navigation }: any) {
       setShowDeleteModal(false);
       setPage(1); // ✅ single refresh
     } catch (err: any) {
-      setMsg({ msg: err.message || 'Error occurred', state: 'error' });
+      setMsg({
+        msg: err.message || err.data?.message || 'Error occurred, try again ',
+        state: 'error',
+      });
     }
   };
 
@@ -224,6 +214,7 @@ export default function BusinessManagementScreen({ navigation }: any) {
                 flexDirection: 'row',
                 justifyContent: 'space-between',
                 marginTop: 12,
+                
               }}
             >
               <ActionButton
@@ -253,127 +244,30 @@ export default function BusinessManagementScreen({ navigation }: any) {
       />
 
       <Fab onPress={() => setShowFormModal(true)} icon="add" />
+      <AddBusinessModal
+        showFormModal={showFormModal}
+        editingId={editingId}
+        form={form}
+        setForm={setForm}
+        country={country}
+        setCountry={setCountry}
+        setMsg={setMsg}
+        msg={msg}
+        handleSave={handleSave}
+        savingbusiness={editingId ? editing : savingbusiness}
+        setShowFormModal={() => {
+          setForm(initialState);
+          setEditingId(null);
+          setShowFormModal(false);
+        }}
+      />
 
-      <Modal visible={showFormModal} animationType="slide" transparent>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={{ flex: 1 }}
-        >
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <View
-              style={{
-                flex: 1,
-                backgroundColor: colors.overlay,
-                justifyContent: 'center',
-                padding: 20,
-              }}
-            >
-              <View
-                style={{
-                  backgroundColor: colors.card,
-                  borderRadius: 12,
-                  padding: 16,
-                }}
-              >
-                <SectionHeader
-                  title={editingId ? 'Edit Business' : 'Add Business'}
-                />
-
-                <FormInput
-                  label="Business Name"
-                  value={form.business_name}
-                  onChangeText={text =>
-                    setForm({ ...form, business_name: text })
-                  }
-                />
-                <PhoneInput
-                  label="Phone Number"
-                  value={form.phone_number}
-                  onChange={(text: any) =>
-                    setForm({ ...form, phone_number: text })
-                  }
-                  country={country}
-                  onChangeCountry={setCountry}
-                />
-                <FormInput
-                  label="Postal Address"
-                  value={form.postal_address}
-                  onChangeText={text =>
-                    setForm({ ...form, postal_address: text })
-                  }
-                />
-                <PhoneInput
-                  label="Contact Number"
-                  value={form.contact_number}
-                  onChange={(text: any) =>
-                    setForm({ ...form, contact_number: text })
-                  }
-                  country={country}
-                  onChangeCountry={setCountry}
-                />
-                <FormInput
-                  label="KRA PIN"
-                  value={form.kra_pin}
-                  onChangeText={text => setForm({ ...form, kra_pin: text })}
-                />
-
-                {msg.msg && (
-                  <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />
-                )}
-
-                <PrimaryButton
-                  title={editingId ? 'Update Business' : 'Add Business'}
-                  onPress={handleSave}
-                  loading={savingbusiness}
-                />
-                <SecondaryButton
-                  title="Cancel"
-                  onPress={() => setShowFormModal(false)}
-                />
-              </View>
-            </View>
-          </TouchableWithoutFeedback>
-        </KeyboardAvoidingView>
-      </Modal>
-
-      <Modal visible={showDeleteModal} animationType="fade" transparent>
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: colors.overlay,
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: colors.card,
-              borderRadius: 12,
-              padding: 20,
-              width: '80%',
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: '600',
-                color: colors.text,
-                marginBottom: 12,
-              }}
-            >
-              Confirm Delete
-            </Text>
-            <Text style={{ color: colors.secondary, marginBottom: 20 }}>
-              Are you sure you want to delete this business?
-            </Text>
-            <PrimaryButton title="Yes, Delete" onPress={handleDelete} />
-            <SecondaryButton
-              title="Cancel"
-              onPress={() => setShowDeleteModal(false)}
-            />
-          </View>
-        </View>
-      </Modal>
+      <ConfirmDeleteModal
+        visible={showDeleteModal}
+        onConfirm={handleDelete}
+        loading={deleting}
+        onCancel={() => setShowDeleteModal(false)}
+      />
 
       {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
     </View>

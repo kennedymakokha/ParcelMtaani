@@ -5,15 +5,19 @@ import ParcelIntakeScreen from '../../screens/ParcelIntakeScreen';
 import OnReceivingScreen from '../../screens/ArrivalToScreen';
 import CustomDrawerContent from './CustomDrawer';
 import StaffManagementScreen from '../../screens/staffScreen';
-import TrucksManagementScreen from '../../screens/truckScreen';
+
 import CustomHeader from '../../components/customHeader';
 import ParcelStack from '../stacks/parcelStack';
-import PickupManagementScreen from '../../screens/PickupManagementScreen';
-import businessStack from '../stacks/businessStack';
-import SuperSalesManagementScreen from '../../screens/superSalesScreen';
+
+import BusinessStack from '../stacks/businessStack';
+import SuperSalesManagementScreen from '../../screens/salesPsersons/superSalesScreen';
 import NotificationPage from '../../screens/notificationScreen';
 import AdminDailyPaymentScreen from '../../screens/adminPaymentScreen';
 import { displayDate } from '../../utils/dates.utils';
+import CancelledParcelsScreen from '../../screens/canceledParcel';
+import ProfileScreen from '../../screens/ProfileScreen';
+import PickupManagementScreen from '../../screens/pickup/PickupManagementScreen';
+import TrucksManagementScreen from '../../screens/fleet/truckScreen';
 
 const Drawer = createDrawerNavigator();
 
@@ -36,6 +40,20 @@ export default function RootDrawer() {
         component={AdminDashboard}
       />
       <Drawer.Screen
+        name="Profile"
+        options={() => ({
+          header: () => <CustomHeader title="Profile" />,
+        })}
+        component={ProfileScreen}
+      />
+      <Drawer.Screen
+        name="Cancelled Parcels"
+        options={() => ({
+          header: () => <CustomHeader title="Cancelled" />,
+        })}
+        component={CancelledParcelsScreen}
+      />
+      <Drawer.Screen
         name="notifications"
         options={() => ({
           header: () => <CustomHeader title="Notifications" />,
@@ -45,7 +63,9 @@ export default function RootDrawer() {
       <Drawer.Screen
         name="payments"
         options={() => ({
-          header: () => <CustomHeader title={`${displayDate.toDateString()}`} />,
+          header: () => (
+            <CustomHeader title={`${displayDate.toDateString()}`} />
+          ),
         })}
         component={AdminDailyPaymentScreen}
       />
@@ -73,7 +93,7 @@ export default function RootDrawer() {
       <Drawer.Screen
         name="Business"
         options={{ headerShown: false }}
-        component={businessStack}
+        component={BusinessStack}
       />
       <Drawer.Screen
         name="pickup management"

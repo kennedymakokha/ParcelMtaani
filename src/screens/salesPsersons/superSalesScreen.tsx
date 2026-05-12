@@ -1,25 +1,22 @@
 /* eslint-disable react-native/no-inline-styles */
 import { useEffect, useState } from 'react';
-import { View, Text, FlatList, Modal, ActivityIndicator } from 'react-native';
-import { useTheme } from '../contexts/themeContext';
+import { View, Text, FlatList, ActivityIndicator } from 'react-native';
+import { useTheme } from '../../contexts/themeContext';
 import {
   useDeleteUserMutation,
   useGetUsersQuery,
   useSignupMutation,
-} from '../services/apis/auth.api';
-import { rolesData } from '../utils/roles';
-import FilterChips from '../components/horizontalScroller';
+  useUpdateuserMutation,
+} from '../../services/apis/auth.api';
+import { rolesData } from '../../utils/roles';
+import FilterChips from '../../components/horizontalScroller';
 import { useSelector } from 'react-redux';
-import { PhoneInput } from '../components/phoneinput';
-import { FormInput } from '../components/input.component';
-import { COUNTRIES } from '../utils/countryCodes';
-import { PrimaryButton } from '../components/PrimaryButton';
-import { SecondaryButton } from '../components/SecondaryButton';
-import { Fab } from '../components/buttons/fab';
-import { SearchBar } from '../components/ui/SearchBar';
-import { ActionButton } from '../components/buttons/actionButtons';
-import ConfirmModal from '../components/modals/confirmDelete';
-import { SectionHeader } from '../components/ui/sectionHeader';
+import { COUNTRIES } from '../../utils/countryCodes';
+import { Fab } from '../../components/buttons/fab';
+import { SearchBar } from '../../components/ui/SearchBar';
+import { ActionButton } from '../../components/buttons/actionButtons';
+import ConfirmModal from '../../components/modals/confirmDelete';
+import { AddSalesPsersonModal } from './addSalesPersonModal';
 
 interface Staff {
   _id: string;
@@ -39,24 +36,19 @@ export default function SuperSalesManagementScreen() {
   const [page, setPage] = useState(1);
   const [allStaff, setAllStaff] = useState<Staff[]>([]);
   const [hasMore, setHasMore] = useState(true);
-
   const [showModal, setShowModal] = useState(false);
   const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
-
   const [country, setCountry] = useState(COUNTRIES[0]);
   const [name, setName] = useState('');
   const [identification_No, setIdentification_No] = useState('');
   const [phone, setPhone] = useState('');
-
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
-
   const { user } = useSelector((state: any) => state.auth);
-
   const [DeleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
   const [signUp, { isLoading: isCreating }] = useSignupMutation();
-
-  const { data, isLoading, isFetching } = useGetUsersQuery(
+  const [updateSales, { isLoading: editing }] = useUpdateuserMutation();
+  const { data, isLoading, isFetching, refetch } = useGetUsersQuery(
     {
       page,
       search: debouncedSearch,
@@ -110,6 +102,7 @@ export default function SuperSalesManagementScreen() {
 
     try {
       await DeleteUser(selectedStaffId).unwrap();
+      await refetch();
       setShowDeleteModal(false);
       setSelectedStaffId(null);
       setPage(1); // trigger fresh fetch
@@ -144,7 +137,13 @@ export default function SuperSalesManagementScreen() {
 
         setPage(1); // trigger refetch
       }
-
+      await updateSales({
+        _id: editingStaff?._id,
+        name,
+        phone_number: phone,
+        identification_No,
+      }).unwrap;
+      await refetch();
       setShowModal(false);
     } catch (error) {
       console.log(error);
@@ -246,43 +245,25 @@ export default function SuperSalesManagementScreen() {
 
       <Fab onPress={() => openModal()} />
 
-      <Modal visible={showModal} animationType="slide">
-        <View
-          style={{ flex: 1, padding: 24, backgroundColor: colors.background }}
-        >
-          <SectionHeader title={editingStaff ? 'Edit Staff' : 'Add Staff'} />
-
-          <FormInput
-            label="Name"
-            placeholder="Name"
-            value={name}
-            onChangeText={setName}
-          />
-
-          <FormInput
-            label="Identification Number"
-            placeholder="ID No"
-            value={identification_No}
-            onChangeText={setIdentification_No}
-          />
-
-          <PhoneInput
-            label="Phone Number"
-            value={phone}
-            country={country}
-            onChangeCountry={setCountry}
-            onChange={setPhone}
-          />
-
-          <PrimaryButton
-            title={isCreating ? 'Saving...' : 'Save'}
-            onPress={saveStaff}
-          />
-
-          <SecondaryButton title="Cancel" onPress={() => setShowModal(false)} />
-        </View>
-      </Modal>
-
+      <AddSalesPsersonModal
+        showModal={showModal}
+        editingStaff={editingStaff}
+        name={name}
+        setName={setName}
+        country={country}
+        setCountry={setCountry}
+        identification_No={identification_No}
+        setIdentification_No={setIdentification_No}
+        phone={phone}
+        setPhone={setPhone}
+        isCreating={editingStaff ? editing : isCreating}
+        saveStaff={saveStaff}
+        setShowModal={() => {
+          setName('');
+          setIdentification_No('');
+          setShowModal(false);
+        }}
+      />
       <ConfirmModal
         visible={showDeleteModal}
         title="Delete Staff"

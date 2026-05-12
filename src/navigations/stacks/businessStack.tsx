@@ -7,7 +7,7 @@ import BusinessDetailScreen from '../../screens/business/BusinessDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
-export default function businessStack() {
+export default function BusinessStack() {
   return (
     <Stack.Navigator initialRouteName="businesses">
       <Stack.Screen

@@ -1,5 +1,5 @@
 // src/types/auth.ts
-export type UserRole = "superadmin" | "staff" | "agent" | "customer"|"admin"|"superuser"|"supersales";
+export type UserRole = "superadmin" | "attendant" | "agent" | "customer"|"admin"|"superuser"|"supersales";
 
 
 export interface ParcelFormData {
@@ -40,7 +40,7 @@ export interface Truck {
   plate: string;
   model: string;
   capacity: string;
-  driverId?: string;
+  driverId?: any;
 }
 
 export interface ParcelFormState {

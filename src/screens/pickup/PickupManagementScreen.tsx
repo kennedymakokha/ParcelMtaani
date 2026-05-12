@@ -1,49 +1,48 @@
 /* eslint-disable react-native/no-inline-styles */
-import React, { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
   FlatList,
   TouchableOpacity,
-  Modal,
   StyleSheet,
   RefreshControl,
 } from 'react-native';
-import { useTheme } from '../contexts/themeContext';
+import { useTheme } from '../../contexts/themeContext';
 import {
   useCreatePickupMutation,
-  useDeletePickupMutation,
-  useEditPickupMutation,
-  useGetPickupsQuery,
-} from '../services/apis/pickup.api';
-import { PrimaryButton } from '../components/PrimaryButton';
-import { SecondaryButton } from '../components/SecondaryButton';
-import { FormInput } from '../components/input.component';
-import PickupSkeleton from '../components/skeletons/pickupSkeleton';
-import { ActionButton } from '../components/buttons/actionButtons';
+  useTrashPickupMutation,
+  useUpdatePickupMutation,
+  useFetchPickupsQuery,
+} from '../../services/apis/pickup.api';
+import PickupSkeleton from '../../components/skeletons/pickupSkeleton';
+import { ActionButton } from '../../components/buttons/actionButtons';
+import { AddPickupModal } from './addPickupModal';
+import Toast from '../../components/toast';
+import ConfirmDeleteModal from '../../components/modals/confirmDelete';
 
 export default function PickupManagementScreen() {
   const { colors } = useTheme();
-
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   // Pagination state
   const [page, setPage] = useState(1);
   const [allPickups, setAllPickups] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
   // API hooks
-  const { data, isFetching, refetch } = useGetPickupsQuery({
+  const { data, isFetching, refetch } = useFetchPickupsQuery({
     page,
     limit: 10,
     search: '',
   });
   const [createPickup, { isLoading }] = useCreatePickupMutation();
-  const [updatePickup] = useEditPickupMutation();
-  const [deletePickup] = useDeletePickupMutation();
-
+  const [updatePickup, { isLoading: editing }] = useUpdatePickupMutation();
+  const [deletePickup, { isLoading: deleting }] = useTrashPickupMutation();
+  const [msg, setMsg] = useState({ msg: '', state: '' });
   // UI state
   const [modalVisible, setModalVisible] = useState(false);
   const [editingPickup, setEditingPickup] = useState<any>(null);
-
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   // Form state
   const [pickupName, setPickupName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -111,8 +110,12 @@ export default function PickupManagementScreen() {
 
     if (editingPickup) {
       await updatePickup({ id: editingPickup._id, ...payload });
+      await refetch();
+      setMsg({ msg: 'Pickup Updated successfully', state: 'success' });
     } else {
       await createPickup(payload);
+      setMsg({ msg: 'Pickup Created successfully', state: 'success' });
+      await refetch();
     }
     setModalVisible(false);
     setPage(1);
@@ -120,12 +123,22 @@ export default function PickupManagementScreen() {
   };
 
   // Delete pickup
-  const removePickup = async (id: string) => {
-    await deletePickup(id);
-    setPage(1);
-    refetch();
-  };
 
+  const handleDelete = async () => {
+    if (!selectedId) return;
+    try {
+      await deletePickup(selectedId).unwrap();
+      await refetch();
+      setMsg({ msg: 'Pickup deleted successfully', state: 'success' });
+      setShowDeleteModal(false);
+      setPage(1); // ✅ single refresh
+    } catch (err: any) {
+      setMsg({
+        msg: err.message || err.data?.message || 'Error occurred, try again ',
+        state: 'error',
+      });
+    }
+  };
   // Render pickup card
   const renderPickup = ({ item }: { item: any }) => (
     <View
@@ -160,7 +173,10 @@ export default function PickupManagementScreen() {
         <ActionButton
           title="Delete"
           type="error"
-          onPress={() => removePickup(item._id)}
+          onPress={() => {
+            setSelectedId(item._id);
+            setShowDeleteModal(true);
+          }}
         />
       </View>
     </View>
@@ -200,7 +216,7 @@ export default function PickupManagementScreen() {
       </View>
 
       {/* Floating Add Button */}
-
+      {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
       <TouchableOpacity
         onPress={() => openModal()}
         style={{
@@ -221,57 +237,34 @@ export default function PickupManagementScreen() {
           ＋
         </Text>
       </TouchableOpacity>
-
+      <ConfirmDeleteModal
+        visible={showDeleteModal}
+        onConfirm={handleDelete}
+        loading={deleting }
+        onCancel={() => setShowDeleteModal(false)}
+      />
       {/* Add/Edit Modal */}
-      <Modal visible={modalVisible} animationType="slide">
-        <View
-          style={{ flex: 1, padding: 20, backgroundColor: colors.background }}
-        >
-          <Text style={{ fontSize: 18, fontWeight: '600', color: colors.text }}>
-            {editingPickup ? 'Edit Pickup' : 'Add Pickup'}
-          </Text>
-
-          <FormInput
-            label="Pickup Name"
-            placeholder="Pickup Name"
-            value={pickupName}
-            onChangeText={setPickupName}
-          />
-          <FormInput
-            label="Phone Number"
-            placeholder="712 345 678"
-            keyboardType="phone-pad"
-            withCountryCode
-            value={phoneNumber}
-            onChangeText={setPhoneNumber}
-          />
-
-          <FormInput
-            label="Short Code"
-            placeholder="Short Code"
-            value={shortCode}
-            onChangeText={setShortCode}
-          />
-          <FormInput
-            label="Contact Person's Number"
-            placeholder="712 345 678"
-            keyboardType="phone-pad"
-            withCountryCode
-            value={contactNumber}
-            onChangeText={setContactNumber}
-          />
-
-          <PrimaryButton
-            title={editingPickup ? 'Update' : 'Create'}
-            onPress={savePickup}
-            loading={isLoading}
-          />
-          <SecondaryButton
-            onPress={() => setModalVisible(false)}
-            title="Cancel"
-          />
-        </View>
-      </Modal>
+      <AddPickupModal
+        modalVisible={modalVisible}
+        editingPickup={editingPickup}
+        pickupName={pickupName}
+        setPickupName={setPickupName}
+        phoneNumber={phoneNumber}
+        setPhoneNumber={setPhoneNumber}
+        shortCode={shortCode}
+        setShortCode={setShortCode}
+        contactNumber={contactNumber}
+        setContactNumber={setContactNumber}
+        savePickup={savePickup}
+        isLoading={editingPickup ? editing : isLoading}
+        setModalVisible={() => {
+          setContactNumber('');
+          setPhoneNumber('');
+          setPickupName('');
+          setShortCode('');
+          setModalVisible(false);
+        }}
+      />
     </View>
   );
 }

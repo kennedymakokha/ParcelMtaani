@@ -114,8 +114,8 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
 
   const isPickupShut = pickupState === 'pickup_shut';
   const isNotPaid = user?.pickup?.paid === false;
-
-  const isInactive = isPickupShut || isNotPaid;
+  console.log(isNotPaid);
+  const isInactive = isPickupShut;
 
   const theme: Theme = {
     ...baseTheme,
