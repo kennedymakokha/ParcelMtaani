@@ -22,7 +22,7 @@ export default function ProfileScreen() {
   const [profilePic, setProfilePic] = useState(user?.profilePic || '');
   const [phone_number, setPhone] = useState(user?.phone_number || '');
   const [country, setCountry] = useState(COUNTRIES[0]);
-  const [EditUser] = useUpdateuserMutation({});
+  const [EditUser, { isLoading: loading }] = useUpdateuserMutation({});
   const handleSave = async () => {
     dispatch(updateProfile({ name, email, profilePic }));
     await EditUser({ name, email, profilePic, phone_number });
@@ -81,8 +81,9 @@ export default function ProfileScreen() {
       {/* Name Input */}
       <FormInput
         label="Name"
-        placeholder="********"
+        placeholder="James Maido"
         value={name}
+        capitalize
         onChangeText={setName}
       />
       <FormInput
@@ -99,7 +100,11 @@ export default function ProfileScreen() {
         onChange={full => setPhone(full)}
       />
 
-      <PrimaryButton title="Save Changes" onPress={handleSave} />
+      <PrimaryButton
+        loading={loading}
+        title="Save Changes"
+        onPress={handleSave}
+      />
     </View>
   );
 }

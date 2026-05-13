@@ -19,12 +19,14 @@ import { useTheme } from '../contexts/themeContext';
 import { COUNTRIES } from '../utils/countryCodes';
 import { PhoneInput } from '../components/phoneinput';
 import { subscribeToTopic } from '../utils/subscribeUnsubscribe';
+import { useBusiness } from '../contexts/BusinessContext';
 
 export default function LoginScreen({ navigation }: any) {
   const [phone_number, setPhoneNumber] = useState('+254790226510');
-  const [password, setPassword] = useState('');
+  const [password, setPassword] = useState('+254790226510');
   const [FCM_token, setFCM_token] = useState('');
   const { setUser } = useAuth();
+  const { updateBusiness } = useBusiness();
   const [msg, setMsg] = useState({ msg: '', state: '' });
   const dispatch = useDispatch();
   const [loginUser, { isLoading: loading }] = useLoginMutation();
@@ -47,14 +49,21 @@ export default function LoginScreen({ navigation }: any) {
 
       if (data.ok) {
         dispatch(setCredentials({ ...data }));
+        if (data.user?.business) {
+          updateBusiness(data.user.business);
+        }
+
         await AsyncStorage.setItem('accessToken', data.token);
         await AsyncStorage.setItem('userId', data.user._id);
+        // await  dispatch(useUpdateBusinessMutation(data.user.business))
         dispatch(setCurrentPickup(data.user.pickup || null));
 
         if (data.exp) {
           await AsyncStorage.setItem('tokenExpiry', data.exp.toString());
           const pickup = data?.user?.pickup;
+          const business = data?.user?.business;
           await subscribeToTopic(`pickup_${pickup._id}_attendants`);
+          await subscribeToTopic(`business_${business._id}_crew`);
           if (data.user.role === 'superuser') {
             await subscribeToTopic(`superuser`);
           }
@@ -62,7 +71,7 @@ export default function LoginScreen({ navigation }: any) {
             await subscribeToTopic(`supersales`);
           }
           if (data.user.role === 'admin') {
-            await subscribeToTopic(`admin`);
+            await subscribeToTopic(`business_${business._id}_admin`);
           }
 
           setUser(data.user);

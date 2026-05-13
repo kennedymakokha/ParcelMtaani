@@ -30,7 +30,7 @@ export default function BusinessManagementScreen({ navigation }: any) {
   const [addBusiness, { isLoading: savingbusiness }] = useAddBusinessMutation();
   const [updateBusiness, { isLoading: editing }] = useUpdateBusinessMutation();
   const [deleteBusiness, { isLoading: deleting }] = useDeleteBusinessMutation();
-
+  const [contactName, setcontactName] = useState('');
   const [country, setCountry] = useState(COUNTRIES[0]);
   const initialState = {
     id: '',
@@ -214,7 +214,6 @@ export default function BusinessManagementScreen({ navigation }: any) {
                 flexDirection: 'row',
                 justifyContent: 'space-between',
                 marginTop: 12,
-                
               }}
             >
               <ActionButton
@@ -248,6 +247,8 @@ export default function BusinessManagementScreen({ navigation }: any) {
         showFormModal={showFormModal}
         editingId={editingId}
         form={form}
+        contactName={contactName}
+        setcontactName={setcontactName}
         setForm={setForm}
         country={country}
         setCountry={setCountry}

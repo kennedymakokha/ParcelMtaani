@@ -103,24 +103,26 @@ export default function FilterChipsFDB<T>({
             </Text>
 
             {/* ✅ Count badge */}
-            <View
-              style={{
-                paddingHorizontal: 6,
-                paddingVertical: 2,
-                borderRadius: 999,
-                backgroundColor: isSelected ? '#fff' : colors.border,
-              }}
-            >
-              <Text
+            {countExtractor && (
+              <View
                 style={{
-                  color: isSelected ? colors.primary : colors.subText,
-                  fontSize: 12,
-                  fontWeight: '600',
+                  paddingHorizontal: 6,
+                  paddingVertical: 2,
+                  borderRadius: 999,
+                  backgroundColor: isSelected ? '#fff' : colors.border,
                 }}
               >
-                {itemCount}
-              </Text>
-            </View>
+                <Text
+                  style={{
+                    color: isSelected ? colors.primary : colors.subText,
+                    fontSize: 12,
+                    fontWeight: '600',
+                  }}
+                >
+                  {itemCount}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
         );
       })}

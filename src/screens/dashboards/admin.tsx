@@ -16,7 +16,7 @@ export default function AdminDashboard() {
   const { socket } = useSocket();
   const { user } = useSelector((state: any) => state.auth);
   const [filter, setFilter] = useState('today');
-
+// Parcel-change
   const {
     data: dashboardStats,
     isSuccess,
@@ -97,7 +97,7 @@ export default function AdminDashboard() {
     return () => {
       socket.off('Parcel-change', onCanceledParcel);
       socket.off('pickup_shut', () => {
-        console.log('object');
+      
       });
     };
   }, [socket, refetch]);

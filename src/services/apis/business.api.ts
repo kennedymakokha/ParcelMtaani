@@ -35,7 +35,7 @@ export const injectEndpoints = api.injectEndpoints({
         }),
         UpdateBusiness: builder.mutation({
             query: (data: any) => ({
-                url: `/business/${data.id}`,
+                url: `/business/${data._id}`,
                 method: 'PUT',
                body: data,
             }),

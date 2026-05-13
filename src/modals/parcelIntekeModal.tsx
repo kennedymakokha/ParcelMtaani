@@ -1,8 +1,6 @@
 /* eslint-disable react-native/no-inline-styles */
 import { useState } from 'react';
-import {
-  ScrollView,
-} from 'react-native';
+import { ScrollView } from 'react-native';
 
 import { useSelector } from 'react-redux';
 import { useTheme } from '../contexts/themeContext';
@@ -65,33 +63,32 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
 
   useBluetoothPermissions();
 
- const handleSubmit = async () => {
-  // Open printer selector if no printer chosen
-  if (!selectedPrinterMac) {
-    setShowPrinterModal(true);
-    return;
-  }
+  const handleSubmit = async () => {
+    // Open printer selector if no printer chosen
+    if (!selectedPrinterMac) {
+      setShowPrinterModal(true);
+      return;
+    }
 
-  await submitParcel({
-    formData,
-    paymentMethod,
-    isSplitPayment,
-    phoneNumber,
-    amountGiven,
-    mpesaPortion,
-    parcelTotal,
-    pickup,
-    pickups,
-    user,
-    selectedPrinterMac,
-    refetch,
+    await submitParcel({
+      formData,
+      paymentMethod,
+      isSplitPayment,
+      phoneNumber,
+      amountGiven,
+      mpesaPortion,
+      parcelTotal,
+      pickup,
+      pickups,
+      user,
+      selectedPrinterMac,
+      refetch,
 
-    onSuccess: data => {
-
-      setQrPrintData(data);
-    },
-  });
-};
+      onSuccess: data => {
+        setQrPrintData(data);
+      },
+    });
+  };
   return (
     <ScrollView
       style={{
@@ -169,17 +166,17 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
       {qrPrintData ? (
         <PrimaryButton onPress={printQr} title="Print QR Code" />
       ) : (
-       <SubmitButton
-  isProcessing={isProcessing}
-  selectedPrinterMac={selectedPrinterMac}
-  onPress={handleSubmit}
-  colors={colors}
-  title={
-    selectedPrinterMac
-      ? 'Generate & Print Receipt'
-      : 'Select Printer First'
-  }
-/>
+        <SubmitButton
+          isProcessing={isProcessing}
+          selectedPrinterMac={selectedPrinterMac}
+          onPress={handleSubmit}
+          colors={colors}
+          title={
+            selectedPrinterMac
+              ? 'Generate & Print Receipt'
+              : 'Select Printer First'
+          }
+        />
       )}
 
       {/* ========================= */}

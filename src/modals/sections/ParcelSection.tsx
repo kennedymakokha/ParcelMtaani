@@ -4,17 +4,30 @@ import { FormInput } from '../../components/input.component';
 import { Text } from 'react-native';
 import { Switch } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import { useFetchPickupsQuery } from '../../services/apis/business.api';
+import { useEffect } from 'react';
 
 export const ParcelSection = ({
   formData,
   updateField,
   setFormData,
   colors,
-  pickups,
+
   user,
   setPickup,
   pickup,
 }: any) => {
+  const { data, refetch } = useFetchPickupsQuery({});
+
+  const pickups = data.pickups ?? [];
+  useEffect(() => {
+    const Refetch = async () => {
+      await refetch();
+    };
+
+    Refetch();
+  }, [refetch]);
+
   return (
     <View
       style={{

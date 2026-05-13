@@ -33,7 +33,10 @@ const pickupSlice = createSlice({
       //   }
     },
 
-    setCurrentPickup: (state, action: PayloadAction<Pickup>) => {
+    setCurrentPickup: (
+      state,
+      action: PayloadAction<Pickup | null>,
+    ) => {
       state.currentPickup = action.payload;
     },
     addPickup: (state, action) => {

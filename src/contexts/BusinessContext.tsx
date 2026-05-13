@@ -1,0 +1,161 @@
+import React, {
+  createContext,
+  useContext,
+  useReducer,
+  useEffect,
+  ReactNode,
+} from 'react';
+
+import { useSelector } from 'react-redux';
+
+import { useGetBusinessByIdQuery } from '../services/apis/business.api';
+
+export type Business = {
+  _id: string;
+  business_name: string;
+  logo: string;
+  postal_address: string;
+  phone_number: string;
+  primary_color: string;
+  contact_number: string;
+  secondary_color: string;
+  working_hrs: string;
+  kra_pin: string;
+  state: string;
+  api_key: string;
+  printQr?: boolean;
+  latitude: any;
+  longitude: any;
+  strictMpesa: boolean;
+};
+
+type State = {
+  business: Business | null;
+};
+
+type Action =
+  | { type: 'SET_BUSINESS'; payload: Business }
+  | { type: 'UPDATE_BUSINESS'; payload: Partial<Business> }
+  | { type: 'RESET_BUSINESS' };
+
+type BusinessContextType = {
+  business: Business | null;
+  updateBusiness: (data: Partial<Business>) => void;
+  clearBusiness: () => void;
+  isLoading: boolean;
+};
+
+const BusinessContext = createContext<BusinessContextType | undefined>(
+  undefined,
+);
+
+const reducer = (state: State, action: Action): State => {
+  switch (action.type) {
+    case 'SET_BUSINESS':
+      return {
+        ...state,
+        business: action.payload,
+      };
+
+    case 'UPDATE_BUSINESS':
+      return {
+        ...state,
+        business: state.business
+          ? {
+              ...state.business,
+              ...action.payload,
+            }
+          : (action.payload as Business),
+      };
+
+    case 'RESET_BUSINESS':
+      return {
+        ...state,
+        business: null,
+      };
+
+    default:
+      return state;
+  }
+};
+
+export const BusinessProvider = ({ children }: { children: ReactNode }) => {
+  const user = useSelector((state: any) => state.auth.user);
+
+  const businessId = user?.business?._id;
+
+  const { data: businessData, isLoading } = useGetBusinessByIdQuery(
+    businessId,
+    {
+      skip: !businessId,
+      refetchOnMountOrArgChange: true,
+    },
+  );
+
+  const [state, dispatch] = useReducer(reducer, {
+    business: null,
+  });
+
+  /**
+   * SET BUSINESS FROM API
+   */
+  useEffect(() => {
+    if (businessData?._id) {
+      dispatch({
+        type: 'SET_BUSINESS',
+        payload: businessData,
+      });
+    }
+  }, [businessData]);
+
+  /**
+   * CLEAR BUSINESS WHEN LOGGED OUT
+   */
+  useEffect(() => {
+    if (!user) {
+      dispatch({ type: 'RESET_BUSINESS' });
+    }
+  }, [user]);
+
+  /**
+   * UPDATE LOCAL BUSINESS
+   */
+  const updateBusiness = (data: Partial<Business>) => {
+    dispatch({
+      type: 'UPDATE_BUSINESS',
+      payload: data,
+    });
+  };
+
+  /**
+   * CLEAR BUSINESS
+   */
+  const clearBusiness = () => {
+    dispatch({
+      type: 'RESET_BUSINESS',
+    });
+  };
+
+  return (
+    <BusinessContext.Provider
+      value={{
+        business: state.business,
+        updateBusiness,
+        clearBusiness,
+        isLoading,
+      }}
+    >
+      {children}
+    </BusinessContext.Provider>
+  );
+};
+
+export const useBusiness = () => {
+  const context = useContext(BusinessContext);
+
+  if (!context) {
+    throw new Error('useBusiness must be used within a BusinessProvider');
+  }
+
+  return context;
+};

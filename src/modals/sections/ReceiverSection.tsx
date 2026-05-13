@@ -33,6 +33,7 @@ export const ReceiverSection = ({
 
       <FormInput
         label="Recipient Name"
+        capitalize
         value={formData.receiver.name}
         onChangeText={t => updateField('receiver', 'name', t)}
       />

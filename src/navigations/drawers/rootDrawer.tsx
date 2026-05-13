@@ -18,6 +18,7 @@ import CancelledParcelsScreen from '../../screens/canceledParcel';
 import ProfileScreen from '../../screens/ProfileScreen';
 import PickupManagementScreen from '../../screens/pickup/PickupManagementScreen';
 import TrucksManagementScreen from '../../screens/fleet/truckScreen';
+import BusinessProfileScreen from '../../screens/business/businessProfile';
 
 const Drawer = createDrawerNavigator();
 
@@ -106,6 +107,13 @@ export default function RootDrawer() {
         name="Parcels"
         options={{ headerShown: false }}
         component={ParcelStack}
+      />
+      <Drawer.Screen
+        name="Business profile"
+        options={() => ({
+          header: () => <CustomHeader title="MY Business" />,
+        })}
+        component={BusinessProfileScreen}
       />
       <Drawer.Screen
         name="Delivery"

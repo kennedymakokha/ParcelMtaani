@@ -17,10 +17,7 @@ import { SecondaryButton } from '../../components/SecondaryButton';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { useTheme } from '../../contexts/themeContext';
 
-
-
-
-export const AddBusinessModal= ({
+export const AddBusinessModal = ({
   showFormModal,
   editingId,
   form,
@@ -31,8 +28,9 @@ export const AddBusinessModal= ({
   msg,
   handleSave,
   savingbusiness,
-  setShowFormModal
-}:any) => {
+  setShowFormModal,
+  contactName, setcontactName
+}: any) => {
   const { colors } = useTheme();
   return (
     <Modal visible={showFormModal} animationType="slide" transparent>
@@ -92,6 +90,13 @@ export const AddBusinessModal= ({
                 onChangeCountry={setCountry}
               />
               <FormInput
+                label="Contact Person"
+                placeholder="James Maina"
+                capitalize
+                value={contactName}
+                onChangeText={setcontactName}
+              />
+              <FormInput
                 label="KRA PIN"
                 value={form.kra_pin}
                 onChangeText={text => setForm({ ...form, kra_pin: text })}
@@ -117,4 +122,3 @@ export const AddBusinessModal= ({
     </Modal>
   );
 };
-

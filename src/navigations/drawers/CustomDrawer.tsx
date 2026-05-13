@@ -28,6 +28,7 @@ import {
 export default function CustomDrawerContent(props: any) {
   const { colors } = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
+
   const { user } = useSelector((state: any) => state.auth);
   const pickupState = useSelector((state: any) => state.pickupEvents.lastEvent);
 
@@ -75,18 +76,12 @@ export default function CustomDrawerContent(props: any) {
     if (!socket) return;
 
     const onPickupCreated = async (newPickup: any) => {
-      console.log(newPickup);
-
       dispatch(addPickup(newPickup));
-
       await refetch();
     };
 
     const onSuccessfullDelivery = async (newPickup: any) => {
-      console.log(newPickup);
-
       dispatch(addPickup(newPickup));
-
       await refetch();
     };
 
@@ -104,148 +99,271 @@ export default function CustomDrawerContent(props: any) {
   return (
     <DrawerContentScrollView
       {...props}
-      contentContainerStyle={{ flex: 1, backgroundColor: colors.background }}
+      contentContainerStyle={{
+        flexGrow: 1,
+        backgroundColor: colors.background,
+        justifyContent: 'space-between',
+      }}
+      showsVerticalScrollIndicator={false}
     >
-      {/* Header */}
-      <View
-        style={{
-          backgroundColor: colors.primary,
-          padding: 24,
-          alignItems: 'center',
-        }}
-      >
-        <View className="flex items-center justify-center">
-          <Icon name="truck-fast" size={74} color="#fff" />
-        </View>
-
-        <Text
+      {/* TOP CONTENT */}
+      <View>
+        {/* Header */}
+        <View
           style={{
-            color: '#fff',
-            fontSize: 18,
-            textTransform: 'uppercase',
-            fontWeight: '800',
-            fontFamily: colors.fontSemiBold,
+            backgroundColor: colors.primary,
+            padding: 24,
+            alignItems: 'center',
           }}
         >
-          Parcel Mtaani
-        </Text>
+          <View className="flex items-center justify-center">
+            <Icon name="truck-fast" size={74} color="#fff" />
+          </View>
 
-        <Text style={{ color: '#e0e7ff' }}>
-          {user?.pickup?.pickup_name?.toUpperCase()}
-        </Text>
+          <Text
+            style={{
+              color: '#fff',
+              fontSize: 18,
+              textTransform: 'uppercase',
+              fontWeight: '800',
+              fontFamily: colors.fontSemiBold,
+            }}
+          >
+            Parcel Mtaani
+          </Text>
 
-        <View className="flex items-center justify-center px-4 py-1 border border-blue-500 rounded-md mt-2">
-          <Text style={{ color: '#e0e7ff' }}>{userRole.toUpperCase()}</Text>
+          <Text style={{ color: '#e0e7ff', textAlign: 'center' }}>
+            {user?.pickup?.pickup_name?.toUpperCase()}
+          </Text>
+
+          <View className="flex items-center justify-center px-4 py-1 border border-blue-500 rounded-md mt-2">
+            <Text style={{ color: '#e0e7ff' }}>{userRole?.toUpperCase()}</Text>
+          </View>
+
+          <Text
+            style={{
+              color: '#e0e7ff',
+              marginTop: 4,
+              textAlign: 'center',
+            }}
+          >
+            {user?.name}
+          </Text>
+
+          {/* Super Admin Pickup Point Switcher */}
+          {userRole === 'superadmin' && (
+            <TouchableOpacity
+              style={{
+                marginTop: 12,
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: '#1e40af',
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+                borderRadius: 8,
+                maxWidth: '100%',
+              }}
+              onPress={() => setModalVisible(true)}
+            >
+              <Ionicons name="location-outline" size={18} color="#fff" />
+
+              <Text
+                numberOfLines={1}
+                style={{
+                  color: '#fff',
+                  fontWeight: '600',
+                  marginLeft: 6,
+                  maxWidth: 180,
+                }}
+              >
+                {currentPickup?.pickup_name || 'Select Pickup'}
+              </Text>
+
+              <Ionicons
+                name="chevron-down"
+                size={16}
+                color="#fff"
+                style={{ marginLeft: 4 }}
+              />
+            </TouchableOpacity>
+          )}
         </View>
 
-        <Text style={{ color: '#e0e7ff' }}>{user.name}</Text>
-
-        {/* Super Admin Pickup Point Switcher */}
-        {userRole === 'superadmin' && (
-          <TouchableOpacity
-            style={{
-              marginTop: 12,
-              flexDirection: 'row',
-              alignItems: 'center',
-              backgroundColor: '#1e40af',
-              paddingHorizontal: 12,
-              paddingVertical: 8,
-              borderRadius: 8,
-            }}
-            onPress={() => setModalVisible(true)}
-          >
-            <Ionicons name="location-outline" size={18} color="#fff" />
-
-            <Text style={{ color: '#fff', fontWeight: '600', marginLeft: 6 }}>
-              {currentPickup?.pickup_name || 'Select Pickup'}
-            </Text>
-
-            <Ionicons
-              name="chevron-down"
-              size={16}
-              color="#fff"
-              style={{ marginLeft: 4 }}
+        {/* Drawer Items */}
+        <View
+          style={{
+            flexGrow: 1,
+            backgroundColor: colors.background,
+            padding: 16,
+          }}
+        >
+          {menuItems?.map(item => (
+            <DrawerItem
+              key={item.label}
+              label={item.label}
+              icon={({ color, size }) => (
+                <Ionicons name={item.icon} size={size} color={color} />
+              )}
+              onPress={() => props.navigation.navigate(item.screen)}
             />
-          </TouchableOpacity>
-        )}
-      </View>
+          ))}
 
-      {/* Drawer Items */}
-      <View
-        style={{ flex: 1, backgroundColor: colors.background, padding: 16 }}
-      >
-        {menuItems?.map(item => (
-          <DrawerItem
-            key={item.label}
-            label={item.label}
-            icon={({ color, size }) => (
-              <Ionicons name={item.icon} size={size} color={color} />
-            )}
-            onPress={() => props.navigation.navigate(item.screen)}
+          <View
+            style={{
+              height: 1,
+              width: '100%',
+              backgroundColor: '#fecaca',
+              marginVertical: 10,
+            }}
           />
-        ))}
-        <View className="  h-[1px] w-full bg-red-200"></View>
-        <DrawerItem
-          label="User Profile"
-          icon={({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
+          {user.role === 'superadmin' && (
+            <DrawerItem
+              label="Business Profile"
+              icon={({ color, size }) => (
+                <Ionicons name="home-outline" size={size} color={color} />
+              )}
+              onPress={() => props.navigation.navigate('Business profile')}
+            />
           )}
-          onPress={() => props.navigation.navigate('Profile')}
-        />
+          {user.role === 'admin' && (
+            <DrawerItem
+              label="Pickup Profile"
+              icon={({ color, size }) => (
+                <Ionicons name="home-outline" size={size} color={color} />
+              )}
+              onPress={() => props.navigation.navigate('Profile')}
+            />
+          )}
+          <DrawerItem
+            label="User Profile"
+            icon={({ color, size }) => (
+              <Ionicons name="person-outline" size={size} color={color} />
+            )}
+            onPress={() => props.navigation.navigate('Profile')}
+          />
+        </View>
       </View>
 
       {/* Footer */}
       <View
-        className="flex flex-row items-center justify-between"
         style={{
-          padding: 16,
+          paddingHorizontal: 16,
+          paddingTop: 12,
+          paddingBottom: 24,
           borderTopWidth: 1,
           borderColor: colors.border,
           backgroundColor: colors.background,
         }}
       >
-        <TouchableOpacity
+        <View
           style={{
+            gap: 14,
             flexDirection: 'row',
-            alignItems: 'center',
-            marginBottom: 12,
+            justifyContent: 'space-between',
           }}
         >
-          <Ionicons
-            name="settings-outline"
-            size={20}
-            color={colors.secondary}
-          />
-
-          <Text
-            style={{ marginLeft: 8, color: colors.text, fontWeight: '600' }}
+          {/* SETTINGS */}
+          <TouchableOpacity
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}
           >
-            Settings
-          </Text>
-        </TouchableOpacity>
+            <Ionicons
+              name="settings-outline"
+              size={20}
+              color={colors.secondary}
+            />
 
-        <TouchableOpacity
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            marginBottom: 12,
-          }}
-          onPress={async () => {
-            await unsubscribeAllTopics(user);
+            <Text
+              style={{
+                marginLeft: 8,
+                color: colors.text,
+                fontWeight: '600',
+              }}
+            >
+              Settings
+            </Text>
+          </TouchableOpacity>
 
-            dispatch(logout());
-            await AsyncStorage.removeItem('accessToken');
-            await AsyncStorage.removeItem('userId');
-          }}
-        >
-          <Ionicons name="log-out-outline" size={20} color={colors.danger} />
+          {/* LOGOUT */}
+          <TouchableOpacity
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}
+            onPress={async () => {
+              try {
+                /**
+                 * UNSUBSCRIBE FROM ALL USER TOPICS
+                 */
+                await unsubscribeAllTopics(user);
 
-          <Text
-            style={{ marginLeft: 8, color: colors.danger, fontWeight: '600' }}
+                /**
+                 * EXTRA SAFETY UNSUBSCRIBE
+                 */
+
+                if (currentPickup?._id) {
+                  await unsubscribeFromTopic(
+                    `pickup_${currentPickup._id}_attendants`,
+                  );
+                }
+
+                if (user?.business?._id) {
+                  await unsubscribeFromTopic(
+                    `business_${user.business._id}_crew`,
+                  );
+
+                  await unsubscribeFromTopic(
+                    `business_${user.business._id}_admin`,
+                  );
+                }
+
+                /**
+                 * GLOBAL TOPICS
+                 */
+                await unsubscribeFromTopic('parcel-updates');
+
+                /**
+                 * SOCKET CLEANUP
+                 */
+                if (socket?.disconnect) {
+                  socket.disconnect();
+                }
+
+                /**
+                 * CLEAR STORAGE
+                 */
+                await AsyncStorage.multiRemove([
+                  'accessToken',
+                  'userId',
+                  'tokenExpiry',
+                ]);
+
+                /**
+                 * CLEAR REDUX
+                 */
+                dispatch(setCurrentPickup(null));
+
+                dispatch(logout());
+              } catch (error) {
+                console.log('Logout error:', error);
+              }
+            }}
           >
-            Logout
-          </Text>
-        </TouchableOpacity>
+            <Ionicons name="log-out-outline" size={20} color={colors.danger} />
+
+            <Text
+              style={{
+                marginLeft: 8,
+                color: colors.danger,
+                fontWeight: '600',
+              }}
+            >
+              Logout
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Pickup Point Modal */}
@@ -257,13 +375,16 @@ export default function CustomDrawerContent(props: any) {
               backgroundColor: 'rgba(0,0,0,0.5)',
               justifyContent: 'center',
               alignItems: 'center',
+              paddingHorizontal: 16,
             }}
           >
             <View
               style={{
                 backgroundColor: colors.background,
                 borderRadius: 12,
-                width: 300,
+                width: '90%',
+                maxWidth: 400,
+                maxHeight: '70%',
                 padding: 20,
               }}
             >
@@ -281,6 +402,8 @@ export default function CustomDrawerContent(props: any) {
               <FlatList
                 data={pickups}
                 keyExtractor={item => item._id}
+                showsVerticalScrollIndicator={false}
+                style={{ maxHeight: 350 }}
                 renderItem={({ item }) => (
                   <TouchableOpacity
                     style={{

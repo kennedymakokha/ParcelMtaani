@@ -45,6 +45,7 @@ export default function PickupManagementScreen() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // Form state
   const [pickupName, setPickupName] = useState('');
+  const [contactName, setcontactName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [contactNumber, setContactNumber] = useState('');
   const [shortCode, setShortCode] = useState('');
@@ -156,6 +157,9 @@ export default function PickupManagementScreen() {
       <Text style={{ color: colors.primary }}>
         Code: {item.short_code || 'N/A'}
       </Text>
+      <Text style={{ color: colors.primary }}>
+        Contact: {item.contact_number || 'N/A'}
+      </Text>
       <Text
         style={{
           color: item.state === 'active' ? colors.success : colors.error,
@@ -240,7 +244,7 @@ export default function PickupManagementScreen() {
       <ConfirmDeleteModal
         visible={showDeleteModal}
         onConfirm={handleDelete}
-        loading={deleting }
+        loading={deleting}
         onCancel={() => setShowDeleteModal(false)}
       />
       {/* Add/Edit Modal */}
@@ -256,6 +260,8 @@ export default function PickupManagementScreen() {
         contactNumber={contactNumber}
         setContactNumber={setContactNumber}
         savePickup={savePickup}
+        contactName={contactName}
+        setcontactName={setcontactName}
         isLoading={editingPickup ? editing : isLoading}
         setModalVisible={() => {
           setContactNumber('');

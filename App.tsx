@@ -13,10 +13,7 @@ import {
   StatusBar,
 } from 'react-native';
 
-import {
-  NavigationContainer,
-  DefaultTheme,
-} from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -31,25 +28,19 @@ import { persistor, store } from './store';
 import RootStack from './src/navigations/stacks/rootStack';
 import AuthStack from './src/navigations/stacks/authStack';
 
-import {
-  ThemeProvider,
-  useTheme,
-} from './src/contexts/themeContext';
+import { ThemeProvider, useTheme } from './src/contexts/themeContext';
 
 import { AuthProvider } from './src/contexts/AuthContext';
 
-import {
-  SocketProvider,
-  useSocket,
-} from './src/contexts/socketContext';
+import { SocketProvider, useSocket } from './src/contexts/socketContext';
+
+import { BusinessProvider } from './src/contexts/BusinessContext';
 
 import { addNotification } from './src/features/notificationsSlice';
 
 import { usePickupSocket } from './src/hooks/usePickupSocket';
 
 import PickupUserSync from './src/screens/syncUserNevents';
-
-
 
 function AppNavigator() {
   const { colors } = useTheme();
@@ -58,31 +49,22 @@ function AppNavigator() {
 
   const { socket } = useSocket();
 
-  const { user } = useSelector(
-    (state: any) => state.auth,
-  );
+  const { user } = useSelector((state: any) => state.auth);
 
   usePickupSocket();
 
-  // ✅ NOTIFICATION PERMISSION
-  const requestNotificationPermission =
-    async () => {
+  /**
+   * NOTIFICATION PERMISSION
+   */
+  useEffect(() => {
+    const requestNotificationPermission = async () => {
       try {
-        if (
-          Platform.OS === 'android' &&
-          Number(Platform.Version) >= 33
-        ) {
-          const status =
-            await PermissionsAndroid.request(
-              PermissionsAndroid.PERMISSIONS
-                .POST_NOTIFICATIONS,
-            );
+        if (Platform.OS === 'android' && Number(Platform.Version) >= 33) {
+          const status = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+          );
 
-          if (
-            status ===
-            PermissionsAndroid.RESULTS
-              .NEVER_ASK_AGAIN
-          ) {
+          if (status === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
             Alert.alert(
               'Enable Notifications',
               'Notifications are disabled. Enable them from settings.',
@@ -93,136 +75,110 @@ function AppNavigator() {
                 },
                 {
                   text: 'Open Settings',
-                  onPress: () =>
-                    Linking.openSettings(),
+                  onPress: () => Linking.openSettings(),
                 },
               ],
             );
           }
         }
       } catch (error) {
-        console.log(
-          '❌ Permission error:',
-          error,
-        );
+        console.log('❌ Notification permission error:', error);
       }
     };
 
-  // ✅ REQUEST PERMISSION
-  useEffect(() => {
     requestNotificationPermission();
   }, []);
 
-  // ✅ GET FCM TOKEN
+  /**
+   * GET FCM TOKEN
+   */
   useEffect(() => {
-    const getToken = async () => {
+    const fetchFcmToken = async () => {
       try {
         const token = await messaging().getToken();
 
         console.log('🔥 FCM TOKEN:', token);
       } catch (error) {
-        console.log(
-          '❌ Token error:',
-          error,
-        );
+        console.log('❌ FCM token error:', error);
       }
     };
 
-    getToken();
+    fetchFcmToken();
   }, []);
 
-  // ✅ FOREGROUND NOTIFICATIONS
+  /**
+   * FOREGROUND NOTIFICATIONS
+   */
   useEffect(() => {
-    const unsubscribe = messaging().onMessage(
-      async remoteMessage => {
-        dispatch(
-          addNotification({
-            id:
-              remoteMessage.messageId ||
-              Date.now().toString(),
+    const unsubscribe = messaging().onMessage(async remoteMessage => {
+      dispatch(
+        addNotification({
+          id: remoteMessage.messageId || Date.now().toString(),
 
-            title:
-              remoteMessage.notification
-                ?.title || 'Notification',
+          title: remoteMessage.notification?.title || 'Notification',
 
-            body:
-              remoteMessage.notification
-                ?.body || '',
+          body: remoteMessage.notification?.body || '',
 
-            data: remoteMessage.data,
+          data: remoteMessage.data,
 
-            read: false,
+          read: false,
 
-            createdAt: Date.now(),
-          }),
-        );
-      },
-    );
+          createdAt: Date.now(),
+        }),
+      );
+    });
 
     return unsubscribe;
-  }, [dispatch]);
+  }, []);
 
-  // ✅ TOPIC SUBSCRIPTION
+  /**
+   * TOPIC SUBSCRIPTION
+   */
   useEffect(() => {
-    const subscribe = async () => {
+    const subscribeToGlobalTopics = async () => {
       try {
-        await messaging().subscribeToTopic(
-          'parcel-updates',
-        );
+        await messaging().subscribeToTopic('parcel-updates');
 
-        console.log(
-          '✅ Subscribed to parcel-updates',
-        );
+        console.log('✅ Subscribed to parcel-updates');
       } catch (e) {
-        console.log(
-          '❌ Topic subscribe error:',
-          e,
-        );
+        console.log('❌ Topic subscription error:', e);
       }
     };
 
-    subscribe();
+    subscribeToGlobalTopics();
   }, []);
 
-  // ✅ SOCKET EVENTS
+  /**
+   * SOCKET EVENTS
+   */
   useEffect(() => {
-    if (!socket) return;
+    if (!socket) {
+      return;
+    }
 
-    const onSuccessfulDelivery = (
-      newPickup: any,
-    ) => {
-      console.log(
-        '✅ Successful Delivery:',
-        newPickup,
-      );
+    const onSuccessfulDelivery = (payload: any) => {
+      console.log('✅ Successful Delivery:', payload);
     };
 
-    socket.on(
-      'Successful Delivery',
-      onSuccessfulDelivery,
-    );
+    socket.on('Successful Delivery', onSuccessfulDelivery);
 
     return () => {
-      socket.off(
-        'Successful Delivery',
-        onSuccessfulDelivery,
-      );
+      socket.off('Successful Delivery', onSuccessfulDelivery);
     };
   }, [socket]);
 
-  // ✅ APP STATE
+  /**
+   * APP STATE LISTENER
+   */
   useEffect(() => {
-    const sub = AppState.addEventListener(
-      'change',
-      state => {
-        if (state === 'active') {
-          console.log('📱 App Active');
-        }
-      },
-    );
+    const subscription = AppState.addEventListener('change', state => {
+      if (state === 'active') {
+        console.log('📱 App Active');
+      }
+    });
 
     return () => {
-      sub.remove();
+      subscription.remove();
     };
   }, []);
 
@@ -260,15 +216,14 @@ function AppNavigator() {
 export default function App() {
   return (
     <Provider store={store}>
-      <PersistGate
-        persistor={persistor}
-        loading={null}
-      >
+      <PersistGate persistor={persistor} loading={null}>
         <SafeAreaProvider>
           <ThemeProvider>
             <AuthProvider>
               <SocketProvider>
-                <AppNavigator />
+                <BusinessProvider>
+                  <AppNavigator />
+                </BusinessProvider>
               </SocketProvider>
             </AuthProvider>
           </ThemeProvider>
