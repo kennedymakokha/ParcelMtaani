@@ -24,6 +24,7 @@ import {
   subscribeToTopic,
   unsubscribeFromTopic,
 } from '../../utils/subscribeUnsubscribe';
+import { DrawerActions } from '@react-navigation/native';
 
 export default function CustomDrawerContent(props: any) {
   const { colors } = useTheme();
@@ -63,6 +64,7 @@ export default function CustomDrawerContent(props: any) {
       dispatch(setCurrentPickup(point));
 
       setModalVisible(false);
+      props.navigation.dispatch(DrawerActions.closeDrawer());
     } finally {
       switchingRef.current = false;
     }
@@ -259,11 +261,11 @@ export default function CustomDrawerContent(props: any) {
           style={{
             gap: 14,
             flexDirection: 'row',
-            justifyContent: 'space-between',
+            justifyContent:'flex-end',
           }}
         >
           {/* SETTINGS */}
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={{
               flexDirection: 'row',
               alignItems: 'center',
@@ -284,7 +286,7 @@ export default function CustomDrawerContent(props: any) {
             >
               Settings
             </Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           {/* LOGOUT */}
           <TouchableOpacity

@@ -22,8 +22,8 @@ import { subscribeToTopic } from '../utils/subscribeUnsubscribe';
 import { useBusiness } from '../contexts/BusinessContext';
 
 export default function LoginScreen({ navigation }: any) {
-  const [phone_number, setPhoneNumber] = useState('+254790226510');
-  const [password, setPassword] = useState('+254790226510');
+  const [phone_number, setPhoneNumber] = useState('');
+  const [password, setPassword] = useState('');
   const [FCM_token, setFCM_token] = useState('');
   const { setUser } = useAuth();
   const { updateBusiness } = useBusiness();

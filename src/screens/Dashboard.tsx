@@ -6,6 +6,7 @@ import AdminDashboard from './dashboards/admin';
 import SuperUserDashboard from './dashboards/superUser';
 import SalesDashboard from './dashboards/sales';
 import SuperAdminDashboard from './dashboards/superAdmin';
+import DriverDashboard from './dashboards/driver';
 export default function DashboardScreen() {
   const {
     user: { role },
@@ -13,7 +14,9 @@ export default function DashboardScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      {role === 'superadmin' ? (
+      {role === 'driver' ? (
+        <DriverDashboard />
+      ) : role === 'superadmin' ? (
         <SuperAdminDashboard />
       ) : role === 'admin' || role === 'attendant' ? (
         <AdminDashboard />

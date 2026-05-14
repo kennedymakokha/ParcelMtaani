@@ -17,6 +17,9 @@ export const injectEndpoints = api.injectEndpoints({
         fetchgroupedparcel: builder.query({
             query: ({ limit, pickupId, page, currentTruck, status, search }) => `/parcel/grouped?limit=${limit}&page=${page}&status=${status}&search=${search}&pickuId=${pickupId}&currentTruck=${currentTruck}`,
         }),
+        fetchdriverparcel: builder.query({
+            query: ({ limit, driverId, filter, page, status, search }) => `/parcel/driver-pickups/count/${driverId}?limit=${limit}&page=${page}&status=${status}&search=${search}&driverId=${driverId}&filter=${filter}`,
+        }),
         fetchparcelJourney: builder.query({
             query: (id) => `/parcel/${id}/journey`,
         }),
@@ -85,5 +88,6 @@ export const {
     useMarkParcelAsrrivedMutation,
     useMarkParcerAsDeliveredMutation,
     useFetchDashboardStatsQuery,
-    useFetchParcelCountQuery
+    useFetchParcelCountQuery,
+    useFetchdriverparcelQuery
 } = injectEndpoints;

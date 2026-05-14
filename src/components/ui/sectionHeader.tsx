@@ -15,7 +15,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
 
   return (
     <View style={[styles.container, style]}>
-      <Text style={[styles.text, { color: colors.text }]}>{title}</Text>
+      <Text style={[styles.text, { color: colors.subText }]}>{title}</Text>
     </View>
   );
 };
@@ -30,5 +30,7 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 20,
     fontWeight: '700',
+    textTransform:"uppercase",
+    textAlign: 'center',
   },
 });

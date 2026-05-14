@@ -9,7 +9,7 @@ export const injectEndpoints = api.injectEndpoints({
                 body,
             }),
         }),
-         openPickup: builder.mutation({
+        openPickup: builder.mutation({
             query: (body) => ({
                 url: '/business/pickup/opening',
                 method: 'POST',
@@ -21,7 +21,10 @@ export const injectEndpoints = api.injectEndpoints({
             query: () => '/business/get/pickups',
         }),
         getBusinessById: builder.query({
-            query: (id) => `/business/${id}/pickups`,
+            query: ({ id, filterType }) => `/business/${id}/pickups?filter=${filterType}`
+        }),
+        getUserById: builder.query({
+            query: ({ id, filterType }) => `/business/${id}/user/pickups?filter=${filterType}`
         }),
         AddBusiness: builder.mutation({
             query: (body) => ({
@@ -37,7 +40,7 @@ export const injectEndpoints = api.injectEndpoints({
             query: (data: any) => ({
                 url: `/business/${data._id}`,
                 method: 'PUT',
-               body: data,
+                body: data,
             }),
         }),
 
@@ -57,6 +60,7 @@ export const {
     useAddBusinessMutation,
     useFetchPickupsQuery,
     useGetBusinessByIdQuery,
+    useGetUserByIdQuery,
     useGetBusinessesQuery,
     useDeleteBusinessMutation,
     useOpenPickupMutation

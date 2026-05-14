@@ -4,19 +4,20 @@ import { View, Text, ScrollView } from 'react-native';
 import { useTheme } from './../../contexts/themeContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useSelector } from 'react-redux';
-import MultiBarChart from './../../components/analytics/multiBarChart';
 import PieChart from './../../components/analytics/pieChart';
 import { useFetchDashboardStatsQuery } from './../../services/apis/parcel.api';
 import RadialFab from './../../components/buttons/radialFab';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSocket } from './../../contexts/socketContext';
+import { useGetUserByIdQuery } from '../../services/apis/business.api';
+import SingleBarChart from '../../components/analytics/barChart';
 export default function AdminDashboard() {
   const { colors } = useTheme();
 
   const { socket } = useSocket();
   const { user } = useSelector((state: any) => state.auth);
   const [filter, setFilter] = useState('today');
-// Parcel-change
+  // Parcel-change
   const {
     data: dashboardStats,
     isSuccess,
@@ -27,10 +28,36 @@ export default function AdminDashboard() {
     startDate: '', // Optional: Start date for filtering (YYYY-MM-DD)
     endDate: '', // Optional: End date for filtering (YYYY-MM-DD)
   });
+  const filterLabel = useMemo(() => {
+    switch (filter) {
+      case 'today':
+        return 'Today';
+      case 'week':
+        return 'This Week';
+      case 'month':
+        return 'This Month';
+      case 'year':
+        return 'This Year';
+      default:
+        return '';
+    }
+  }, [filter]);
+  const chartTitle = `Parcels Performance - ${filterLabel}`;
+
+  const {
+    data: business,
+   
+    refetch: fetch,
+  } = useGetUserByIdQuery({
+    id: user.pickup._id,
+    filterType: filter,
+  });
+  const pickups = business?.pickups ?? [];
   const KPIdata = dashboardStats ? dashboardStats : {};
   const fetchAnalytics = useCallback(async () => {
     try {
       await refetch();
+      await fetch();
     } catch (err) {
       console.error('Analytics Error:', err);
     }
@@ -81,7 +108,6 @@ export default function AdminDashboard() {
     },
   ];
 
-
   useEffect(() => {
     if (!socket) return;
 
@@ -96,9 +122,7 @@ export default function AdminDashboard() {
     socket.on('pickup_shut', () => {});
     return () => {
       socket.off('Parcel-change', onCanceledParcel);
-      socket.off('pickup_shut', () => {
-      
-      });
+      socket.off('pickup_shut', () => {});
     };
   }, [socket, refetch]);
 
@@ -163,34 +187,8 @@ export default function AdminDashboard() {
             data={KPIdata.pickupStats} // pass one pickup object
           />
         )}
-        {/* Another Chart Example */}
-        {/* <MultiLineChart
-          title="Delivery Performance"
-          datasets={[
-            {
-              label: 'Delivered',
-              color: colors.success,
-              data: hourlyData.map(d => ({ ...d, value: d.value + 10 })),
-            },
-            {
-              label: 'Failed',
-              color: colors.error,
-              data: hourlyData.map(d => ({
-                ...d,
-                value: Math.max(0, d.value - 60),
-              })),
-            },
-          ]}
-          startHour={8}
-          endHour={16}
-        /> */}
-
-        {user.role === 'superadmin' && isSuccess && (
-          <MultiBarChart
-            title="Business Pickup KPIs"
-            data={KPIdata.groupedByPickup}
-          />
-        )}
+   
+        <SingleBarChart title={chartTitle} data={pickups} />
         {/* {showDatePicker && (
         <DateTimePicker
           value={new Date()}

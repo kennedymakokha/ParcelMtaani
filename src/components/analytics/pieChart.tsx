@@ -29,7 +29,7 @@ const PieChart: React.FC<PieChartProps> = ({ data, title }) => {
     {
       label: 'Delivered',
       value: data.delivered,
-      color: colors.success || '#4CAF50',
+      color: '#4CACF0',
     },
     {
       label: 'On Transit',

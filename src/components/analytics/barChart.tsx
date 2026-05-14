@@ -17,7 +17,7 @@ const SingleBarChart = ({ data, title }: any) => {
   }
 
   // ✅ FILTER OUT ZERO VALUES
-  const filteredData = data.filter((d: any) => d.parcelsToday > 0);
+  const filteredData = data.filter((d: any) => d.parcelsCount > 0);
 
   // ✅ HANDLE EMPTY AFTER FILTER
   if (!filteredData.length) {
@@ -34,9 +34,7 @@ const SingleBarChart = ({ data, title }: any) => {
   const height = 220;
   const padding = 40;
 
-  const maxValue = Math.max(
-    ...filteredData.map((d: any) => d.parcelsToday)
-  );
+  const maxValue = Math.max(...filteredData.map((d: any) => d.parcelsCount));
 
   const scaleY = (value: number): number => {
     if (maxValue === 0) return 0;
@@ -46,8 +44,7 @@ const SingleBarChart = ({ data, title }: any) => {
 
   const barWidth = 30;
   const spacing = 30;
-  const totalWidth =
-    padding * 2 + filteredData.length * (barWidth + spacing);
+  const totalWidth = padding * 2 + filteredData.length * (barWidth + spacing);
 
   return (
     <View
@@ -72,7 +69,7 @@ const SingleBarChart = ({ data, title }: any) => {
           />
 
           {filteredData.map((item: any, index: any) => {
-            const barHeight = scaleY(item.parcelsToday);
+            const barHeight = scaleY(item.parcelsCount);
             const x = padding + index * (barWidth + spacing);
             const y = height - padding - barHeight;
 
@@ -95,7 +92,7 @@ const SingleBarChart = ({ data, title }: any) => {
                   fill={colors.text}
                   textAnchor="middle"
                 >
-                  {item.parcelsToday}
+                  {item.parcelsCount}
                 </SvgText>
 
                 {/* Label (slanted) */}
