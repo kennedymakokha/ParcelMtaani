@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRegisterParcelMutation } from '../services/apis/parcel.api';
-import { useCreatepaymentMutation, useMpesapayMutation } from '../services/apis/mpesa.api.ts';
+import {
+  useCreatepaymentMutation,
+  useMpesapayMutation,
+} from '../services/apis/mpesa.api.ts';
+
 import { buildReceiptText } from '../services /recieptBuilder.tsx';
 import { printToPrinter } from '../services /printer.service.ts';
-
-
 
 interface SubmitParcelParams {
   formData: any;
@@ -25,6 +27,8 @@ interface SubmitParcelParams {
   onSuccess?: (data: any) => void;
 }
 
+const PRINT_QUEUE_KEY = 'pending_print_jobs';
+
 export const useParcelSubmit = () => {
   const [msg, setMsg] = useState({
     msg: '',
@@ -36,8 +40,91 @@ export const useParcelSubmit = () => {
 
   const [lipaNaMpesa, { isLoading: paying }] =
     useMpesapayMutation();
-  const [createPayment] = useCreatepaymentMutation()
+
+  const [createPayment] =
+    useCreatepaymentMutation();
+
   const isProcessing = submitting || paying;
+
+  /**
+   * =========================
+   * SAVE PRINT JOB
+   * =========================
+   */
+
+  const savePendingPrintJob = async (
+    printJob: any,
+  ) => {
+    try {
+      const existing =
+        await AsyncStorage.getItem(
+          PRINT_QUEUE_KEY,
+        );
+
+      const jobs = existing
+        ? JSON.parse(existing)
+        : [];
+
+      const alreadyExists = jobs.find(
+        (j: any) => j.id === printJob.id,
+      );
+
+      if (!alreadyExists) {
+        jobs.push(printJob);
+
+        await AsyncStorage.setItem(
+          PRINT_QUEUE_KEY,
+          JSON.stringify(jobs),
+        );
+      }
+    } catch (err) {
+      console.log(
+        'Failed to save print job',
+        err,
+      );
+    }
+  };
+
+  /**
+   * =========================
+   * REMOVE PRINT JOB
+   * =========================
+   */
+
+  const removePendingPrintJob = async (
+    id: string,
+  ) => {
+    try {
+      const existing =
+        await AsyncStorage.getItem(
+          PRINT_QUEUE_KEY,
+        );
+
+      const jobs = existing
+        ? JSON.parse(existing)
+        : [];
+
+      const updated = jobs.filter(
+        (j: any) => j.id !== id,
+      );
+
+      await AsyncStorage.setItem(
+        PRINT_QUEUE_KEY,
+        JSON.stringify(updated),
+      );
+    } catch (err) {
+      console.log(
+        'Failed to remove print job',
+        err,
+      );
+    }
+  };
+
+  /**
+   * =========================
+   * SUBMIT PARCEL
+   * =========================
+   */
 
   const submitParcel = async ({
     formData,
@@ -59,9 +146,6 @@ export const useParcelSubmit = () => {
         (p: any) => p._id === pickup,
       );
 
-      const pickupShortCode =
-        currentPickup?.short_code || '';
-
       const pickupFullName =
         currentPickup?.pickup_name || '';
 
@@ -75,6 +159,8 @@ export const useParcelSubmit = () => {
 
       const updatedFormData = {
         ...formData,
+
+        print_status: 'PENDING',
 
         payment: {
           method: isSplitPayment
@@ -101,10 +187,14 @@ export const useParcelSubmit = () => {
           pickup,
         },
       };
+      updatedFormData.print_status =
+        'PENDING';
 
+      updatedFormData.qr_status =
+        'READY';
       /**
        * =========================
-       * MPESA
+       * MPESA PAYMENT
        * =========================
        */
 
@@ -151,97 +241,69 @@ export const useParcelSubmit = () => {
         response?.parcel || response;
 
       /**
-* =========================
-* SAVE PAYMENTS
-* =========================
-*/
+       * =========================
+       * BUILD PAYMENTS
+       * =========================
+       */
 
       const payments = [];
 
-      /**
-       * SPLIT PAYMENT
-       */
-
       if (isSplitPayment) {
-
-        // CASH
         if (Number(amountGiven) > 0) {
           payments.push({
             method: 'CASH',
-
             amount: Number(amountGiven),
           });
         }
 
-        // MPESA
         if (Number(mpesaPortion) > 0) {
           payments.push({
             method: 'MPESA',
-
             amount: Number(mpesaPortion),
-
             phone: phoneNumber,
-
             customer_name:
               formData?.sender?.name ||
               'Unknown Customer',
-
             receiptNumber:
-              mpesaResponse?.MpesaReceiptNumber || '',
+              mpesaResponse?.MpesaReceiptNumber ||
+              '',
           });
         }
-
       } else {
-
-        /**
-         * CASH ONLY
-         */
-
         if (paymentMethod === 'CASH') {
           payments.push({
             method: 'CASH',
-
             amount: Number(parcelTotal),
           });
         }
-
-        /**
-         * MPESA ONLY
-         */
 
         if (paymentMethod === 'MPESA') {
           payments.push({
             method: 'MPESA',
-
             amount: Number(parcelTotal),
-
             phone: phoneNumber,
-
             customer_name:
               formData?.sender?.name ||
               'Unknown Customer',
-
             receiptNumber:
-              mpesaResponse?.MpesaReceiptNumber || '',
+              mpesaResponse?.MpesaReceiptNumber ||
+              '',
           });
         }
       }
 
       /**
-       * POST PAYMENTS
+       * =========================
+       * CREATE PAYMENT
+       * =========================
        */
 
       const parcelCode =
         savedParcel?.parcel?.code ||
         savedParcel?.code;
 
-      /**
-       * =========================
-       * RECEIPT
-       * =========================
-       */
-
       const receiptNo = `${parcelCode}`;
+
       await createPayment({
         parcel: savedParcel?._id,
         pickup: currentPickup._id,
@@ -249,6 +311,11 @@ export const useParcelSubmit = () => {
         receiptNo,
       }).unwrap();
 
+      /**
+       * =========================
+       * BUILD RECEIPT
+       * =========================
+       */
 
       const receiptText = buildReceiptText({
         receiptNo,
@@ -314,36 +381,81 @@ export const useParcelSubmit = () => {
        * =========================
        */
 
-      const qrData = JSON.stringify({
+      /**
+  * =========================
+  * QR DATA
+  * =========================
+  */
+
+      const qrPayload = {
         id: receiptNo,
 
-        reciever: formData.receiver,
+        parcelId: savedParcel?._id,
+
+        parcelCode,
+
+        sender: formData.sender,
+
+        receiver: formData.receiver,
 
         pickupName: pickupFullName,
 
-        code: parcelCode,
-
         from: `${user?.pickup?.pickup_name || ''}`,
-      });
+
+        amount: parcelTotal,
+
+        paymentMethod: isSplitPayment
+          ? 'SPLIT'
+          : paymentMethod,
+
+        createdAt: new Date().toISOString(),
+      };
+
+      const qrData = JSON.stringify(qrPayload);
+      /**
+       * =========================
+       * PRINT JOB
+       * =========================
+       */
+
+      const printJob = {
+        id: `${Date.now()}`,
+
+        parcelId: savedParcel?._id,
+
+        printerMac: selectedPrinterMac,
+
+        receiptText,
+
+        qrData,
+
+        qrPayload,
+
+        print_status: 'PENDING',
+
+        qr_status: 'READY',
+
+        createdAt:
+          new Date().toISOString(),
+      };
 
       /**
        * =========================
-       * PRINT
+       * SAVE JOB FIRST
+       * =========================
+       */
+
+      await savePendingPrintJob(printJob);
+
+      /**
+       * =========================
+       * KEEP RETRYING UNTIL SUCCESS
        * =========================
        */
 
       let printed = false;
 
-      let attempts = 0;
-
-      const MAX_RETRIES = 5;
-
-      while (
-        !printed &&
-        attempts < MAX_RETRIES
-      ) {
-        attempts++;
-
+      while (!printed) {
         try {
           printed = await printToPrinter(
             selectedPrinterMac,
@@ -351,73 +463,53 @@ export const useParcelSubmit = () => {
           );
 
           if (!printed) {
-            throw new Error('Printing failed');
+            throw new Error(
+              'Printer returned false',
+            );
           }
+
+          /**
+           * =========================
+           * UPDATE STATUS
+           * =========================
+           */
+
+        
+          savedParcel.print_status =
+            'PRINTED';
+
+          savedParcel.qr_status =
+            'PRINTED';
+          /**
+           * =========================
+           * REMOVE FROM QUEUE
+           * =========================
+           */
+
+          await removePendingPrintJob(
+            printJob.id,
+          );
+
+          console.log(
+            'Receipt printed successfully',
+          );
         } catch (printErr) {
           console.log(
-            `Print attempt ${attempts} failed`,
+            'Print failed. Retrying...',
             printErr,
           );
 
-          if (attempts >= MAX_RETRIES) {
-            /**
-             * =========================
-             * SAVE FAILED PRINT
-             * =========================
-             */
+          savedParcel.print_status =
+            'PENDING';
 
-            try {
-              const storedPrints =
-                await AsyncStorage.getItem(
-                  'failed_prints',
-                );
-
-              const failedPrints = storedPrints
-                ? JSON.parse(storedPrints)
-                : [];
-
-              failedPrints.push({
-                parcelId: savedParcel?._id,
-
-                receiptText,
-
-                qrData,
-
-                code: parcelCode,
-
-                receiptNo,
-
-                pickupShortCode,
-
-                printerMac:
-                  selectedPrinterMac,
-
-                createdAt:
-                  new Date().toISOString(),
-              });
-
-              await AsyncStorage.setItem(
-                'failed_prints',
-                JSON.stringify(failedPrints),
-              );
-            } catch (storageError) {
-              console.log(
-                'Failed to save failed print locally',
-                storageError,
-              );
-            }
-
-            setMsg({
-              msg: 'Parcel saved but printing failed',
-
-              state: 'warning',
-            });
-
-            return;
-          }
+          setMsg({
+            msg:
+              'Waiting for printer connection...',
+            state: 'warning',
+          });
 
           await new Promise((resolve: any) =>
-            setTimeout(resolve, 2000),
+            setTimeout(resolve, 3000),
           );
         }
       }
@@ -433,7 +525,6 @@ export const useParcelSubmit = () => {
       setMsg({
         msg:
           'Parcel registered and receipt printed successfully',
-
         state: 'success',
       });
 
@@ -441,12 +532,14 @@ export const useParcelSubmit = () => {
         qrData,
         parcelCode,
         savedParcel,
+        print_status: 'PRINTED',
       });
 
       return {
         success: true,
         qrData,
         parcelCode,
+        print_status: 'PRINTED',
       };
     } catch (error: any) {
       console.log(error);
