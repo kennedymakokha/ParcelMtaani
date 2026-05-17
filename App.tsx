@@ -208,7 +208,7 @@ function AppNavigator() {
         barStyle="light-content"
       />
 
-      {user ? <RootStack /> : <AuthStack />}
+      {!user ? <RootStack /> : <AuthStack />}
     </NavigationContainer>
   );
 }

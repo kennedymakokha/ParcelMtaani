@@ -22,7 +22,7 @@ import { useQrPrinter } from '../hooks/useQrPrinter.ts';
 import { SubmitButton } from './component/SubmitButton.tsx';
 
 export default function ParcelIntakeScreen({ onClose, refetch }: any) {
-  const { submitParcel, msg, setMsg, isProcessing } = useParcelSubmit();
+  const { submitParcel, msg, setMsg } = useParcelSubmit();
   const { colors } = useTheme();
   const { user } = useSelector((state: any) => state.auth);
   const pickups = useSelector((state: any) => state.pickups.pickups);
@@ -74,6 +74,7 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
       formData,
       paymentMethod,
       isSplitPayment,
+      business:user.business,
       phoneNumber,
       amountGiven,
       mpesaPortion,
@@ -167,7 +168,6 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
         <PrimaryButton onPress={printQr} title="Print QR Code" />
       ) : (
         <SubmitButton
-          isProcessing={isProcessing}
           selectedPrinterMac={selectedPrinterMac}
           onPress={handleSubmit}
           colors={colors}

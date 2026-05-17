@@ -30,7 +30,7 @@ export default function FilterChipsFDB<T>({
   idExtractor,
   labelExtractor,
   countExtractor,
-  showAllOption = true,
+  showAllOption = false,
   allLabel = 'All',
 }: FilterChipsProps<T>) {
   const { colors } = useTheme();

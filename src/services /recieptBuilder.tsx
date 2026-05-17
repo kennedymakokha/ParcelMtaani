@@ -1,4 +1,5 @@
-import { FineDate } from '../utils/dates.utils';
+
+import { FormatDate } from '../utils/dates.utils';
 
 export const buildReceiptText = ({
   receiptNo,
@@ -21,39 +22,63 @@ export const buildReceiptText = ({
   business,
 }: any) => {
   const width = 32;
-
   const line = '-'.repeat(width) + '\n';
 
   const center = (str: string) => {
-    const space = Math.max(0, Math.floor((width - str.length) / 2));
-
-    return ' '.repeat(space) + str + '\n';
+    const text = String(str || '').toUpperCase();
+    const space = Math.max(0, Math.floor((width - text.length) / 2));
+    return ' '.repeat(space) + text + '\n';
   };
 
   const formatLine = (label: string, value: any) => {
     const val = String(value ?? '');
-
     return label.padEnd(width - val.length) + val + '\n';
   };
 
   const formatMoney = (num: any) => Number(num || 0).toFixed(2);
 
   const paymentLabel =
-    paidMpesa > 0 && paidCash > 0 ? 'MPESA/CASH (SPLIT)' : method;
+    paidMpesa > 0 && paidCash > 0
+      ? 'MPESA/CASH (SPLIT)'
+      : method;
 
-  const totalAmount = Number(totals?.finalTotal || parcel?.price || 0);
+  const totalAmount = Number(
+    totals?.finalTotal ||
+      totals?.total ||
+      parcel?.price ||
+      0,
+  );
 
-  const net = Number(totals?.subtotal || totalAmount / 1.16);
+  const net = Number(totalAmount / 1.16);
+  const vat = Number(totalAmount - net);
 
-  const vat = Number(totals?.tax || totalAmount - net);
-
+  /**
+   * =========================
+   * BUSINESS HEADER (FIXED)
+   * =========================
+   */
   let text = '';
-  if (business) {
-    text += center(business.business_name.toUpperCase());
-    if (business.postal_address) text += center(business.postal_address);
-    if (business.phone_number) text += center(`Tel: ${business.phone_number}`);
-  }
+
+  const businessName =
+    business?.business_name ||
+    user?.business?.business_name ||
+    user?.businessName ||
+    '';
+
+  const businessAddress =
+    business?.postal_address ||
+    user?.business?.postal_address;
+
+  const businessPhone =
+    business?.phone_number ||
+    user?.business?.phone_number;
+
+  if (businessName) text += center(businessName);
+  if (businessAddress) text += center(businessAddress);
+  if (businessPhone) text += center(`TEL: ${businessPhone}`);
+
   text += line;
+
   text += `Receipt No: ${receiptNo}\n`;
   text += `Invoice ID: ${invoiceId}\n`;
   text += `Payment: ${paymentLabel}\n`;
@@ -63,44 +88,56 @@ export const buildReceiptText = ({
   }
 
   /**
-   * MPESA DETAILS
+   * MPESA
    */
   if (mpesaData?.receiptNumber) {
     text += `Trans ID: ${mpesaData.receiptNumber}\n`;
-
     text += `Paid via: ${mpesaData?.phoneNumber || phoneNumber}\n`;
   }
 
   const displayDate = mpesaData?.transactionDate
-    ? FineDate(`${mpesaData.transactionDate}`)
+    ? FormatDate(`${mpesaData.transactionDate}`)
     : new Date().toLocaleString();
 
   text += `Date: ${displayDate}\n`;
 
   text += line;
 
+  /**
+   * SENDER
+   */
   text += `SENDER\n`;
   text += `Name: ${sender?.name || ''}\n`;
   text += `Phone: ${sender?.phone || ''}\n`;
 
   text += line;
 
+  /**
+   * RECEIVER
+   */
   text += `RECEIVER\n`;
   text += `Name: ${reciever?.name || ''}\n`;
   text += `Phone: ${reciever?.phone || ''}\n`;
 
   text += line;
 
+  /**
+   * PARCEL (FIXED WEIGHT)
+   */
   text += `PARCEL\n`;
 
   if (parcel?.fragile) {
     text += '*** FRAGILE ITEM ***\n';
   }
 
-  text += formatLine('Weight (kg)', parcel?.weight || '');
+  const weight =
+    parcel?.weight ||
+    parcel?.weight_kg ||
+    parcel?.parcel?.weight ||
+    '';
 
+  text += formatLine('Weight (kg)', weight);
   text += formatLine('From', from || '');
-
   text += formatLine('Pickup Point', pickupName || '');
 
   if (parcel?.instructions) {
@@ -109,15 +146,16 @@ export const buildReceiptText = ({
 
   text += line;
 
+  /**
+   * TOTALS
+   */
   text += formatLine('TOTAL', formatMoney(totalAmount));
 
   text += line;
 
   if (customerPin) {
     text += formatLine('Net (Excl VAT)', formatMoney(net));
-
     text += formatLine('VAT (16%)', formatMoney(vat));
-
     text += line;
   }
 
@@ -137,11 +175,10 @@ export const buildReceiptText = ({
 
   text += line;
 
-  text += center('Prices VAT Inclusive');
-  text += center('Thank You!');
+  text += center('THANK YOU FOR YOUR BUSINESS');
 
   if (user?.name) {
-    text += center(`Served by: ${user.name}`);
+    text += center(`SERVED BY: ${user.name}`);
   }
 
   return text;

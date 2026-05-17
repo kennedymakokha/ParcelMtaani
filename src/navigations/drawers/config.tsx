@@ -42,18 +42,22 @@ export const getDrawerConfig = (
 
     { label: 'Staff Management', icon: 'people-outline', screen: 'staff' },
 
+    // {
+    //   label: 'Parcel Recieval & Loading',
+    //   icon: 'cube-outline',
+    //   screen: 'Parcel Intake',
+    // },
     {
-      label: 'Parcel Recieval & Loading',
-      icon: 'cube-outline',
-      screen: 'Parcel Intake',
+      label: 'Cash Flow',
+      icon: 'wallet-outline',
+      screen: 'Todays cash Records',
     },
-
-    { label: 'Offloading', icon: 'qr-code-outline', screen: 'On Receiving' },
-    {
-      label: 'Cancelled Parcels',
-      icon: 'people-outline',
-      screen: 'Cancelled Parcels',
-    },
+    // { label: 'Offloading', icon: 'qr-code-outline', screen: 'On Receiving' },
+    // {
+    //   label: 'Cancelled Parcels',
+    //   icon: 'people-outline',
+    //   screen: 'Cancelled Parcels',
+    // },
     { label: 'Reports', icon: 'document-text-outline', screen: 'Parcels' },
 
     ...(pickupState === 'pickup_shut'

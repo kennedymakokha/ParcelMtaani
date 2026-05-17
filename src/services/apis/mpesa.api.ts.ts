@@ -9,7 +9,13 @@ export const injectEndpoints = api.injectEndpoints({
                 body,
             }),
         }),
-    createpayment: builder.mutation({
+        fetchpaymentStats: builder.query({
+            query: ({ filterType }) => `/payments/daily/reconciliations?filter=${filterType}`,
+        }),
+        fetchpayments: builder.query({
+            query: ({ filterType }) => `/payments?filter=${filterType}`,
+        }),
+        createpayment: builder.mutation({
             query: (body) => ({
                 url: '/payments',
                 method: 'POST',
@@ -17,12 +23,14 @@ export const injectEndpoints = api.injectEndpoints({
             }),
         }),
 
-       
+
     }),
 });
 
 
 export const {
-  useMpesapayMutation,
-  useCreatepaymentMutation
+    useMpesapayMutation,
+    useCreatepaymentMutation,
+    useFetchpaymentStatsQuery,
+    useFetchpaymentsQuery
 } = injectEndpoints;

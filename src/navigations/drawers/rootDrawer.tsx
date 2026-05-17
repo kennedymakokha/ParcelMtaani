@@ -19,6 +19,7 @@ import ProfileScreen from '../../screens/ProfileScreen';
 import PickupManagementScreen from '../../screens/pickup/PickupManagementScreen';
 import TrucksManagementScreen from '../../screens/fleet/truckScreen';
 import BusinessProfileScreen from '../../screens/business/businessProfile';
+import ParcelCashScreen from '../../screens/cash';
 
 const Drawer = createDrawerNavigator();
 
@@ -128,6 +129,13 @@ export default function RootDrawer() {
           header: () => <CustomHeader title="Staff Management" />,
         })}
         component={StaffManagementScreen}
+      />
+       <Drawer.Screen
+        name="Todays cash Records"
+        options={() => ({
+          header: () => <CustomHeader title="Todays Cash Flow" />,
+        })}
+        component={ParcelCashScreen}
       />
       <Drawer.Screen
         name="trucks"
