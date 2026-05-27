@@ -6,14 +6,15 @@ import {
   ActivityIndicator,
   ViewStyle,
   TextStyle,
+  StyleSheet,
 } from "react-native";
-import NetInfo from "@react-native-community/netinfo";
 import { useTheme } from "../contexts/themeContext";
 
 interface PrimaryButtonProps {
   title: string;
   onPress: () => void;
   loading?: boolean;
+  disabled?: boolean; // Accept an explicit parent constraint state flag
   variant?: "primary" | "secondary" | "danger" | "outline";
 }
 
@@ -21,67 +22,60 @@ export const PrimaryButton = ({
   title,
   onPress,
   loading = false,
+  disabled = false,
   variant = "primary",
 }: PrimaryButtonProps) => {
-
   const { colors } = useTheme();
+  const isInteractionDisabled = loading || disabled;
 
-  const [isOffline, setIsOffline] = React.useState(false);
-
-  React.useEffect(() => {
-
-    const unsubscribe = NetInfo.addEventListener((state) => {
-      setIsOffline(!(state.isConnected && state.isInternetReachable));
-    });
-
-    return () => unsubscribe();
-
-  }, []);
-
-  const disabled = loading || isOffline;
-
-  // ✅ Variant styles
+  // Determine dynamic variant styling rules using real theme tokens
   const getButtonStyle = (): ViewStyle => {
-
     switch (variant) {
-
       case "secondary":
         return {
-          backgroundColor: disabled ? "#d1d5db" : "#6b7280",
+          // Locks in colors.secondary (Orange) as the standalone variant background
+          backgroundColor: isInteractionDisabled 
+            ? `${colors.secondary || '#f97316'}60` 
+            : (colors.secondary || '#f97316'),
         };
 
       case "danger":
         return {
-          backgroundColor: disabled ? "#fca5a5" : "#dc2626",
+          backgroundColor: isInteractionDisabled 
+            ? `${colors.danger || '#dc2626'}60` 
+            : (colors.danger || '#dc2626'),
         };
 
       case "outline":
         return {
           backgroundColor: "transparent",
           borderWidth: 1.5,
-          borderColor: disabled ? "#93c5fd" : colors.primary,
+          borderColor: isInteractionDisabled 
+            ? `${colors.primary || '#2563eb'}40` 
+            : (colors.primary || '#2563eb'),
         };
 
       case "primary":
       default:
         return {
-          backgroundColor: disabled ? "#93c5fd" : colors.primary,
+          backgroundColor: isInteractionDisabled 
+            ? `${colors.primary || '#2563eb'}60` 
+            : (colors.primary || '#2563eb'),
         };
     }
   };
 
   const getTextStyle = (): TextStyle => {
-
     switch (variant) {
-
       case "outline":
         return {
-          color: disabled ? "#93c5fd" : colors.primary,
+          color: isInteractionDisabled 
+            ? `${colors.primary || '#2563eb'}60` 
+            : (colors.primary || '#2563eb'),
         };
-
       default:
         return {
-          color: "#fff",
+          color: "#ffffff",
         };
     }
   };
@@ -89,34 +83,43 @@ export const PrimaryButton = ({
   return (
     <TouchableOpacity
       style={[
-        {
-          padding: 16,
-          borderRadius: 12,
-          marginBottom: 12,
-          opacity: disabled ? 0.7 : 1,
-        },
+        styles.baseButton,
         getButtonStyle(),
       ]}
       onPress={onPress}
-      disabled={disabled}
+      disabled={isInteractionDisabled}
+      activeOpacity={0.8}
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === "outline" ? colors.primary : "#fff"}
+          color={variant === "outline" ? (colors.primary || '#2563eb') : "#ffffff"}
+          size="small"
         />
       ) : (
-        <Text
-          style={[
-            {
-              fontWeight: "700",
-              textAlign: "center",
-            },
-            getTextStyle(),
-          ]}
-        >
-          {isOffline ? "No Internet Connection" : title}
+        <Text style={[styles.baseText, getTextStyle()]}>
+          {title}
         </Text>
       )}
     </TouchableOpacity>
   );
 };
+
+// ==========================================
+// UNIFIED LAYOUT PRODUCTION DESIGN SHEET
+// ==========================================
+const styles = StyleSheet.create({
+  baseButton: {
+    width: '100%',
+    height: 52, // Perfectly balances your 52dp form input height for premium rhythm
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  baseText: {
+    fontSize: 15,
+    fontWeight: "700",
+    letterSpacing: 0.2,
+    textAlign: "center",
+  },
+});

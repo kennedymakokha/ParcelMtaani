@@ -35,6 +35,11 @@ export default function DispatchToTrackScreen() {
   const [showTrackModal, setShowTrackModal] = useState(false);
   const [selectedParcels, setSelectedParcels] = useState<any[]>([]);
   const [msg, setMsg] = useState({ msg: '', state: '' });
+  const handleToastMsg = (message: string) =>
+    setMsg(prev => ({
+      msg: message,
+      state: message ? prev.state : '',
+    }));
   const { user } = useSelector((state: any) => state.auth);
   const pickupState = useSelector(
     (state: RootState) => state.pickupEvents.lastEvent,
@@ -51,6 +56,18 @@ export default function DispatchToTrackScreen() {
   const currentPickup = useSelector(
     (state: any) => state.pickups.currentPickup,
   );
+
+  // 2. Build explicit safety boundaries
+  const isPickupShut = pickupState === 'pickup_shut';
+
+  // Guard clause: If the pickup object isn't loaded yet, default to NOT shutting down the UI
+  const isNotPaid =
+    currentPickup && Object.keys(currentPickup).length > 0
+      ? currentPickup.paid === false || currentPickup.paid === 'false'
+      : false;
+
+  // 3. Combine statuses
+  const isInactive = isPickupShut || isNotPaid;
   const { data, isLoading, refetch } = useFetchparcelQuery({
     limit: 10,
     sentFrom: user?.pickup?._id,
@@ -134,7 +151,7 @@ export default function DispatchToTrackScreen() {
           }
         />
       )}
-      {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
+      {msg.msg && <Toast setMsg={handleToastMsg} msg={msg.msg} state={msg.state} />}
       {/* Track Button (enabled if pending selected) */}
       {selectedParcels.length > 0 && (
         <TouchableOpacity
@@ -154,7 +171,7 @@ export default function DispatchToTrackScreen() {
         </TouchableOpacity>
       )}
 
-      {pickupState === 'pickup_open' && (
+      {!isInactive && (
         <Fab
           onPress={() => {
             setShowIntakeModal(true);

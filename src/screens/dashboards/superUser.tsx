@@ -1,53 +1,41 @@
-/* eslint-disable react-native/no-inline-styles */
+/* eslint-disable react/no-unstable-nested-components */
 /* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react-native/no-inline-styles */
 
-import React, {
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
-
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
-  FlatList,
   ScrollView,
   ActivityIndicator,
+  FlatList,
 } from 'react-native';
-
 import { useTheme } from './../../contexts/themeContext';
-
-import { SectionHeader } from '../../components/ui/sectionHeader';
-
+import { useSocket } from './../../contexts/socketContext';
+import RadialFab from './../../components/buttons/radialFab';
+import SingleBarChart from './../../components/analytics/barChart';
 import {
   useGetBusinessByIdQuery,
   useGetBusinessesQuery,
 } from '../../services/apis/business.api';
+import { formatNumber } from '../../utils/trancateText.ts';
+import { SectionHeader } from '../../components/ui/sectionHeader.tsx';
 
-import { SkeletonBlock } from '../../components/skeletons/dashBoardSkeleton';
+type FilterType = 'today' | 'week' | 'month' | 'year';
 
-import SingleBarChart from '../../components/analytics/barChart';
-
-import { useSocket } from '../../contexts/socketContext';
-
-import RadialFab from '../../components/buttons/radialFab';
-
-export default function SuperUserDashboard() {
+export default function AdminDashboard() {
   const { colors } = useTheme();
-
   const { socket } = useSocket();
 
-  const [filter, setFilter] = useState<
-    'today' | 'week' | 'month' | 'year'
-  >('today');
-
-  const [filterLoading, setFilterLoading] =
-    useState(false);
-
-  // businesses
+  const [filter, setFilter] = useState<FilterType>('today');
+  const [filterLoading, setFilterLoading] = useState(false);
+  /**
+   * Businesses
+   */
   const {
     data: businessesData,
-    refetch,
+    refetch: refetchBusinesses,
+    isLoading: businessLoading,
     isFetching: businessesFetching,
   } = useGetBusinessesQuery({
     page: 1,
@@ -55,116 +43,307 @@ export default function SuperUserDashboard() {
     filterType: filter,
   });
 
-  // analytics
+  /**
+   * Analytics
+   */
   const {
     data: business,
     isLoading,
     isFetching,
-    refetch: refetchBusiness,
+    refetch: refetchAnalytics,
   } = useGetBusinessByIdQuery({
     filterType: filter,
   });
 
+  /**
+   * Memoized Data
+   */
   const businesses = businessesData ?? {};
-
   const pickups = business?.pickups ?? [];
 
   const totalParcels = useMemo(
     () =>
       pickups.reduce(
-        (sum: any, p: any) =>
-          sum + p.parcelsToday,
-        0
+        (sum: number, item: any) => sum + (item.parcelsCount || 0),
+        0,
       ),
-    [pickups]
+    [pickups],
   );
+  console.log(totalParcels);
+  const totalPayments = useMemo(() => totalParcels * 5, [totalParcels]);
 
   const filterLabel = useMemo(() => {
-    switch (filter) {
-      case 'today':
-        return 'Today';
+    const labels: Record<FilterType, string> = {
+      today: 'Today',
+      week: 'This Week',
+      month: 'This Month',
+      year: 'This Year',
+    };
 
-      case 'week':
-        return 'This Week';
-
-      case 'month':
-        return 'This Month';
-
-      case 'year':
-        return 'This Year';
-
-      default:
-        return '';
-    }
+    return labels[filter];
   }, [filter]);
 
-  const loading =
+  const isPageLoading =
     isLoading ||
     isFetching ||
     businessesFetching ||
+    businessLoading ||
     filterLoading;
 
-  // refresh analytics
-  const fetchAnalytics = async () => {
+  /**
+   * Fetch Analytics
+   */
+  const fetchAnalytics = useCallback(async () => {
     try {
       setFilterLoading(true);
 
-      await Promise.all([
-        refetch(),
-        refetchBusiness(),
-      ]);
-    } catch (err) {
-      console.log(err);
+      await Promise.all([refetchBusinesses(), refetchAnalytics()]);
+    } catch (error) {
+      console.error('Analytics Error:', error);
     } finally {
       setFilterLoading(false);
     }
-  };
+  }, [refetchBusinesses, refetchAnalytics]);
 
-  // handle filter
-  const handleFilterChange = async (
-    value:
-      | 'today'
-      | 'week'
-      | 'month'
-      | 'year'
-  ) => {
+  /**
+   * Filter Change
+   */
+  const handleFilterChange = async (value: FilterType) => {
     setFilter(value);
-
-    setFilterLoading(true);
 
     setTimeout(async () => {
       await fetchAnalytics();
     }, 100);
   };
 
-  // sockets
+  /**
+   * Socket Listener
+   */
   useEffect(() => {
     if (!socket) return;
 
-    const parcelChange = async () => {
+    const onParcelChange = async () => {
       await fetchAnalytics();
     };
 
-    const onNewBusiness = async () => {
-      await fetchAnalytics();
-    };
-
-    socket.on('Parcel-change', parcelChange);
-
-    socket.on('New  Business', onNewBusiness);
+    socket.on('Parcel-change', onParcelChange);
 
     return () => {
-      socket.off(
-        'Parcel-change',
-        parcelChange
-      );
-
-      socket.off(
-        'New  Business',
-        onNewBusiness
-      );
+      socket.off('Parcel-change', onParcelChange);
     };
-  }, [socket]);
+  }, [socket, fetchAnalytics]);
+
+  /**
+   * Skeleton KPI Card
+   */
+  const SkeletonCard = () => (
+    <View
+      className="bg-white rounded-2xl p-4 mr-3 border border-gray-200"
+      style={{ width: 120, height: 130 }}
+    >
+      <View className="items-center justify-center animate-pulse">
+        <View className="w-10 h-10 rounded-full bg-gray-200" />
+
+        <View className="h-3 w-16 bg-gray-200 rounded mt-4" />
+
+        <View className="h-6 w-20 bg-gray-200 rounded mt-4" />
+      </View>
+    </View>
+  );
+
+  /**
+   * Skeleton Bars
+   */
+  const SkeletonBars = () => (
+    <View className="bg-white rounded-2xl p-5 mt-4 border border-gray-200 animate-pulse">
+      <View className="h-5 w-48 bg-gray-200 rounded mb-6" />
+
+      {[...Array(5)].map((_, index) => (
+        <View key={index} className="flex-row items-center mb-4">
+          <View className="h-4 w-14 bg-gray-200 rounded mr-3" />
+
+          <View
+            className="h-5 bg-gray-200 rounded"
+            style={{
+              width: 50 + index * 30,
+            }}
+          />
+        </View>
+      ))}
+    </View>
+  );
+
+  /**
+   * KPI Card
+   */
+  const KPI_CARD_STYLE = {
+    width: 180,
+    marginRight: 10,
+    padding: 14,
+    height: 120,
+    borderRadius: 16,
+    borderWidth: 1,
+  };
+
+  const renderKpiCard = ({
+    title,
+    value,
+    subtitle,
+    titleColor,
+  }: {
+    title: string;
+    value: string | number;
+    subtitle: string;
+    titleColor: string;
+  }) => (
+    <View
+      style={{
+        ...KPI_CARD_STYLE,
+        backgroundColor: colors.card,
+        borderColor: colors.border,
+      }}
+    >
+      <Text
+        style={{
+          color: titleColor,
+          fontWeight: '700',
+          marginBottom: 8,
+        }}
+      >
+        {title}
+      </Text>
+
+      <Text
+        style={{
+          color: colors.text,
+          fontSize: 24,
+          fontWeight: '700',
+        }}
+      >
+        {value}
+      </Text>
+
+      <Text
+        style={{
+          color: colors.subText,
+          marginTop: 4,
+        }}
+      >
+        {subtitle}
+      </Text>
+    </View>
+  );
+
+  /**
+   * Pickup Item
+   */
+  const renderPickupItem = ({ item }: any) => {
+    const parcels = item.parcelsCount || 0;
+    const payments = item.parcelsCount * 5 || 0;
+    const active = parcels > 0;
+
+    return (
+      <View
+        style={{
+          backgroundColor: colors.card,
+          borderRadius: 16,
+          padding: 14,
+          marginBottom: 12,
+          borderWidth: 1,
+          borderColor: colors.border,
+        }}
+      >
+        <Text
+          style={{
+            fontWeight: '700',
+            color: colors.text,
+            fontSize: 16,
+            marginBottom: 4,
+          }}
+        >
+          {item.pickupName}
+        </Text>
+
+        <Text
+          style={{
+            color: colors.secondary,
+            marginBottom: 10,
+          }}
+        >
+          {item.business}
+        </Text>
+
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+          }}
+        >
+          <View>
+            <Text
+              style={{
+                color: colors.subText,
+                fontSize: 12,
+              }}
+            >
+              Parcels
+            </Text>
+
+            <Text
+              style={{
+                color: colors.text,
+                fontWeight: '700',
+                fontSize: 18,
+              }}
+            >
+              {parcels}
+            </Text>
+          </View>
+
+          <View>
+            <Text
+              style={{
+                color: colors.subText,
+                fontSize: 12,
+              }}
+            >
+              Payments
+            </Text>
+
+            <Text
+              style={{
+                color: colors.success,
+                fontWeight: '700',
+                fontSize: 18,
+              }}
+            >
+              KES {payments}
+            </Text>
+          </View>
+        </View>
+
+        <View
+          style={{
+            marginTop: 12,
+            alignSelf: 'flex-start',
+            paddingHorizontal: 12,
+            paddingVertical: 5,
+            borderRadius: 999,
+            backgroundColor: active ? '#DCFCE7' : '#FEE2E2',
+          }}
+        >
+          <Text
+            style={{
+              color: active ? colors.success : colors.error,
+              fontWeight: '700',
+            }}
+          >
+            {active ? 'Active' : 'Inactive'}
+          </Text>
+        </View>
+      </View>
+    );
+  };
 
   return (
     <View
@@ -172,21 +351,13 @@ export default function SuperUserDashboard() {
         flex: 1,
         backgroundColor: colors.background,
         padding: 16,
+        paddingBottom: 10,
       }}
     >
-      {/* FILTER LOADER */}
+      {/* Loading Indicator */}
       {filterLoading && (
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            marginBottom: 14,
-          }}
-        >
-          <ActivityIndicator
-            size="small"
-            color={colors.primary}
-          />
+        <View className="flex-row items-center mb-4">
+          <ActivityIndicator size="small" color={colors.primary} />
 
           <Text
             style={{
@@ -201,348 +372,67 @@ export default function SuperUserDashboard() {
       )}
 
       {/* KPI CARDS */}
-      {loading ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{
-            marginBottom: 16,
-          }}
-        >
-          {[1, 2, 3].map(i => (
-            <View
-              key={i}
-              style={{
-                width: 180,
-                backgroundColor: colors.card,
-                marginRight: 10,
-                padding: 14,
-                borderRadius: 16,
-                borderWidth: 1,
-                borderColor: colors.border,
-              }}
-            >
-              <SkeletonBlock
-                height={14}
-                width={100}
-                style={{
-                  marginBottom: 14,
-                }}
-              />
-
-              <SkeletonBlock
-                height={26}
-                width={80}
-              />
-
-              <SkeletonBlock
-                height={10}
-                width={120}
-                style={{
-                  marginTop: 10,
-                }}
-              />
-            </View>
-          ))}
-        </ScrollView>
-      ) : (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingBottom: 12,
-          }}
-        >
-          {/* BUSINESSES */}
-          <View
-            style={{
-              width: 180,
-              backgroundColor: colors.card,
-              marginRight: 10,
-              padding: 14,
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: colors.border,
-            }}
-          >
-            <Text
-              style={{
-                color: colors.primary,
-                fontWeight: '700',
-                marginBottom: 8,
-              }}
-            >
-              Businesses
-            </Text>
-
-            <Text
-              style={{
-                color: colors.text,
-                fontSize: 24,
-                fontWeight: '700',
-              }}
-            >
-              {businesses.active || 0}
-            </Text>
-
-            <Text
-              style={{
-                color: colors.subText,
-                marginTop: 4,
-              }}
-            >
-              Active Businesses
-            </Text>
-          </View>
-
-          {/* PAYMENTS */}
-          <View
-            style={{
-              width: 180,
-              backgroundColor: colors.card,
-              marginRight: 10,
-              padding: 14,
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: colors.border,
-            }}
-          >
-            <Text
-              style={{
-                color: colors.success,
-                fontWeight: '700',
-                marginBottom: 8,
-              }}
-            >
-              Payments
-            </Text>
-
-            <Text
-              style={{
-                color: colors.text,
-                fontSize: 24,
-                fontWeight: '700',
-              }}
-            >
-              KES 40,000
-            </Text>
-
-            <Text
-              style={{
-                color: colors.subText,
-                marginTop: 4,
-              }}
-            >
-              {filterLabel}
-            </Text>
-          </View>
-
-          {/* PENDING */}
-          <View
-            style={{
-              width: 180,
-              backgroundColor: colors.card,
-              marginRight: 10,
-              padding: 14,
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: colors.border,
-            }}
-          >
-            <Text
-              style={{
-                color: colors.warning,
-                fontWeight: '700',
-                marginBottom: 8,
-              }}
-            >
-              Pending
-            </Text>
-
-            <Text
-              style={{
-                color: colors.text,
-                fontSize: 24,
-                fontWeight: '700',
-              }}
-            >
-              KES {totalParcels * 5}
-            </Text>
-
-            <Text
-              style={{
-                color: colors.subText,
-                marginTop: 4,
-              }}
-            >
-              Awaiting Settlement
-            </Text>
-          </View>
-        </ScrollView>
-      )}
-
-      {/* MAIN CONTENT */}
-      <FlatList
-        data={pickups}
-        keyExtractor={item => item.id}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
         contentContainerStyle={{
-          paddingBottom: 120,
+          paddingBottom: 12,
         }}
-        style={{
-          flex: 1,
-          backgroundColor: colors.background,
-        }}
-        showsVerticalScrollIndicator={false}
-        ListHeaderComponent={
+      >
+        {isPageLoading ? (
+          [...Array(3)].map((_, index) => <SkeletonCard key={index} />)
+        ) : (
           <>
-            <SectionHeader
-              title={`Pickup Performance - ${filterLabel}`}
-            />
+            {renderKpiCard({
+              title: 'Businesses',
+              value: businesses.active || 0,
+              subtitle: 'Active Businesses',
+              titleColor: colors.primary ?? '',
+            })}
 
-            {/* CHART */}
-            {loading ? (
-              <SkeletonBlock
-                height={240}
-                style={{
-                  marginBottom: 16,
-                  borderRadius: 18,
-                }}
-              />
-            ) : (
-              <SingleBarChart
-                title="Parcels per Pickup"
-                data={pickups}
-              />
-            )}
+            {renderKpiCard({
+              title: 'Payments',
+              value: `KES ${formatNumber(totalPayments)}`,
+              subtitle: filterLabel,
+              titleColor: colors.success ?? '',
+            })}
 
-            <SectionHeader
-              title="Pickup Summary"
-            />
+            {filter === 'today' &&
+              renderKpiCard({
+                title: 'Pending',
+                value: `KES ${formatNumber(totalPayments)}`,
+                subtitle: 'Awaiting Settlement',
+                titleColor: colors.warning ?? '',
+              })}
           </>
-        }
-        renderItem={({ item }) =>
-          loading ? (
-            <SkeletonBlock
-              height={120}
-              style={{
-                marginBottom: 12,
-                borderRadius: 16,
-              }}
-            />
-          ) : (
-            <View
-              style={{
-                backgroundColor: colors.card,
-                borderRadius: 16,
-                padding: 14,
-                marginBottom: 12,
-                borderWidth: 1,
-                borderColor: colors.border,
-              }}
-            >
-              <Text
-                style={{
-                  fontWeight: '700',
-                  color: colors.text,
-                  fontSize: 16,
-                  marginBottom: 4,
-                }}
-              >
-                {item.pickupName}
-              </Text>
+        )}
+      </ScrollView>
 
-              <Text
-                style={{
-                  color: colors.secondary,
-                  marginBottom: 10,
-                }}
-              >
-                {item?.business}
-              </Text>
+      {/* Charts */}
+      {isPageLoading ? (
+        <SkeletonBars />
+      ) : (
+        <FlatList
+          data={pickups}
+          keyExtractor={(item: any) => item.id || item.pickupId}
+          renderItem={renderPickupItem}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingBottom: 120,
+          }}
+          style={{
+            backgroundColor: colors.background,
+          }}
+          ListHeaderComponent={
+            <>
+              <SectionHeader title={`Pickup Performance - ${filterLabel}`} />
 
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent:
-                    'space-between',
-                }}
-              >
-                <View>
-                  <Text
-                    style={{
-                      color: colors.subText,
-                      fontSize: 12,
-                    }}
-                  >
-                    Parcels
-                  </Text>
+              <SingleBarChart title="Parcels per Pickup" data={pickups} />
 
-                  <Text
-                    style={{
-                      color: colors.text,
-                      fontWeight: '700',
-                      fontSize: 18,
-                    }}
-                  >
-                    {item.parcelsToday}
-                  </Text>
-                </View>
-
-                <View>
-                  <Text
-                    style={{
-                      color: colors.subText,
-                      fontSize: 12,
-                    }}
-                  >
-                    Payments
-                  </Text>
-
-                  <Text
-                    style={{
-                      color: colors.success,
-                      fontWeight: '700',
-                      fontSize: 18,
-                    }}
-                  >
-                    KES{' '}
-                    {item.parcelsToday * 5}
-                  </Text>
-                </View>
-              </View>
-
-              <View
-                style={{
-                  marginTop: 12,
-                  alignSelf: 'flex-start',
-                  paddingHorizontal: 12,
-                  paddingVertical: 5,
-                  borderRadius: 999,
-                  backgroundColor:
-                    item.parcelsToday > 0
-                      ? '#DCFCE7'
-                      : '#FEE2E2',
-                }}
-              >
-                <Text
-                  style={{
-                    color:
-                      item.parcelsToday > 0
-                        ? colors.success
-                        : colors.error,
-                    fontWeight: '700',
-                  }}
-                >
-                  {item.parcelsToday > 0
-                    ? 'Active'
-                    : 'Inactive'}
-                </Text>
-              </View>
-            </View>
-          )
-        }
-        ListEmptyComponent={
-          !loading ? (
+              <SectionHeader title="Pickup Summary" />
+            </>
+          }
+          ListEmptyComponent={
             <View
               style={{
                 alignItems: 'center',
@@ -557,24 +447,11 @@ export default function SuperUserDashboard() {
                 No pickup data found
               </Text>
             </View>
-          ) : (
-            <View>
-              {[1, 2, 3].map(i => (
-                <SkeletonBlock
-                  key={i}
-                  height={120}
-                  style={{
-                    marginBottom: 12,
-                    borderRadius: 16,
-                  }}
-                />
-              ))}
-            </View>
-          )
-        }
-      />
+          }
+        />
+      )}
 
-      {/* FILTER FAB */}
+      {/* FAB */}
       <RadialFab
         mainColor={colors.primary}
         mainIcon="filter-outline"
@@ -584,34 +461,22 @@ export default function SuperUserDashboard() {
           {
             icon: 'today-outline',
             label: 'Today',
-            onPress: async () =>
-              handleFilterChange(
-                'today'
-              ),
+            onPress: () => handleFilterChange('today'),
           },
           {
             icon: 'calendar-outline',
             label: 'Week',
-            onPress: async () =>
-              handleFilterChange(
-                'week'
-              ),
+            onPress: () => handleFilterChange('week'),
           },
           {
             icon: 'stats-chart-outline',
             label: 'Month',
-            onPress: async () =>
-              handleFilterChange(
-                'month'
-              ),
+            onPress: () => handleFilterChange('month'),
           },
           {
             icon: 'bar-chart-outline',
             label: 'Year',
-            onPress: async () =>
-              handleFilterChange(
-                'year'
-              ),
+            onPress: () => handleFilterChange('year'),
           },
         ]}
       />

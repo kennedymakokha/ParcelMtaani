@@ -5,6 +5,7 @@ import { useTheme } from '../contexts/themeContext';
 import { useDispatch, useSelector } from 'react-redux';
 import { markAsRead } from '../features/notificationsSlice';
 import { SecondaryButton } from '../components/SecondaryButton';
+import { TruncateText } from '../utils/trancateText';
 
 export default function NotificationPage() {
   const { colors } = useTheme();
@@ -15,17 +16,7 @@ export default function NotificationPage() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, padding: 16 }}>
-      <Text
-        style={{
-          fontSize: 22,
-          fontWeight: '700',
-          color: colors.primary,
-          marginBottom: 12,
-        }}
-      >
-        Notifications
-      </Text>
-
+     
       <FlatList
         data={notifications}
         keyExtractor={item => item.id}
@@ -44,11 +35,20 @@ export default function NotificationPage() {
               borderColor: colors.border,
             }}
           >
-            <Text style={{ fontWeight: '600', color: colors.text }}>
+            <Text style={{ fontWeight: '600', color: colors.subText }}>
               {item.title}
             </Text>
-            <Text style={{ color: colors.secondary }}>{item.body}</Text>
-            <Text style={{ fontSize: 12, color: colors.secondary }}>
+            <Text style={{ color: colors.text }}>
+              {TruncateText(item.body, 27)}
+            </Text>
+            <Text
+              style={{
+                justifyContent: 'flex-end',
+                textAlign: 'right',
+                fontSize: 12,
+                color: colors.subText,
+              }}
+            >
               {new Date(item.createdAt).toLocaleString()}
             </Text>
           </TouchableOpacity>
@@ -82,7 +82,7 @@ export default function NotificationPage() {
             >
               {selected?.title}
             </Text>
-            <Text style={{ color: colors.secondary, marginBottom: 20 }}>
+            <Text style={{ color: colors.subText, marginBottom: 20 }}>
               {selected?.body}
             </Text>
             <SecondaryButton title="Close" onPress={() => setSelected(null)} />

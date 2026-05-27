@@ -1,7 +1,14 @@
 /* eslint-disable react/no-unstable-nested-components */
 /* eslint-disable react-native/no-inline-styles */
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, FlatList } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Modal,
+  FlatList,
+  ActivityIndicator,
+} from 'react-native';
 import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../../contexts/themeContext';
@@ -24,20 +31,25 @@ import {
   subscribeToTopic,
   unsubscribeFromTopic,
 } from '../../utils/subscribeUnsubscribe';
-import { DrawerActions } from '@react-navigation/native';
+import { TruncateText } from '../../utils/trancateText';
+import { useLogoutMutation } from '../../services/apis/auth.api';
 
 export default function CustomDrawerContent(props: any) {
   const { colors } = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
-
+  const [isLoading, setIsLoading] = useState(false);
   const { user } = useSelector((state: any) => state.auth);
   const pickupState = useSelector((state: any) => state.pickupEvents.lastEvent);
-
+  const [logoutUser] = useLogoutMutation();
   const { data, refetch } = useFetchPickupsQuery({});
 
   const userRole: UserRole = user?.role;
+  const currentPickup = useSelector(
+    (state: any) => state.pickups.currentPickup,
+  );
+  const isPaid = currentPickup?.paid ?? true;
 
-  const menuItems = getDrawerConfig(pickupState)[userRole];
+  const menuItems = getDrawerConfig(pickupState, isPaid)[userRole as UserRole];
 
   const pickups = useSelector((state: any) => state.pickups.pickups);
 
@@ -47,24 +59,32 @@ export default function CustomDrawerContent(props: any) {
 
   const switchingRef = useRef(false);
 
-  const currentPickup = useSelector(
-    (state: any) => state.pickups.currentPickup,
-  );
-
   const handleSwitch = async (point: any) => {
     if (switchingRef.current) return;
 
     switchingRef.current = true;
 
     try {
-      await unsubscribeFromTopic(`pickup_${currentPickup?._id}_attendants`);
+      // CLOSE UI FIRST
+      setModalVisible(false);
 
+      props.navigation.closeDrawer();
+
+      // SMALL DELAY
+      await new Promise((resolve: any) => setTimeout(resolve, 200));
+
+      // UNSUBSCRIBE OLD
+      if (currentPickup?._id) {
+        await unsubscribeFromTopic(`pickup_${currentPickup._id}_attendants`);
+      }
+
+      // SUBSCRIBE NEW
       await subscribeToTopic(`pickup_${point._id}_attendants`);
 
+      // UPDATE REDUX
       dispatch(setCurrentPickup(point));
-
-      setModalVisible(false);
-      props.navigation.dispatch(DrawerActions.closeDrawer());
+    } catch (error) {
+      console.log('Pickup switch error:', error);
     } finally {
       switchingRef.current = false;
     }
@@ -109,142 +129,150 @@ export default function CustomDrawerContent(props: any) {
       showsVerticalScrollIndicator={false}
     >
       {/* TOP CONTENT */}
-      <View>
-        {/* Header */}
-        <View
-          style={{
-            backgroundColor: colors.primary,
-            padding: 24,
-            alignItems: 'center',
-          }}
-        >
-          <View className="flex items-center justify-center">
-            <Icon name="truck-fast" size={74} color="#fff" />
-          </View>
-
-          <Text
-            style={{
-              color: '#fff',
-              fontSize: 18,
-              textTransform: 'uppercase',
-              fontWeight: '800',
-              fontFamily: colors.fontSemiBold,
-            }}
-          >
-            Parcel Mtaani
-          </Text>
-
-          <Text style={{ color: '#e0e7ff', textAlign: 'center' }}>
-            {user?.pickup?.pickup_name?.toUpperCase()}
-          </Text>
-
-          <View className="flex items-center justify-center px-4 py-1 border border-blue-500 rounded-md mt-2">
-            <Text style={{ color: '#e0e7ff' }}>{userRole?.toUpperCase()}</Text>
-          </View>
-
-          <Text
-            style={{
-              color: '#e0e7ff',
-              marginTop: 4,
-              textAlign: 'center',
-            }}
-          >
-            {user?.name}
-          </Text>
-
-          {/* Super Admin Pickup Point Switcher */}
-          {userRole === 'superadmin' && (
-            <TouchableOpacity
-              style={{
-                marginTop: 12,
-                flexDirection: 'row',
-                alignItems: 'center',
-                backgroundColor: '#1e40af',
-                paddingHorizontal: 12,
-                paddingVertical: 8,
-                borderRadius: 8,
-                maxWidth: '100%',
-              }}
-              onPress={() => setModalVisible(true)}
-            >
-              <Ionicons name="location-outline" size={18} color="#fff" />
-
-              <Text
-                numberOfLines={1}
-                style={{
-                  color: '#fff',
-                  fontWeight: '600',
-                  marginLeft: 6,
-                  maxWidth: 180,
-                }}
-              >
-                {currentPickup?.pickup_name || 'Select Pickup'}
-              </Text>
-
-              <Ionicons
-                name="chevron-down"
-                size={16}
-                color="#fff"
-                style={{ marginLeft: 4 }}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Drawer Items */}
-        <View
-          style={{
-            flexGrow: 1,
-            backgroundColor: colors.background,
-            padding: 16,
-          }}
-        >
-          {menuItems?.map(item => (
-            <DrawerItem
-              key={item.label}
-              label={item.label}
-              icon={({ color, size }) => (
-                <Ionicons name={item.icon} size={size} color={color} />
-              )}
-              onPress={() => props.navigation.navigate(item.screen)}
-            />
-          ))}
-
+     
+        <View>
+          {/* Header */}
           <View
             style={{
-              height: 1,
-              width: '100%',
-              backgroundColor: '#fecaca',
-              marginVertical: 10,
+              backgroundColor: colors.card,
+              padding: 24,
+              alignItems: 'center',
             }}
-          />
-          {user.role === 'superadmin' && (
-            <DrawerItem
-              label="Business Profile"
-              icon={({ color, size }) => (
-                <Ionicons name="home-outline" size={size} color={color} />
-              )}
-              onPress={() => props.navigation.navigate('Business profile')}
+          >
+            <View className="flex items-center justify-center">
+              <Icon name="truck-fast" size={74} color={colors.primaryLight} />
+            </View>
+
+            <Text
+              style={{
+                color: colors.secondary,
+                fontSize: 18,
+                textTransform: 'uppercase',
+                fontWeight: '800',
+                fontFamily: colors.fontSemiBold,
+              }}
+            >
+              {TruncateText(user?.business?.business_name?.toUpperCase(), 20) ||
+                'ParcelMtaani'}
+            </Text>
+
+            <Text style={{ color: '#e0e7ff', textAlign: 'center' }}>
+              {user?.pickup?.pickup_name?.toUpperCase()}
+            </Text>
+
+            <View
+              style={{ backgroundColor: colors.card }}
+              className="flex items-center justify-center px-4 py-1   rounded-md mt-2"
+            >
+              <Text style={{ color: colors.secondary }}>
+                {userRole?.toUpperCase()}
+              </Text>
+            </View>
+
+            <Text
+              style={{
+                color: '#e0e7ff',
+                marginTop: 4,
+                textAlign: 'center',
+              }}
+            >
+              {user?.name}
+            </Text>
+
+            {/* Super Admin Pickup Point Switcher */}
+            {userRole === 'superadmin' && (
+              <TouchableOpacity
+                style={{
+                  marginTop: 12,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: '#1e40af',
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  borderRadius: 8,
+                  maxWidth: '100%',
+                }}
+                onPress={() => setModalVisible(true)}
+              >
+                <Ionicons name="location-outline" size={18} color="#fff" />
+
+                <Text
+                  numberOfLines={1}
+                  style={{
+                    color: '#fff',
+                    fontWeight: '600',
+                    marginLeft: 6,
+                    maxWidth: 180,
+                  }}
+                >
+                  {currentPickup?.pickup_name || 'Select Pickup'}
+                </Text>
+
+                <Ionicons
+                  name="chevron-down"
+                  size={16}
+                  color="#fff"
+                  style={{ marginLeft: 4 }}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Drawer Items */}
+          <View
+            style={{
+              flexGrow: 1,
+              backgroundColor: colors.background,
+              padding: 16,
+            }}
+          >
+            {menuItems?.map(item => (
+              <DrawerItem
+                key={item.label}
+                label={item.label}
+                icon={({ color, size }) => (
+                  <Ionicons name={item.icon} size={size} color={color} />
+                )}
+                onPress={() => props.navigation.navigate(item.screen)}
+              />
+            ))}
+
+            <View
+              style={{
+                height: 1,
+                width: '100%',
+                backgroundColor: '#fecaca',
+                marginVertical: 10,
+              }}
             />
-          )}
-          {user.role === 'admin' && (
+            {user.role === 'superadmin' && (
+              <DrawerItem
+                label="Business Profile"
+                icon={({ color, size }) => (
+                  <Ionicons name="home-outline" size={size} color={color} />
+                )}
+                onPress={() => props.navigation.navigate('Business profile')}
+              />
+            )}
+            {user.role === 'admin' && (
+              <DrawerItem
+                label="Pickup Profile"
+                icon={({ color, size }) => (
+                  <Ionicons name="home-outline" size={size} color={color} />
+                )}
+                onPress={() => props.navigation.navigate('Pickup profile')}
+              />
+            )}
             <DrawerItem
-              label="Pickup Profile"
+              label="User Profile"
               icon={({ color, size }) => (
-                <Ionicons name="home-outline" size={size} color={color} />
+                <Ionicons name="person-outline" size={size} color={color} />
               )}
               onPress={() => props.navigation.navigate('Profile')}
             />
-          )}
-          <DrawerItem
-            label="User Profile"
-            icon={({ color, size }) => (
-              <Ionicons name="person-outline" size={size} color={color} />
-            )}
-            onPress={() => props.navigation.navigate('Profile')}
-          />
+          </View>
         </View>
-      </View>
+     
 
       {/* Footer */}
       <View
@@ -261,7 +289,7 @@ export default function CustomDrawerContent(props: any) {
           style={{
             gap: 14,
             flexDirection: 'row',
-            justifyContent:'flex-end',
+            justifyContent: 'flex-end',
           }}
         >
           {/* SETTINGS */}
@@ -299,6 +327,7 @@ export default function CustomDrawerContent(props: any) {
                 /**
                  * UNSUBSCRIBE FROM ALL USER TOPICS
                  */
+                setIsLoading(true);
                 await unsubscribeAllTopics(user);
 
                 /**
@@ -346,8 +375,9 @@ export default function CustomDrawerContent(props: any) {
                  * CLEAR REDUX
                  */
                 dispatch(setCurrentPickup(null));
-
+                await logoutUser({}).unwrap();
                 dispatch(logout());
+                setIsLoading(false);
               } catch (error) {
                 console.log('Logout error:', error);
               }
@@ -355,15 +385,19 @@ export default function CustomDrawerContent(props: any) {
           >
             <Ionicons name="log-out-outline" size={20} color={colors.danger} />
 
-            <Text
-              style={{
-                marginLeft: 8,
-                color: colors.danger,
-                fontWeight: '600',
-              }}
-            >
-              Logout
-            </Text>
+            {isLoading ? (
+              <ActivityIndicator />
+            ) : (
+              <Text
+                style={{
+                  marginLeft: 8,
+                  color: colors.danger,
+                  fontWeight: '600',
+                }}
+              >
+                Logout
+              </Text>
+            )}
           </TouchableOpacity>
         </View>
       </View>

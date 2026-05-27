@@ -3,6 +3,7 @@ import { displayDate } from '../../utils/dates.utils';
 
 export const getDrawerConfig = (
   pickupState: string,
+  isPaid: boolean, // 💡 ADDED: Explicit status flag from your currentPickup profile state
 ): Record<UserRole, { label: string; icon: string; screen: string }[]> => ({
   superuser: [
     { label: 'Dashboard', icon: 'stats-chart', screen: 'Dashboard' },
@@ -21,46 +22,32 @@ export const getDrawerConfig = (
 
   superadmin: [
     { label: 'Dashboard', icon: 'stats-chart', screen: 'Dashboard' },
-
     {
       label: 'Pickup Management',
       icon: 'people-outline',
       screen: 'pickup management',
     },
     { label: 'Fleet Management', icon: 'bus-outline', screen: 'trucks' },
-    // {
-    //   label: 'Parcel Recieval & Loading',
-    //   icon: 'cube-outline',
-    //   screen: 'Parcel Intake',
-    // },
-    // { label: 'Offloading', icon: 'qr-code-outline', screen: 'On Receiving' },
     { label: 'Reports', icon: 'document-text-outline', screen: 'Parcels' },
   ],
 
   admin: [
     { label: 'Dashboard', icon: 'stats-chart', screen: 'Dashboard' },
-
     { label: 'Staff Management', icon: 'people-outline', screen: 'staff' },
-
-    // {
-    //   label: 'Parcel Recieval & Loading',
-    //   icon: 'cube-outline',
-    //   screen: 'Parcel Intake',
-    // },
     {
       label: 'Cash Flow',
       icon: 'wallet-outline',
       screen: 'Todays cash Records',
     },
-    // { label: 'Offloading', icon: 'qr-code-outline', screen: 'On Receiving' },
     // {
-    //   label: 'Cancelled Parcels',
-    //   icon: 'people-outline',
-    //   screen: 'Cancelled Parcels',
+    //   label: 'Parcel Recieval & Loading',
+    //   icon: 'cube-outline',
+    //   screen: 'Parcel Intake',
     // },
     { label: 'Reports', icon: 'document-text-outline', screen: 'Parcels' },
 
-    ...(pickupState === 'pickup_shut'
+    // 💡 FIX: Appends subscription action link if station is shut OR subscription paid flag evaluates to false
+    ...(pickupState === 'pickup_shut' || isPaid === false
       ? [
           {
             label: `${displayDate.toDateString()} Subscription`,

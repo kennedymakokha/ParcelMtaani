@@ -14,13 +14,16 @@ import { useSocket } from './../../contexts/socketContext';
 import { useGetUserByIdQuery } from '../../services/apis/business.api';
 import SingleBarChart from '../../components/analytics/barChart';
 import { useFetchpaymentStatsQuery } from '../../services/apis/mpesa.api.ts';
+import { formatNumber } from '../../utils/trancateText.ts';
 
 export default function AdminDashboard() {
   const { colors } = useTheme();
-
+  const currentPickup = useSelector(
+    (state: any) => state.pickups.currentPickup,
+  );
   const { socket } = useSocket();
   const { user } = useSelector((state: any) => state.auth);
-
+  console.log(user);
   const [filter, setFilter] = useState('today');
   const [filterLoading, setFilterLoading] = useState(false);
 
@@ -32,6 +35,7 @@ export default function AdminDashboard() {
     isFetching: revenueFetching,
   } = useFetchpaymentStatsQuery({
     filterType: filter,
+    pickupId: currentPickup?._id,
   });
 
   // Dashboard
@@ -42,7 +46,7 @@ export default function AdminDashboard() {
     isLoading: dashboardLoading,
     isFetching: dashboardFetching,
   } = useFetchDashboardStatsQuery({
-    pickupId: user?.pickup._id,
+    pickupId: currentPickup?._id,
     filterType: filter,
     startDate: '',
     endDate: '',
@@ -55,7 +59,7 @@ export default function AdminDashboard() {
     isLoading: businessLoading,
     isFetching: businessFetching,
   } = useGetUserByIdQuery({
-    id: user.pickup._id,
+    id: currentPickup?._id,
     filterType: filter,
   });
 
@@ -93,11 +97,7 @@ export default function AdminDashboard() {
     try {
       setFilterLoading(true);
 
-      await Promise.all([
-        refetch(),
-        fetch(),
-        fetchRevenues(),
-      ]);
+      await Promise.all([refetch(), fetch(), fetchRevenues()]);
     } catch (err) {
       console.error('Analytics Error:', err);
     } finally {
@@ -117,19 +117,19 @@ export default function AdminDashboard() {
   const kpis = [
     {
       label: 'Revenue',
-      value: `KES ${revData?.totalRevenue || 0}`,
+      value: ` ${formatNumber(revData?.totalRevenue) || 0}`,
       icon: 'wallet-outline',
       color: '#10B981',
     },
     {
       label: 'M-Pesa',
-      value: `KES ${revData?.mpesaTotal || 0}`,
+      value: ` ${formatNumber(revData?.mpesa?.total) || 0}`,
       icon: 'phone-portrait-outline',
       color: '#22C55E',
     },
     {
       label: 'Cash',
-      value: `KES ${revData?.cashTotal || 0}`,
+      value: ` ${formatNumber(revData?.cash?.total) || 0}`,
       icon: 'cash-outline',
       color: '#F59E0B',
     },
@@ -200,16 +200,13 @@ export default function AdminDashboard() {
       <View className="h-5 w-48 bg-gray-200 rounded mb-6" />
 
       {[...Array(5)].map((_, index) => (
-        <View
-          key={index}
-          className="flex-row items-center mb-4"
-        >
+        <View key={index} className="flex-row items-center mb-4">
           <View className="h-4 w-14 bg-gray-200 rounded mr-3" />
 
           <View
             className="h-5 bg-gray-200 rounded"
             style={{
-              width: `${50 + index * 30}px`,
+              width: 50 + index * 30,
             }}
           />
         </View>
@@ -232,10 +229,7 @@ export default function AdminDashboard() {
         {/* Loading Overlay */}
         {filterLoading && (
           <View className="flex-row items-center mb-4">
-            <ActivityIndicator
-              size="small"
-              color={colors.primary}
-            />
+            <ActivityIndicator size="small" color={colors.primary} />
 
             <Text
               style={{
@@ -260,9 +254,7 @@ export default function AdminDashboard() {
           }}
         >
           {isPageLoading
-            ? [...Array(6)].map((_, index) => (
-                <SkeletonCard key={index} />
-              ))
+            ? [...Array(6)].map((_, index) => <SkeletonCard key={index} />)
             : kpis.map((kpi, index) => (
                 <View
                   key={index}
@@ -278,11 +270,7 @@ export default function AdminDashboard() {
                   }}
                 >
                   <View className="flex flex-col items-center justify-center">
-                    <Ionicons
-                      name={kpi.icon}
-                      size={26}
-                      color={kpi.color}
-                    />
+                    <Ionicons name={kpi.icon} size={26} color={kpi.color} />
 
                     <Text
                       style={{
@@ -314,10 +302,7 @@ export default function AdminDashboard() {
           <SkeletonChart />
         ) : (
           isSuccess && (
-            <PieChart
-              title="Pickup KPI Breakdown"
-              data={KPIdata.pickupStats}
-            />
+            <PieChart title="Pickup KPI Breakdown" data={KPIdata.pickupStats} />
           )
         )}
 
@@ -325,10 +310,9 @@ export default function AdminDashboard() {
         {isPageLoading ? (
           <SkeletonBars />
         ) : (
-          <SingleBarChart
-            title={chartTitle}
-            data={pickups}
-          />
+          user.role === 'admin' && (
+            <SingleBarChart title={chartTitle} data={pickups} />
+          )
         )}
       </ScrollView>
 
@@ -342,26 +326,22 @@ export default function AdminDashboard() {
           {
             icon: 'today-outline',
             label: 'Today',
-            onPress: async () =>
-              handleFilterChange('today'),
+            onPress: async () => handleFilterChange('today'),
           },
           {
             icon: 'calendar-outline',
             label: 'Week',
-            onPress: async () =>
-              handleFilterChange('week'),
+            onPress: async () => handleFilterChange('week'),
           },
           {
             icon: 'stats-chart-outline',
             label: 'Month',
-            onPress: async () =>
-              handleFilterChange('month'),
+            onPress: async () => handleFilterChange('month'),
           },
           {
             icon: 'bar-chart-outline',
             label: 'Year',
-            onPress: async () =>
-              handleFilterChange('year'),
+            onPress: async () => handleFilterChange('year'),
           },
         ]}
       />

@@ -43,6 +43,7 @@ export const injectEndpoints = api.injectEndpoints({
                 body: data,
             }),
         }),
+     
 
         DeleteBusiness: builder.mutation({
             query: (id) => ({
@@ -58,7 +59,7 @@ export const {
     useRegisterPickupMutation,
     useUpdateBusinessMutation,
     useAddBusinessMutation,
-    useFetchPickupsQuery,
+        useFetchPickupsQuery,
     useGetBusinessByIdQuery,
     useGetUserByIdQuery,
     useGetBusinessesQuery,

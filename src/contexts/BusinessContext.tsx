@@ -9,7 +9,27 @@ import React, {
 import { useSelector } from 'react-redux';
 
 import { useGetBusinessByIdQuery } from '../services/apis/business.api';
-
+export interface Pickup {
+  _id: string;
+  pickup_name: string;
+  phone_number?: string;
+  working_hrs: string;
+  contact_number?: string;
+  contactName?: string;
+  paid: boolean;
+  short_code?: string;
+  state: 'active' | 'inactive';
+  consumerKey?: string;
+  consumerSecret?: string;
+  passKey?: string;
+  shortCode?: string;
+  primary_color?: string;
+  secondary_color?: string;
+  strictMpesa: boolean;
+  isHQ: boolean;
+  logo?: string;
+  business: string;
+}
 export type Business = {
   _id: string;
   business_name: string;

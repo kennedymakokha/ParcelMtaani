@@ -41,6 +41,7 @@ import { addNotification } from './src/features/notificationsSlice';
 import { usePickupSocket } from './src/hooks/usePickupSocket';
 
 import PickupUserSync from './src/screens/syncUserNevents';
+import { setCurrentPickup } from './src/features/pickSlice';
 
 function AppNavigator() {
   const { colors } = useTheme();
@@ -159,9 +160,16 @@ function AppNavigator() {
     const onSuccessfulDelivery = (payload: any) => {
       console.log('✅ Successful Delivery:', payload);
     };
-
+    const updatePickup = (payload: any) => {
+      const freshPickup = payload.data?.pickup;
+    
+      if (freshPickup) {
+        dispatch(setCurrentPickup(freshPickup));
+      }
+    };
     socket.on('Successful Delivery', onSuccessfulDelivery);
-
+    const currentPickupId = user.pickup._id;
+    socket.on(`pickup_${currentPickupId}`, updatePickup);
     return () => {
       socket.off('Successful Delivery', onSuccessfulDelivery);
     };
@@ -201,14 +209,13 @@ function AppNavigator() {
       }}
     >
       <PickupUserSync />
-
       <StatusBar
         animated
-        backgroundColor={colors.primary}
-        barStyle="light-content"
+        backgroundColor={colors.card}
+        barStyle={colors.mode === 'dark' ? 'light-content' : 'dark-content'}
       />
 
-      {!user ? <RootStack /> : <AuthStack />}
+      {user ? <RootStack /> : <AuthStack />}
     </NavigationContainer>
   );
 }

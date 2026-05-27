@@ -19,7 +19,7 @@ export const ParcelSection = ({
 }: any) => {
   const { data, refetch } = useFetchPickupsQuery({});
 
-  const pickups = data.pickups ?? [];
+  const pickups = data?.pickups ?? [];
   useEffect(() => {
     const Refetch = async () => {
       await refetch();

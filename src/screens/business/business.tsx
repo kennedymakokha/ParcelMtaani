@@ -183,51 +183,281 @@ export default function BusinessManagementScreen({ navigation }: any) {
           <View
             style={{
               backgroundColor: colors.card,
-              borderRadius: 14,
-              padding: 16,
-              marginBottom: 14,
+              borderRadius: 22,
+              padding: 18,
+              marginBottom: 16,
               borderWidth: 1,
               borderColor: colors.border,
+              shadowColor: '#000',
+              shadowOffset: {
+                width: 0,
+                height: 4,
+              },
+              shadowOpacity: 0.08,
+              shadowRadius: 8,
+              elevation: 4,
             }}
           >
-            <Text
-              style={{ fontSize: 16, fontWeight: '700', color: colors.text }}
-            >
-              {item.business_name}
-            </Text>
-
-            <Text style={{ color: colors.secondary }}>
-              📞 {item.phone_number || '—'}
-            </Text>
-            <Text style={{ color: colors.secondary }}>
-              ☎️ {item.contact_number || '—'}
-            </Text>
-            <Text style={{ color: colors.secondary }}>
-              📍 {item.postal_address || '—'}
-            </Text>
-            <Text style={{ color: colors.secondary }}>
-              🧾 {item.kra_pin || '—'}
-            </Text>
-
+            {/* HEADER */}
             <View
               style={{
                 flexDirection: 'row',
                 justifyContent: 'space-between',
-                marginTop: 12,
+                alignItems: 'center',
+                marginBottom: 14,
               }}
             >
-              <ActionButton
-                title="View"
-                type="secondary"
-                onPress={() => navigation.navigate('BusinessDetail', { item })}
-              />
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: '800',
+                    color: colors.text,
+                    marginBottom: 4,
+                  }}
+                  numberOfLines={1}
+                >
+                  {item.business_name}
+                </Text>
 
-              <View style={{ flexDirection: 'row' }}>
+               
+              </View>
+
+              <View
+                style={{
+                  width: 52,
+                  height: 52,
+                  borderRadius: 26,
+                  backgroundColor: `${colors.primary}18`,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: '800',
+                    color: colors.primary,
+                  }}
+                >
+                  {item.business_name?.charAt(0)?.toUpperCase()}
+                </Text>
+              </View>
+            </View>
+
+            {/* DETAILS */}
+            <View
+              style={{
+                // backgroundColor: colors.background,
+                borderRadius: 16,
+                padding: 14,
+              }}
+            >
+              {/* PHONE */}
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  marginBottom: 10,
+                }}
+              >
+                <View
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 10,
+                    backgroundColor: `${colors.success}15`,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginRight: 12,
+                  }}
+                >
+                  <Text style={{ fontSize: 16 }}>📞</Text>
+                </View>
+
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      color: colors.subText,
+                      fontSize: 12,
+                      marginBottom: 2,
+                    }}
+                  >
+                    Phone Number
+                  </Text>
+
+                  <Text
+                    style={{
+                      color: colors.text,
+                      fontWeight: '600',
+                    }}
+                  >
+                    {item.phone_number || 'Not provided'}
+                  </Text>
+                </View>
+              </View>
+
+              {/* CONTACT */}
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  marginBottom: 10,
+                }}
+              >
+                <View
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 10,
+                    backgroundColor: `${colors.warning}15`,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginRight: 12,
+                  }}
+                >
+                  <Text style={{ fontSize: 16 }}>☎️</Text>
+                </View>
+
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      color: colors.subText,
+                      fontSize: 12,
+                      marginBottom: 2,
+                    }}
+                  >
+                    Contact Number
+                  </Text>
+
+                  <Text
+                    style={{
+                      color: colors.text,
+                      fontWeight: '600',
+                    }}
+                  >
+                    {item.contact_number || 'Not provided'}
+                  </Text>
+                </View>
+              </View>
+
+              {/* ADDRESS */}
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  marginBottom: 10,
+                }}
+              >
+                <View
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 10,
+                    backgroundColor: `${colors.primary}15`,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginRight: 12,
+                  }}
+                >
+                  <Text style={{ fontSize: 16 }}>📍</Text>
+                </View>
+
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      color: colors.subText,
+                      fontSize: 12,
+                      marginBottom: 2,
+                    }}
+                  >
+                    Postal Address
+                  </Text>
+
+                  <Text
+                    style={{
+                      color: colors.text,
+                      fontWeight: '600',
+                    }}
+                  >
+                    {item.postal_address || 'Not provided'}
+                  </Text>
+                </View>
+              </View>
+
+              {/* KRA */}
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                }}
+              >
+                <View
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 10,
+                    backgroundColor: `${colors.error}15`,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginRight: 12,
+                  }}
+                >
+                  <Text style={{ fontSize: 16 }}>🧾</Text>
+                </View>
+
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      color: colors.subText,
+                      fontSize: 12,
+                      marginBottom: 2,
+                    }}
+                  >
+                    KRA PIN
+                  </Text>
+
+                  <Text
+                    style={{
+                      color: colors.text,
+                      fontWeight: '600',
+                    }}
+                  >
+                    {item.kra_pin || 'Not provided'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* ACTIONS */}
+            <View
+              style={{
+                flexDirection: 'row',
+                marginTop: 18,
+                gap: 10,
+              }}
+            >
+              <View style={{ flex: 1 }}>
+                <ActionButton
+                  title="View Details"
+                  type="subText"
+                  onPress={() =>
+                    navigation.navigate('BusinessDetail', {
+                      item,
+                    })
+                  }
+                />
+              </View>
+
+              <View style={{ flex: 1 }}>
                 <ActionButton
                   title="Edit"
                   type="primary"
                   onPress={() => handleEdit(item)}
                 />
+              </View>
+
+              <View style={{ flex: 1 }}>
                 <ActionButton
                   title="Delete"
                   type="error"

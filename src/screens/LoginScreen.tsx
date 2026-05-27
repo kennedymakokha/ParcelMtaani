@@ -1,8 +1,15 @@
-/* eslint-disable no-unreachable */
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useState } from 'react';
-import { View, Text } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  KeyboardAvoidingView, 
+  Platform, 
+  ScrollView, 
+  SafeAreaView 
+} from 'react-native';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { TertiaryButton } from '../components/TertiaryButton';
 import { useAuth } from '../contexts/AuthContext';
@@ -32,6 +39,7 @@ export default function LoginScreen({ navigation }: any) {
   const [loginUser, { isLoading: loading }] = useLoginMutation();
   const { colors } = useTheme();
   const [country, setCountry] = useState(COUNTRIES[0]); // default
+
   const handleLogin = async () => {
     try {
       setMsg({ msg: '', state: '' });
@@ -55,7 +63,6 @@ export default function LoginScreen({ navigation }: any) {
 
         await AsyncStorage.setItem('accessToken', data.token);
         await AsyncStorage.setItem('userId', data.user._id);
-        // await  dispatch(useUpdateBusinessMutation(data.user.business))
         dispatch(setCurrentPickup(data.user.pickup || null));
 
         if (data.exp) {
@@ -91,9 +98,13 @@ export default function LoginScreen({ navigation }: any) {
 
   useEffect(() => {
     async function getFcmToken() {
-      const messagingInstance = getMessaging();
-      const token = await getToken(messagingInstance);
-      setFCM_token(token);
+      try {
+        const messagingInstance = getMessaging();
+        const token = await getToken(messagingInstance);
+        setFCM_token(token);
+      } catch (err) {
+        console.log('FCM Token generation skipped:', err);
+      }
     }
     getFcmToken();
   }, []);
@@ -114,86 +125,168 @@ export default function LoginScreen({ navigation }: any) {
   }, []);
 
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: colors.background,
-        justifyContent: 'center',
-        paddingHorizontal: 24,
-      }}
-    >
-      {/* Branding */}
-      <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-        <Icon name="truck-fast" size={74} color={colors.primary} />
-      </View>
-      <View style={{ alignItems: 'center', marginBottom: 24 }}>
-        <Text
-          style={{ fontSize: 28, fontWeight: '700', color: colors.primary }}
-        >
-          ParcelMtaani
-        </Text>
-        <Text style={{ color: colors.secondary, marginTop: 6 }}>
-          Secure Login
-        </Text>
-      </View>
-
-      {/* Form Card */}
-      <View
-        style={{
-          backgroundColor: colors.card,
-          borderRadius: 12,
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-          padding: 20,
-        }}
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
       >
-        <Text
-          style={{
-            fontSize: 18,
-            fontWeight: '600',
-            color: colors.text,
-            marginBottom: 16,
-          }}
+        <ScrollView 
+          contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          Welcome Back
-        </Text>
-        <PhoneInput
-          label="Phone Number"
-          value={phone_number}
-          country={country}
-          onChangeCountry={setCountry}
-          onChange={full => setPhoneNumber(full)}
-        />
+          {/* Header Branding Zone */}
+          <View style={styles.headerContainer}>
+            <View style={[styles.iconCircle, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Icon name="truck-fast" size={42} color={colors.primary} />
+            </View>
+            
+            <Text style={[styles.brandText, { color: colors.secondary }]}>
+              ParcelMtaani
+            </Text>
+            <Text style={[styles.taglineText, { color: colors.subText }]}>
+              Secure Parcel Management Hub
+            </Text>
+          </View>
 
-        <FormInput
-          label="Password"
-          placeholder="********"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
+          {/* Form Interactive Card Container */}
+          <View
+            style={[
+              styles.formCard,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                shadowColor: colors.shadow || '#000',
+              },
+            ]}
+          >
+            <Text style={[styles.welcomeText, { color: colors.text }]}>
+              Welcome Back
+            </Text>
+            <Text style={[styles.instructionText, { color: colors.subText }]}>
+              Sign in with your registered phone details to manage active workflows.
+            </Text>
 
-        <PrimaryButton title="Login" onPress={handleLogin} loading={loading} />
+            {/* Structured Input Fields Layout */}
+            <View style={{ marginBottom: 16 }}>
+              <PhoneInput
+                label="Phone Number"
+                value={phone_number}
+                country={country}
+                onChangeCountry={setCountry}
+                onChange={full => setPhoneNumber(full)}
+              />
+            </View>
 
-        <View style={{ marginTop: 16 }}>
-          <TertiaryButton
-            title="Forgot Password?"
-            onPress={() => navigation.navigate('forgot password')}
-            color={colors.primary}
-          />
-        </View>
-      </View>
+            <View style={{ marginBottom: 20 }}>
+              <FormInput
+                label="Password"
+                placeholder="••••••••"
+                secureTextEntry
+                value={password}
+                onChangeText={setPassword}
+              />
+            </View>
 
-      {/* Footer */}
-      <View style={{ alignItems: 'center', marginTop: 24 }}>
-        <Text style={{ color: colors.text }}>
-          Don’t have an account?{' '}
-          <Text style={{ color: colors.primary, fontWeight: '600' }}>
-            Sign Up
-          </Text>
-        </Text>
-      </View>
+            <PrimaryButton 
+              title="Sign In" 
+              onPress={handleLogin} 
+              loading={loading} 
+            />
+
+            <View style={styles.forgotPasswordContainer}>
+              <TertiaryButton
+                title="Forgot Password?"
+                onPress={() => navigation.navigate('forgot password')}
+                color={colors.primary}
+              />
+            </View>
+          </View>
+
+          {/* Clean Corporate Footer Section */}
+          <View style={styles.footerContainer}>
+            <Text style={{ color: colors.subText, fontSize: 14 }}>
+              Don’t have an account?{' '}
+              {/* Changed to colors.secondary to lock in a premium layout symmetry */}
+              <Text 
+                onPress={() => navigation.navigate('register')}
+                style={{ color: colors.secondary, fontWeight: '700' }}
+              >
+                Sign Up
+              </Text>
+            </Text>
+          </View>
+          
+        </ScrollView>
+      </KeyboardAvoidingView>
+      
       {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
-    </View>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 40,
+  },
+  headerContainer: {
+    alignItems: 'center',
+    marginBottom: 36,
+  },
+  iconCircle: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  brandText: {
+    fontSize: 32,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  taglineText: {
+    fontSize: 14,
+    marginTop: 4,
+    fontWeight: '500',
+    letterSpacing: 0.2,
+  },
+  formCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 24,
+    width: '100%',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  welcomeText: {
+    fontSize: 22,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+  },
+  instructionText: {
+    fontSize: 13,
+    marginTop: 4,
+    marginBottom: 24,
+    lineHeight: 18,
+  },
+  forgotPasswordContainer: {
+    marginTop: 18,
+    alignItems: 'center',
+  },
+  footerContainer: {
+    alignItems: 'center',
+    marginTop: 32,
+  },
+});

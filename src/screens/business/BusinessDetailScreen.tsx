@@ -4,15 +4,13 @@ import { useTheme } from '../../contexts/themeContext';
 import { useGetBusinessByIdQuery } from '../../services/apis/business.api';
 import { SectionHeader } from '../../components/ui/sectionHeader';
 
-export default function BusinessDetailScreen({ route, }: any) {
-  const {
-    _id,
-   
-  } = route.params.item;
+export default function BusinessDetailScreen({ route }: any) {
+  const { _id } = route.params.item;
+  console.log(_id);
   const { colors } = useTheme();
-  const { data: business, isLoading } = useGetBusinessByIdQuery(_id);
+  const { data: business, isLoading } = useGetBusinessByIdQuery({ id: _id });
   const pickups = business?.pickups ?? [];
- 
+
   if (isLoading) {
     return (
       <View
@@ -164,8 +162,6 @@ export default function BusinessDetailScreen({ route, }: any) {
                 marginVertical: 12,
               }}
             />
-
-          
           </View>
         )}
         ListEmptyComponent={

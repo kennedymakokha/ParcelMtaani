@@ -171,7 +171,7 @@ export default function SuperSalesManagementScreen() {
         Phone: {item.phone_number}
       </Text>
 
-      <View style={{ flexDirection: 'row', marginTop: 12 }}>
+      <View style={{ flexDirection: 'row', marginTop: 12,gap: 10 }}>
         <ActionButton
           title="Edit"
           type="primary"

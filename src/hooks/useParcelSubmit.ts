@@ -12,6 +12,8 @@ import {
 
 import { buildReceiptText } from '../services /recieptBuilder.tsx';
 import { printToPrinter } from '../services /printer.service.ts';
+import { normalizePhoneNumber } from '../utils/trancateText.ts';
+import { useSelector } from 'react-redux';
 
 /**
  * =========================
@@ -26,7 +28,7 @@ const base64Encode = (str: string) =>
 
 const base64Decode = (str: string) =>
   Buffer.from(str, 'base64').toString('utf8');
-
+console.log(base64Decode('gh'));
 const xorTransform = (text: string) => {
   return text
     .split('')
@@ -81,17 +83,19 @@ interface SubmitParcelParams {
 }
 
 const PRINT_QUEUE_KEY = 'pending_print_jobs';
-
+export let loading = false
 export const useParcelSubmit = () => {
   const [msg, setMsg] = useState({
     msg: '',
     state: '',
   });
-
-  const [postParcel] = useRegisterParcelMutation();
+  const currentPickup = useSelector(
+    (state: any) => state.pickups.currentPickup,
+  );
+  const [postParcel, { isLoading: loadingParcel }] = useRegisterParcelMutation();
   const [lipaNaMpesa] = useMpesapayMutation();
-  const [createPayment] = useCreatepaymentMutation();
-
+  const [createPayment, { isLoading }] = useCreatepaymentMutation();
+  loading = isLoading || loadingParcel
   /**
    * =========================
    * SAVE PRINT JOB
@@ -131,17 +135,15 @@ export const useParcelSubmit = () => {
     mpesaPortion,
     parcelTotal,
     pickup,
-    pickups,
     business,
     user,
     selectedPrinterMac,
     refetch,
     onSuccess,
   }: SubmitParcelParams) => {
+
     try {
-      const currentPickup = pickups.find(
-        (p: any) => p._id === pickup,
-      );
+
 
       let mpesaResponse: any = null;
 
@@ -154,14 +156,18 @@ export const useParcelSubmit = () => {
         qr_status: 'READY',
         payment: {
           method: isSplitPayment ? 'SPLIT' : paymentMethod,
-          cash:
-            paymentMethod === 'CASH'
+
+          cash: isSplitPayment
+            ? Number(amountGiven || 0)
+            : paymentMethod === 'CASH'
               ? parcelTotal
-              : Number(amountGiven || 0),
-          mpesa:
-            paymentMethod === 'MPESA'
+              : 0,
+
+          mpesa: isSplitPayment
+            ? Number(mpesaPortion || 0)
+            : paymentMethod === 'MPESA'
               ? parcelTotal
-              : Number(mpesaPortion || 0),
+              : 0,
           phone: phoneNumber,
           mpesaData: null,
         },
@@ -177,7 +183,7 @@ export const useParcelSubmit = () => {
       try {
         if (paymentMethod === 'MPESA' || isSplitPayment) {
           mpesaResponse = await lipaNaMpesa({
-            phone_number: phoneNumber,
+            phone_number: normalizePhoneNumber(phoneNumber),
             amount:
               paymentMethod === 'MPESA'
                 ? parcelTotal
@@ -196,7 +202,7 @@ export const useParcelSubmit = () => {
        */
       const response = await postParcel(updatedFormData).unwrap();
       const savedParcel = response?.parcel || response;
-
+      console.log("RESPONSE", mpesaResponse);
       const parcelCode =
         savedParcel?.parcel?.code || savedParcel?.code;
 
@@ -206,24 +212,67 @@ export const useParcelSubmit = () => {
        * 4. SAVE PAYMENT
        */
       const payments: any[] = [];
+      console.log("PAYMENR", payments);
+      /**
+       * SPLIT PAYMENT
+       */
+      if (isSplitPayment) {
+        const cashAmount = Number(amountGiven || 0);
+        const mpesaAmount = Number(mpesaPortion || 0);
 
-      if (paymentMethod === 'CASH') {
+        if (cashAmount > 0) {
+          payments.push({
+            method: 'CASH',
+            amount: cashAmount,
+          });
+        }
+
+        if (mpesaAmount > 0) {
+          payments.push({
+            method: 'MPESA',
+            amount: mpesaAmount,
+            phone: phoneNumber,
+            receiptNumber:
+              mpesaResponse?.MpesaReceiptNumber || '',
+          });
+        }
+      }
+
+      /**
+       * FULL CASH
+       */
+      else if (paymentMethod === 'CASH') {
         payments.push({
           method: 'CASH',
           amount: parcelTotal,
         });
       }
 
-      if (paymentMethod === 'MPESA' && mpesaResponse) {
+      /**
+       * FULL MPESA
+       */
+      // else if (
+      //   paymentMethod === 'MPESA' &&
+      //   mpesaResponse
+      // ) {
+      //   payments.push({
+      //     method: 'MPESA',
+      //     amount: parcelTotal,
+      //     phone: phoneNumber,
+      //     receiptNumber:
+      //       mpesaResponse?.MpesaReceiptNumber || '',
+      //   });
+      // }
+      else if (paymentMethod === 'MPESA') {
         payments.push({
           method: 'MPESA',
           amount: parcelTotal,
           phone: phoneNumber,
           receiptNumber:
             mpesaResponse?.MpesaReceiptNumber || '',
+          status: mpesaResponse ? 'SUCCESS' : 'PENDING',
         });
       }
-
       await createPayment({
         parcel: savedParcel?._id,
         pickup: currentPickup._id,
@@ -312,6 +361,7 @@ export const useParcelSubmit = () => {
 
       return { success: true, qrData, parcelCode };
     } catch (error: any) {
+      console.log(error);
       setMsg({
         msg: error?.message || 'Error occurred',
         state: 'error',

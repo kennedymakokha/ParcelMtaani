@@ -1,11 +1,25 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-native/no-inline-styles */
 import { View, Text, TouchableOpacity } from 'react-native';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTheme } from '../contexts/themeContext';
 
-const Keypad = ({ value, onChange, activeField }: any) => {
+const Keypad = ({
+  value,
+  onChange,
+  activeField,
+  defaultValue = '',
+}: any) => {
   const { colors } = useTheme();
-  const [isABC, setIsABC] = useState(false); // Toggle state
+
+  const [isABC, setIsABC] = useState(false);
+
+  // Initialize with default value
+  useEffect(() => {
+    if (!value && defaultValue) {
+      onChange(defaultValue);
+    }
+  }, [defaultValue]);
 
   const handlePress = (key: string) => {
     if (key === 'C') {
@@ -21,7 +35,6 @@ const Keypad = ({ value, onChange, activeField }: any) => {
     // prevent multiple decimals
     if (key === '.' && value.includes('.')) return;
 
-    // KRA PINs are usually uppercase
     const newValue = value + key.toUpperCase();
     onChange(newValue);
   };
@@ -44,7 +57,6 @@ const Keypad = ({ value, onChange, activeField }: any) => {
 
   return (
     <View style={{ marginTop: 24 }}>
-      {/* MODE TOGGLE TAB */}
       {activeField === 'customerPin' && (
         <View
           style={{
@@ -74,6 +86,7 @@ const Keypad = ({ value, onChange, activeField }: any) => {
               123
             </Text>
           </TouchableOpacity>
+
           <TouchableOpacity
             onPress={() => setIsABC(true)}
             style={{
@@ -96,10 +109,8 @@ const Keypad = ({ value, onChange, activeField }: any) => {
         </View>
       )}
 
-      {/* KEYPAD GRID */}
       {!isABC
-        ? // NUMERIC VIEW
-          numberKeys.map((row, i) => (
+        ? numberKeys.map((row, i) => (
             <View
               key={i}
               style={{
@@ -135,8 +146,7 @@ const Keypad = ({ value, onChange, activeField }: any) => {
               ))}
             </View>
           ))
-        : // ALPHABET VIEW
-          letterKeys.map((row, i) => (
+        : letterKeys.map((row, i) => (
             <View
               key={i}
               style={{
@@ -156,7 +166,8 @@ const Keypad = ({ value, onChange, activeField }: any) => {
                     borderRadius: 8,
                     alignItems: 'center',
                     borderWidth: 1,
-                    borderColor: key === 'C' ? colors.danger : colors.border,
+                    borderColor:
+                      key === 'C' ? colors.danger : colors.border,
                   }}
                 >
                   <Text
@@ -172,24 +183,6 @@ const Keypad = ({ value, onChange, activeField }: any) => {
               ))}
             </View>
           ))}
-
-      {/* FOOTER CLEAR FOR NUMERIC MODE */}
-      {/* {!isABC && (
-        <TouchableOpacity
-          onPress={() => handlePress('C')}
-          style={{
-            backgroundColor: colors.danger,
-            paddingVertical: 15,
-            borderRadius: 10,
-            alignItems: 'center',
-            marginTop: 5,
-          }}
-        >
-          <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>
-            CLEAR ALL
-          </Text>
-        </TouchableOpacity>
-      )} */}
     </View>
   );
 };

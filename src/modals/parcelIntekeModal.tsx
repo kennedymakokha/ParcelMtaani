@@ -9,7 +9,7 @@ import { SectionHeader } from '../components/ui/sectionHeader';
 import Toast from '../components/toast';
 import { COUNTRIES } from '../utils/countryCodes';
 import { PrimaryButton } from '../components/PrimaryButton.tsx';
-import { useParcelSubmit } from '../hooks/useParcelSubmit.ts';
+import { useParcelSubmit, loading } from '../hooks/useParcelSubmit.ts';
 import { SenderSection } from './sections/SenderSection.tsx';
 import { ReceiverSection } from './sections/ReceiverSection.tsx';
 import { ParcelSection } from './sections/ParcelSection.tsx';
@@ -74,7 +74,7 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
       formData,
       paymentMethod,
       isSplitPayment,
-      business:user.business,
+      business: user.business,
       phoneNumber,
       amountGiven,
       mpesaPortion,
@@ -84,7 +84,6 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
       user,
       selectedPrinterMac,
       refetch,
-
       onSuccess: data => {
         setQrPrintData(data);
       },
@@ -147,6 +146,7 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
         paymentMethod={paymentMethod}
         setMpesaPortion={setMpesaPortion}
         activeField={activeField}
+        formData={formData}
         phoneNumber={phoneNumber}
         mpesaPortion={mpesaPortion}
         amountGiven={amountGiven}
@@ -169,6 +169,7 @@ export default function ParcelIntakeScreen({ onClose, refetch }: any) {
       ) : (
         <SubmitButton
           selectedPrinterMac={selectedPrinterMac}
+          isProcessing={loading}
           onPress={handleSubmit}
           colors={colors}
           title={

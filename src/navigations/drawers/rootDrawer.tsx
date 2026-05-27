@@ -20,6 +20,7 @@ import PickupManagementScreen from '../../screens/pickup/PickupManagementScreen'
 import TrucksManagementScreen from '../../screens/fleet/truckScreen';
 import BusinessProfileScreen from '../../screens/business/businessProfile';
 import ParcelCashScreen from '../../screens/cash';
+import PickupProfileScreen from '../../screens/business/pickupProfile';
 
 const Drawer = createDrawerNavigator();
 
@@ -58,7 +59,7 @@ export default function RootDrawer() {
       <Drawer.Screen
         name="notifications"
         options={() => ({
-          header: () => <CustomHeader title="Notifications" />,
+          header: () => <CustomHeader back title="Notifications" />,
         })}
         component={NotificationPage}
       />
@@ -116,6 +117,14 @@ export default function RootDrawer() {
         })}
         component={BusinessProfileScreen}
       />
+         <Drawer.Screen
+        name="Pickup profile"
+        options={() => ({
+          header: () => <CustomHeader title="MY Pickup Station" />,
+        })}
+        component={PickupProfileScreen}
+      />
+      
       <Drawer.Screen
         name="Delivery"
         options={() => ({

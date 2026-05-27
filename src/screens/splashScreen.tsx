@@ -1,142 +1,160 @@
+/* eslint-disable react-native/no-inline-styles */
 import React, { useEffect, useRef } from 'react';
-import { View, Text, Animated, StyleSheet, Dimensions } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import Icon from 'react-native-vector-icons/FontAwesome6';
+import { View, Text, Animated, Dimensions, StyleSheet } from 'react-native';
 import { useTheme } from '../contexts/themeContext';
+import Icon from 'react-native-vector-icons/FontAwesome6';
 
 const { width } = Dimensions.get('window');
 
-export default function ParcelSplash({ navigation }) {
+export default function SplashScreen({ navigation }: any) {
   const { colors } = useTheme();
-
-  // --- ANIMATION VALUES ---
-  const senderId = useRef(new Animated.Value(0)).current;
-  const parcelId = useRef(new Animated.Value(0)).current;
-  const truckId = useRef(new Animated.Value(0)).current;
-  const parcelLoadId = useRef(new Animated.Value(0)).current;
-  const receiverId = useRef(new Animated.Value(0)).current;
+ 
+  const animationProgress = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.sequence([
-      Animated.timing(senderId, { toValue: 1, duration: 800, useNativeDriver: true }),
-      Animated.spring(parcelId, { toValue: 1, friction: 6, useNativeDriver: true }),
-      Animated.timing(truckId, { toValue: 1, duration: 1000, useNativeDriver: true }),
-      Animated.timing(parcelLoadId, { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.parallel([
-        Animated.timing(truckId, { toValue: 2, duration: 1200, useNativeDriver: true }),
-        Animated.timing(senderId, { toValue: 0, duration: 500, useNativeDriver: true }),
-      ]),
-      Animated.timing(receiverId, { toValue: 1, duration: 800, useNativeDriver: true }),
-      Animated.timing(parcelLoadId, { toValue: 2, duration: 600, useNativeDriver: true }),
-    ]).start(() => {
+    // 5200ms is perfectly deliberate, giving it a majestic movie-reveal pace
+    Animated.timing(animationProgress, {
+      toValue: 1,
+      duration: 5200,
+      useNativeDriver: false, 
+    }).start(() => {
       setTimeout(() => {
-        // navigation.replace('Login');
-      }, 1500);
+        navigation.replace('Login');
+      }, 1000);
     });
-  }, []);
+  }, [animationProgress, navigation]);
 
   // --- INTERPOLATIONS ---
-  const senderTranslateX = senderId.interpolate({ inputRange: [0, 1], outputRange: [-60, 0] });
-  const truckTranslateX = truckId.interpolate({
-    inputRange: [0, 1, 2],
-    outputRange: [-100, width * 0.35, width * 0.55],
+
+  // CLEAN VIEWPORT TRANSIT TRACKING
+  // 0.0 -> 0.55: Drives from offscreen left to offscreen right
+  // 0.55 -> 0.60: Teleports instantly to offscreen left while invisible
+  // 0.60 -> 1.0: Fades in and parks perfectly over the text
+  const truckTranslateX = animationProgress.interpolate({
+    inputRange: [0, 0.55, 0.60, 1],
+    outputRange: [-80, width + 80, -80, width / 2 - 32], 
   });
-  const receiverTranslateX = receiverId.interpolate({ inputRange: [0, 1], outputRange: [60, 0] });
-  const parcelTranslateX = parcelLoadId.interpolate({
-    inputRange: [0, 1, 2],
-    outputRange: [width * 0.18, width * 0.4, width * 0.72],
+
+  // Hides the truck during its teleportation phase so it doesn't cross backwards
+  const truckOpacity = animationProgress.interpolate({
+    inputRange: [0, 0.53, 0.55, 0.62, 0.68, 1],
+    outputRange: [1, 1, 0, 0, 1, 1],
   });
-  const parcelTranslateY = parcelLoadId.interpolate({
-    inputRange: [0, 1, 2],
-    outputRange: [0, 50, 0],
+
+  // Soft vibration physics to mimic rubber tyres hitting tarmac
+  const truckRotate = animationProgress.interpolate({
+    inputRange: [0, 0.15, 0.35, 0.55, 0.65, 0.85, 1],
+    outputRange: ['0deg', '3deg', '-1deg', '0deg', '4deg', '-2deg', '0deg'],
+  });
+
+  // The text container mask widens exactly as the truck sweeps over it
+  const textMaskWidth = animationProgress.interpolate({
+    inputRange: [0, 0.50, 1],
+    outputRange: [0, width * 0.85, width * 0.85],
+  });
+
+  // Tagline and Ground axis fade up organically as the truck parks safely home
+  const elementsOpacity = animationProgress.interpolate({
+    inputRange: [0, 0.70, 0.95],
+    outputRange: [0, 0, 1],
   });
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
-      {/* Header Branding */}
-      <View style={{ position: 'absolute', top: 60, alignItems: 'center' }}>
-        <Text style={{ fontSize: 12, letterSpacing: 2, color: colors.subText, fontWeight: '600', textTransform: 'uppercase' }}>
-          Logistics Network
-        </Text>
-        <Text style={{ fontSize: 20, fontWeight: '700', color: colors.text, marginTop: 4 }}>
-          Seamless Package Delivery
-        </Text>
-        <Icon name="truck-fast" size={74} color={colors.primary} style={{ marginVertical: 8 }} />
-        <Text style={{ fontSize: 28, fontWeight: '700', color: colors.secondary }}>Parcel Mtaani</Text>
-        <Text style={{ fontSize: 14, color: colors.subText, marginTop: 6 }}>Secure Parcel Management</Text>
-      </View>
-
-      {/* Scene Track */}
-      <View style={styles.sceneContainer}>
-        {/* Sender */}
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: colors.primary,
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    >
+      {/* Brand Animation Sandbox Container */}
+      <View style={styles.brandWrapper}>
+        
+        {/* DYNAMIC MOVING TRUCK LOGO */}
         <Animated.View
           style={[
-            styles.actor,
-            { left: width * 0.08, opacity: senderId, transform: [{ translateX: senderTranslateX }] },
-          ]}
-        >
-          <Ionicons name="person-circle" size={56} color={colors.success} />
-          <Text style={{ marginTop: 4, fontSize: 12, fontWeight: '600', color: colors.success }}>Sender</Text>
-          <Text style={{ fontSize: 10, color: colors.subText }}>Step 1: Booked</Text>
-        </Animated.View>
-
-        {/* Truck */}
-        <Animated.View style={[styles.actor, { transform: [{ translateX: truckTranslateX }] }]}>
-          <Ionicons name="bus" size={48} color={colors.primary} />
-          <Text style={{ marginTop: 4, fontSize: 12, fontWeight: '600', color: colors.primary }}>Transit</Text>
-        </Animated.View>
-
-        {/* Receiver */}
-        <Animated.View
-          style={[
-            styles.actor,
-            { right: width * 0.08, opacity: receiverId, transform: [{ translateX: receiverTranslateX }] },
-          ]}
-        >
-          <Ionicons name="person-circle-outline" size={56} color={colors.error} />
-          <Text style={{ marginTop: 4, fontSize: 12, fontWeight: '600', color: colors.error }}>Receiver</Text>
-          <Text style={{ fontSize: 10, color: colors.subText }}>Step 2: Collect</Text>
-        </Animated.View>
-
-        {/* Parcel */}
-        <Animated.View
-          style={[
-            styles.parcel,
+            styles.truckWrapper,
             {
-              opacity: parcelId,
+              opacity: truckOpacity,
               transform: [
-                { scale: parcelId },
-                { translateX: parcelTranslateX },
-                { translateY: parcelTranslateY },
+                { translateX: truckTranslateX },
+                { rotate: truckRotate },
               ],
             },
           ]}
         >
-          <Ionicons name="cube" size={28} color={colors.warning} />
+          {/* colors.text used cleanly on top of primary solid branding */}
+          <Icon name="truck-fast" size={64} color={colors.text} />
+        </Animated.View>
+
+        {/* REVEALED TEXT LAYER */}
+        <Animated.View
+          style={[styles.textMaskContainer, { width: textMaskWidth }]}
+        >
+          <Text
+            style={{
+              fontSize: 34,
+              fontWeight: '800',
+              color: colors.secondary, // Your standout secondary Orange brand anchor
+              letterSpacing: -0.5,
+              width: width * 0.85,
+              textAlign: 'center',
+            }}
+          >
+            ParcelMtaani
+          </Text>
         </Animated.View>
       </View>
 
-      {/* Ground Line */}
-      <View style={{ width: '80%', height: 2, backgroundColor: colors.border, marginTop: 16, borderRadius: 999 }} />
+      {/* Subtitle & Accent Footer Layout */}
+      <Animated.View style={{ opacity: elementsOpacity, alignItems: 'center' }}>
+        <Text
+          style={{
+            fontSize: 13,
+            color: colors.text,
+            marginTop: 16,
+            fontWeight: '600',
+            letterSpacing: 1.5,
+            opacity: 0.85, // Smooth blend down into theme background
+          }}
+        >
+          SECURE PARCEL MANAGEMENT
+        </Text>
+
+        {/* Ground Horizon Visual Anchor */}
+        <View
+          style={{
+            width: 140,
+            height: 2,
+            backgroundColor: colors.border || 'rgba(255,255,255,0.25)',
+            marginTop: 20,
+            borderRadius: 99,
+          }}
+        />
+      </Animated.View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  sceneContainer: {
+  brandWrapper: {
     width: '100%',
-    height: 180,
+    height: 150, 
+    justifyContent: 'flex-end',
     position: 'relative',
+    paddingBottom: 12,
+  },
+  textMaskContainer: {
+    height: 52,
     justifyContent: 'center',
+    alignSelf: 'center',
+    overflow: 'hidden',
+    zIndex: 1,
   },
-  actor: {
+  truckWrapper: {
     position: 'absolute',
-    alignItems: 'center',
-    bottom: 20,
-  },
-  parcel: {
-    position: 'absolute',
-    top: 50,
-    zIndex: 10,
+    top: 8, 
+    zIndex: 2,
   },
 });

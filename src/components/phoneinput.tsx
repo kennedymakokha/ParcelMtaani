@@ -21,18 +21,16 @@ export interface Country {
 
 interface PhoneInputProps {
   label: string;
-  value?: string; // ✅ optional now (prevents crash)
+  value?: string;
   onChange: (full: string, raw: string) => void;
-
   country: Country;
   onChangeCountry: (country: Country) => void;
-
   placeholder?: string;
 }
 
 export const PhoneInput: React.FC<PhoneInputProps> = ({
   label,
-  value = '', // ✅ default fallback
+  value = '',
   onChange,
   country,
   onChangeCountry,
@@ -40,6 +38,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
 }) => {
   const { colors } = useTheme();
   const [showModal, setShowModal] = useState(false);
+  const [isFocused, setIsFocused] = useState(false); // ✅ Track focus state
 
   // 🔍 extract raw number safely
   const rawNumber = useMemo(() => {
@@ -63,7 +62,6 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   const handleChange = (text: string) => {
     const raw = normalize(text);
     const full = `${country.dialCode}${raw}`;
-
     onChange(full, raw);
   };
 
@@ -76,6 +74,15 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   }, [country]);
 
   const isValid = rawNumber.length >= 9;
+  // ✅ Only trigger the visual error validation if there's text AND the user isn't typing
+  const showValidationError = !isValid && rawNumber.length > 0 && !isFocused;
+
+  // ✅ Clean theme border color resolver
+  const getBorderColor = () => {
+    if (showValidationError) return colors.error || 'red';
+    if (isFocused) return colors.secondary || '#f97316'; // Dynamic brand highlight
+    return colors.border || '#ccc';
+  };
 
   return (
     <View style={styles.container}>
@@ -87,13 +94,13 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
         style={[
           styles.inputWrapper,
           {
-            borderColor: isValid ? colors.border : 'red',
+            borderColor: getBorderColor(), // ✅ Controlled dynamically now
             backgroundColor: colors.card,
           },
         ]}
       >
         <TouchableOpacity
-          style={styles.countryCodeContainer}
+          style={[styles.countryCodeContainer, { borderColor: colors.border || '#ccc' }]}
           onPress={() => setShowModal(true)}
         >
           <Text style={styles.flag}>{country.flag}</Text>
@@ -107,13 +114,17 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
           keyboardType="phone-pad"
           placeholder={placeholder}
           placeholderTextColor={colors.textSecondary || '#999'}
-          value={rawNumber || ''} // ✅ always safe
+          value={rawNumber || ''}
           onChangeText={handleChange}
+          onFocus={() => setIsFocused(true)} // ✅ Set focus
+          onBlur={() => setIsFocused(false)}  // ✅ Clear focus to trigger verification safely
         />
       </View>
 
-      {!isValid && rawNumber.length > 0 && (
-        <Text style={styles.error}>Invalid phone number</Text>
+      {showValidationError && (
+        <Text style={[styles.error, { color: colors.error || 'red' }]}>
+          Invalid phone number
+        </Text>
       )}
 
       <CountryPickerModal
@@ -121,7 +132,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
         onClose={() => setShowModal(false)}
         countries={COUNTRIES}
         onSelect={(c) => {
-          onChangeCountry(c); // ✅ critical
+          onChangeCountry(c);
           setShowModal(false);
         }}
       />
@@ -141,7 +152,7 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 1.2, // Slightly tuned up thickness for visibility parity
     borderRadius: 8,
   },
   countryCodeContainer: {
@@ -149,7 +160,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 10,
     borderRightWidth: 1,
-    borderColor: '#ccc',
+    height: '100%', // Match text box height axis perfectly
   },
   flag: {
     fontSize: 18,
@@ -166,7 +177,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   error: {
-    color: 'red',
     fontSize: 12,
     marginTop: 4,
   },

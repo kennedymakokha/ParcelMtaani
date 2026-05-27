@@ -10,7 +10,7 @@ export const injectEndpoints = api.injectEndpoints({
             }),
         }),
         fetchpaymentStats: builder.query({
-            query: ({ filterType }) => `/payments/daily/reconciliations?filter=${filterType}`,
+            query: ({ filterType, pickupId }) => `/payments/daily/reconciliations?filter=${filterType}&pickupId=${pickupId}`,
         }),
         fetchpayments: builder.query({
             query: ({ filterType }) => `/payments?filter=${filterType}`,

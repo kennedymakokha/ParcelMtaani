@@ -9,6 +9,7 @@ interface Theme {
     primary: string;
     secondary: string;
     danger: string;
+    mode: string;
     background: string;
     text: string;
     border: string;
@@ -27,6 +28,7 @@ interface Theme {
     fontBold?: string;
     shadow?: string;
     overlay?: string;
+    warningLight?: string;
   };
   typography: {
     heading: string;
@@ -38,11 +40,12 @@ interface Theme {
 const lightTheme: Theme = {
   colors: {
     primary: '#2563eb',
-    secondary: '#6b7280',
+    secondary: '#f97316',
     danger: '#dc2626',
     background: '#f9fafb',
     text: '#111827',
     border: '#d1d5db',
+    mode: 'light',
     subText: '#6b7280',
     card: '#ffffff',
     textSecondary: '#9ca3af',
@@ -57,6 +60,7 @@ const lightTheme: Theme = {
     fontMedium: 'Inter-Medium',
     fontSemiBold: 'Inter-SemiBold',
     fontBold: 'Inter-Bold',
+    warningLight: '',
   },
   typography: {
     heading: 'text-2xl font-bold',
@@ -68,11 +72,12 @@ const lightTheme: Theme = {
 const darkTheme: Theme = {
   colors: {
     primary: '#3b82f6',
-    secondary: '#9ca3af',
+    secondary: '#fb923c',
     danger: '#f87171',
     background: '#111827',
     text: '#f9fafb',
     border: '#374151',
+    mode: 'dark',
     subText: '#9ca3af',
     card: '#1f2937',
     errorLight: '#fee2e2',
@@ -87,6 +92,7 @@ const darkTheme: Theme = {
     fontSemiBold: 'Inter-SemiBold',
     fontBold: 'Inter-Bold',
     shadow: '#000',
+    warningLight: '',
   },
   typography: {
     heading: 'text-2xl font-bold',
@@ -103,32 +109,41 @@ interface ThemeProviderProps {
 
 export const ThemeProvider = ({ children }: ThemeProviderProps) => {
   const scheme = useColorScheme();
-
   const baseTheme = scheme === 'dark' ? darkTheme : lightTheme;
 
+  // 1. Extract raw values securely
   const pickupState = useSelector(
-    (state: RootState) => state.pickupEvents.lastEvent,
+    (state: RootState) => state.pickupEvents?.lastEvent,
   );
+  const pickup = useSelector((state: any) => state.pickups?.currentPickup);
 
-  const user = useSelector((state: RootState) => state.auth.user);
-
+  // 2. Build explicit safety boundaries
   const isPickupShut = pickupState === 'pickup_shut';
-  const isNotPaid = user?.pickup?.paid === false;
-  console.log(isNotPaid);
-  const isInactive = isPickupShut;
+  
+  // Guard clause: If the pickup object isn't loaded yet, default to NOT shutting down the UI
+  const isNotPaid = pickup && Object.keys(pickup).length > 0 
+    ? (pickup.paid === false || pickup.paid === 'false') 
+    : false;
+
+  // 3. Combine statuses
+  const isInactive = isPickupShut || isNotPaid;
+
+  // console.log('--- SYSTEM STATUS WATCHER ---');
+  // console.log('Raw Pickup Object Status:', pickup);
+  // console.log('Evaluated Unpaid Boolean (isNotPaid):', isNotPaid);
+  // console.log('Evaluated Closed Boolean (isPickupShut):', isPickupShut);
+  // console.log('Final Grayscale Active State (isInactive):', isInactive);
 
   const theme: Theme = {
     ...baseTheme,
     colors: {
       ...baseTheme.colors,
-
+      // Keep colors dynamic only if an intentional lock is requested
       primary: isInactive ? '#9ca3af' : baseTheme.colors.primary,
       primaryLight: isInactive ? '#d1d5db' : baseTheme.colors.primaryLight,
-
       success: isInactive ? '#9ca3af' : baseTheme.colors.success,
       warning: isInactive ? '#9ca3af' : baseTheme.colors.warning,
       danger: isInactive ? '#9ca3af' : baseTheme.colors.danger,
-
       text: isInactive ? '#6b7280' : baseTheme.colors.text,
       card: isInactive ? '#f3f4f6' : baseTheme.colors.card,
     },
@@ -148,31 +163,24 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
               left: 0,
               right: 0,
               bottom: 0,
-              backgroundColor: 'rgba(128,128,128,0.12)',
+              backgroundColor: 'rgba(128, 128, 128, 0.45)',
               justifyContent: 'center',
               alignItems: 'center',
-              zIndex: 999,
+              zIndex: 9999,
             }}
           >
             <View
               style={{
-                backgroundColor: 'rgba(0,0,0,0.15)',
-                paddingHorizontal: 24,
-                paddingVertical: 14,
-                borderRadius: 12,
+                backgroundColor: 'rgba(31, 41, 55, 0.95)',
+                paddingHorizontal: 28,
+                paddingVertical: 18,
+                borderRadius: 14,
               }}
             >
-              <Text
-                style={{
-                  color: '#fff',
-                  fontSize: 18,
-                  fontWeight: '600',
-                  textAlign: 'center',
-                }}
-              >
+              <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '700' }}>
                 {isPickupShut
-                  ? 'We are closed for today'
-                  : 'Payment required to continue'}
+                  ? '🔒 We are closed for today'
+                  : '⚠️ Payment required to continue'}
               </Text>
             </View>
           </View>

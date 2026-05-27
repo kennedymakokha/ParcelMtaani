@@ -1,5 +1,7 @@
+/* eslint-disable react-native/no-inline-styles */
 import React from "react";
-import { TouchableOpacity, Text } from "react-native";
+import { TouchableOpacity, Text, StyleSheet } from "react-native";
+import { useTheme } from '../contexts/themeContext'; // Adjust path as needed
 
 interface SecondaryButtonProps {
   title: string;
@@ -12,22 +14,47 @@ export const SecondaryButton = ({
   onPress,
   disabled = false,
 }: SecondaryButtonProps) => {
+  const { colors } = useTheme();
+
   return (
     <TouchableOpacity
-      className={`p-4 rounded-lg border ${
-        disabled ? "border-gray-300 bg-gray-100" : "border-blue-600 bg-white"
-      }`}
       onPress={onPress}
       disabled={disabled}
-      activeOpacity={0.8}
+      activeOpacity={0.7}
+      style={[
+        styles.button,
+        {
+          borderColor: disabled ? (colors.border || '#e2e8f0') : (colors.secondary || '#f97316'),
+          backgroundColor: disabled ? (colors.border || '#f1f5f9') : 'transparent',
+        },
+      ]}
     >
       <Text
-        className={`text-center font-semibold text-lg ${
-          disabled ? "text-gray-400" : "text-blue-600"
-        }`}
+        style={[
+          styles.text,
+          {
+            color: disabled ? (colors.subText || '#94a3b8') : (colors.secondary || '#f97316'),
+          },
+        ]}
       >
         {title}
       </Text>
     </TouchableOpacity>
   );
 };
+
+const styles = StyleSheet.create({
+  button: {
+    width: '100%',
+    height: 52, // Matches the premium form layout height perfectly
+    borderRadius: 12, // Modern smooth curvature radius
+    borderWidth: 1.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  text: {
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+});

@@ -1,5 +1,6 @@
 /* eslint-disable react/no-unstable-nested-components */
-import { DrawerActions, NavigationProp, useNavigation } from '@react-navigation/native';
+/* eslint-disable react-native/no-inline-styles */
+import { DrawerActions, useNavigation } from '@react-navigation/native';
 import {
   Text,
   View,
@@ -9,43 +10,46 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useTheme } from '../contexts/themeContext';
 import { useAppSelector } from '../hooks/storehooks';
 
-// Notification Badge
+// ==========================================
+// BRANDED NOTIFICATION BADGE (SECONDARY ACCENT)
+// ==========================================
 const NotificationBadge = ({ count }: { count: number }) => {
   const { colors } = useTheme();
   if (count <= 0) return null;
+
   return (
     <View
       style={[
         styles.badgeContainer,
-        { backgroundColor: colors.card, borderColor: colors.border },
+        { 
+          backgroundColor: colors.secondary || '#f97316', 
+          borderColor: colors.card || '#ffffff' 
+        },
       ]}
     >
-      <Text style={[styles.badgeText, { color: colors.error }]}>
+      <Text style={styles.badgeText}>
         {count > 9 ? '9+' : count}
       </Text>
     </View>
   );
 };
 
-function CustomHeader({
-  title,
-  back,
-  nodetails,
-}: {
+interface CustomHeaderProps {
   title: string;
-  add?: boolean;
   back?: boolean;
   nodetails?: boolean;
-}) {
+}
+
+function CustomHeader({ title, back, nodetails }: CustomHeaderProps) {
   const navigation = useNavigation();
   const { colors } = useTheme();
   const [menuVisible, setMenuVisible] = useState(false);
   const notifications = useAppSelector(state => state.notifications.list);
+
   const MenuOption = ({ icon, label, onPress, color }: any) => (
     <TouchableOpacity onPress={onPress} style={styles.menuItem}>
       <Ionicons name={icon} size={20} color={color} />
@@ -55,62 +59,63 @@ function CustomHeader({
 
   return (
     <View
-      style={{ backgroundColor: colors.primary }}
-      className="flex-row items-center justify-between p-4 shadow-md"
+      style={[
+        styles.headerMainWrapper,
+        { 
+          backgroundColor: colors.card, 
+          borderBottomWidth: 1, 
+          borderColor: colors.border || '#e2e8f0' 
+        },
+      ]}
     >
-      <View className="flex-row items-center">
+      {/* Left Navigation Matrix */}
+      <View style={styles.leftLayoutGroup}>
         {back ? (
           <TouchableOpacity
             onPress={() => navigation.goBack()}
-            className="mr-2"
+            style={styles.hitTargetPadding}
+            activeOpacity={0.7}
           >
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
+            <Ionicons name="arrow-back" size={22} color={colors.text} />
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
             onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
-            className="mr-4"
+            style={styles.hitTargetPadding}
+            activeOpacity={0.7}
           >
             <Ionicons name="menu" size={24} color={colors.text} />
           </TouchableOpacity>
         )}
         <Text
-          style={{ color: colors.text }}
-          className="text-lg uppercase font-semibold tracking-widest"
+          numberOfLines={1}
+          style={[styles.headerTitleText, { color: colors.text }]}
         >
           {title}
         </Text>
       </View>
 
+      {/* Right Control Utility Group */}
       {!nodetails && (
-        <View className="flex-row items-center gap-x-4">
+        <View style={styles.rightLayoutGroup}>
           <TouchableOpacity
-            onPress={() => navigation.navigate('notifications')}
-            className="relative p-1"
+            onPress={() => navigation.navigate('notifications' as never)}
+            style={styles.iconHitTarget}
+            activeOpacity={0.7}
           >
             <Ionicons
               name="notifications-outline"
-              size={24}
-              color={colors.secondary}
+              size={23}
+              color={colors.primary || '#2563eb'}
             />
             <NotificationBadge
               count={notifications.filter(e => !e.read).length}
             />
           </TouchableOpacity>
-          {/* <TouchableOpacity
-            onPress={() => setMenuVisible(true)}
-            className="p-1"
-          >
-            <Ionicons
-              name="ellipsis-vertical"
-              size={22}
-              color={colors.secondary}
-            />
-          </TouchableOpacity> */}
         </View>
       )}
 
-      {/* Dropdown Menu */}
+      {/* Action Sheet Dropdown Menu Modal */}
       <Modal
         visible={menuVisible}
         transparent
@@ -125,18 +130,6 @@ function CustomHeader({
                 { backgroundColor: colors.card, borderColor: colors.border },
               ]}
             >
-              {/* <View style={styles.menuItem}>
-                <Ionicons name={isDarkMode ? "moon" : "sunny-outline"} size={20} color={isDarkMode ? colors.primary : colors.warning} />
-                <Text style={[styles.menuText, { color: colors.text, flex: 1 }]}>
-                  {isDarkMode ? "Dark Mode" : "Light Mode"}
-                </Text>
-                <Switch
-                  value={isDarkMode}
-                  onValueChange={(value) => setDarkMode(value)}
-                  trackColor={{ false: colors.border, true: colors.primary + "80" }}
-                  thumbColor={isDarkMode ? colors.primary : colors.card}
-                />
-              </View> */}
               <MenuOption
                 icon="refresh-outline"
                 label="Sync Data"
@@ -156,7 +149,7 @@ function CustomHeader({
                 icon="log-out-outline"
                 label="Logout"
                 onPress={() => setMenuVisible(false)}
-                color={colors.error}
+                color={colors.error || '#dc2626'}
               />
             </View>
           </View>
@@ -166,8 +159,52 @@ function CustomHeader({
   );
 }
 
+// ==========================================
+// CLEAN CENTRALIZED STYLE ARCHITECTURE
+// ==========================================
 const styles = StyleSheet.create({
-  modalOverlay: { flex: 1, backgroundColor: 'transparent' },
+  headerMainWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    height: 56,
+    // Smooth structural shadow depth line
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  leftLayoutGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  rightLayoutGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  hitTargetPadding: {
+    paddingVertical: 8,
+    paddingRight: 14,
+  },
+  iconHitTarget: {
+    padding: 6,
+    position: 'relative',
+  },
+  headerTitleText: {
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
+    flex: 1,
+  },
+  modalOverlay: { 
+    flex: 1, 
+    backgroundColor: 'rgba(0,0,0,0.15)' 
+  },
   dropdownMenu: {
     position: 'absolute',
     top: 60,
@@ -179,7 +216,7 @@ const styles = StyleSheet.create({
     elevation: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.15,
     shadowRadius: 4,
   },
   menuItem: {
@@ -189,21 +226,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 12,
   },
-  menuText: { fontSize: 15, fontWeight: '600' },
-  divider: { height: 1, marginVertical: 4, marginHorizontal: 16 },
+  menuText: { 
+    fontSize: 14, 
+    fontWeight: '600' 
+  },
+  divider: { 
+    height: 1, 
+    marginVertical: 4, 
+    marginHorizontal: 16 
+  },
   badgeContainer: {
     position: 'absolute',
-    right: -2,
-    top: -2,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
+    right: 0,
+    top: 0,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 3,
+    paddingHorizontal: 2,
     borderWidth: 1.5,
   },
-  badgeText: { fontSize: 10, fontWeight: 'bold' },
+  badgeText: { 
+    fontSize: 8, 
+    fontWeight: '900',
+    color: '#ffffff', // Ensures clear visibility against orange backgrounds
+  },
 });
 
 export default CustomHeader;

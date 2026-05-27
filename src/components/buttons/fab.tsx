@@ -1,5 +1,6 @@
+/* eslint-disable react-native/no-inline-styles */
 import React from 'react';
-import { TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
+import { TouchableOpacity, StyleSheet, ViewStyle, Platform } from 'react-native';
 import { useTheme } from '../../contexts/themeContext';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
@@ -13,32 +14,40 @@ interface FabProps {
 export const Fab: React.FC<FabProps> = ({
   onPress,
   icon = 'add',
-  size = 56,
+  size = 56, // Golden standard mobile hit target circle sizing diameter
   style,
 }) => {
   const { colors } = useTheme();
 
+  // Highlight action using the Secondary Orange theme token
+  const actionColor = colors.secondary || '#f97316';
+
   return (
     <TouchableOpacity
-      activeOpacity={0.8}
+      activeOpacity={0.85}
       onPress={onPress}
       style={[
         styles.fab,
         {
           width: size,
           height: size,
-          borderRadius: size / 2, // ✅ perfect circle
-          backgroundColor: colors.primary,
-          shadowColor: colors.shadow || '#000',
+          borderRadius: size / 2,
+          backgroundColor: actionColor,
+          // Sophisticated matching glow footprint
+          shadowColor: Platform.OS === 'ios' ? actionColor : '#000000',
         },
         style,
       ]}
     >
-      <Icon name={icon} size={28} color="#fff" />
+      {/* High contrast sharp white indicator layout icon */}
+      <Icon name={icon} size={26} color="#ffffff" />
     </TouchableOpacity>
   );
 };
 
+// ==========================================
+// CENTRALIZED COMPONENT ELEVATION STYLING
+// ==========================================
 const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
@@ -46,13 +55,18 @@ const styles = StyleSheet.create({
     right: 24,
     alignItems: 'center',
     justifyContent: 'center',
-
-    // iOS shadow
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 4 },
-
-    // Android elevation
-    elevation: 6,
+    zIndex: 999,
+    
+    // Smooth micro-shadow specs
+    ...Platform.select({
+      ios: {
+        shadowOpacity: 0.35,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 4 },
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   },
 });
