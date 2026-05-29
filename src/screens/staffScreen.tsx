@@ -4,7 +4,9 @@ import { View, Text, FlatList, Modal, ActivityIndicator } from 'react-native';
 import { useTheme } from '../contexts/themeContext';
 import {
   useDeleteUserMutation,
+  useForceLogoutMutation,
   useGetUsersQuery,
+  useRestoreNotificationsMutation,
   useSignupMutation,
 } from '../services/apis/auth.api';
 import { Picker } from '@react-native-picker/picker';
@@ -29,11 +31,15 @@ interface Staff {
   role: string;
   phone_number: string;
   identification_No: string;
+  deletedNotificationsAt?: string[]; // 👈 Added
+  RestoredNotificationsAt?: string[]; // 👈 Add
+  isLoggedIn?: boolean; // 👈 Added
 }
 
 export default function StaffManagementScreen() {
   const { colors } = useTheme();
-
+  const [restoreNotifications, { isLoading: isRestoring }] =
+    useRestoreNotificationsMutation();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
     null,
   );
@@ -56,13 +62,15 @@ export default function StaffManagementScreen() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
   const [msg, setMsg] = useState({ msg: '', state: '' });
-
-  
-
+  const currentPickup = useSelector(
+    (state: any) => state.pickups.currentPickup,
+  );
+  const [ForceLogout, { isLoading: isForceLoggingOut }] =
+    useForceLogoutMutation();
   const { data, isLoading, isFetching, refetch } = useGetUsersQuery({
     page,
     search: debouncedSearch,
-    pickup: user?.pickup?._id,
+    pickup: currentPickup?._id,
     role,
   });
 
@@ -173,68 +181,98 @@ export default function StaffManagementScreen() {
     }
   };
 
-  const renderStaff = ({ item }: { item: Staff }) => (
-    <View
-      style={{
-        backgroundColor: colors.card,
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 12,
-      }}
-    >
-      <Text
-        style={{
-          fontSize: 16,
-          fontWeight: '600',
-          color: colors.text,
-        }}
-      >
-        {item.name || 'No Name'}
-      </Text>
+  const renderStaff = ({ item }: { item: Staff }) => {
+    // 1. Safely extract arrays (default to empty arrays if undefined)
+    const deletedArray = item.deletedNotificationsAt || [];
+    const restoredArray = item.RestoredNotificationsAt || [];
 
-      <Text
-        style={{
-          color: colors.secondary,
-          marginTop: 4,
-        }}
-      >
-        Role: {item.role}
-      </Text>
+    // 2. Get the latest timestamps (convert to Unix time for comparison)
+    const lastDeleted =
+      deletedArray.length > 0
+        ? new Date(deletedArray[deletedArray.length - 1]).getTime()
+        : 0;
 
-      <Text
-        style={{
-          color: colors.primary,
-          marginTop: 4,
-        }}
-      >
-        Phone: {item.phone_number}
-      </Text>
+    const lastRestored =
+      restoredArray.length > 0
+        ? new Date(restoredArray[restoredArray.length - 1]).getTime()
+        : 0;
 
+    // 3. Button condition: Must have deleted notifications AND the last delete is newer than the last restore
+    const showRestoreButton =
+      deletedArray.length > 0 && lastDeleted > lastRestored;
+
+    return (
       <View
         style={{
-          flexDirection: 'row',
-          marginTop: 12,
-          gap: 10,
+          backgroundColor: colors.card,
+          borderRadius: 12,
+          padding: 16,
+          marginBottom: 12,
         }}
       >
-        <ActionButton
-          title="Edit"
-          type="primary"
-          onPress={() => openModal(item)}
-        />
+        <Text style={{ fontSize: 16, fontWeight: '600', color: colors.text }}>
+          {item.name || 'No Name'}
+        </Text>
 
-        <ActionButton
-          title="Delete"
-          type="error"
-          onPress={() => {
-            setSelectedStaffId(item._id);
-            setShowDeleteModal(true);
+        <Text style={{ color: colors.secondary, marginTop: 4 }}>
+          Role: {item.role}
+        </Text>
+
+        <Text style={{ color: colors.primary, marginTop: 4 }}>
+          Phone: {item.phone_number}
+        </Text>
+
+        <View
+          style={{
+            flexDirection: 'row',
+            marginTop: 12,
+            gap: 10,
+            flexWrap: 'wrap',
           }}
-        />
-      </View>
-    </View>
-  );
+        >
+          <ActionButton
+            title="Edit"
+            type="primary"
+            onPress={() => openModal(item)}
+          />
 
+          <ActionButton
+            title="Delete"
+            type="error"
+            onPress={() => {
+              setSelectedStaffId(item._id);
+              setShowDeleteModal(true);
+            }}
+          />
+
+          {item.isLoggedIn && (
+            <ActionButton
+              title="lock"
+              type="danger"
+              onPress={async () => {
+                await ForceLogout({ userId: item._id }).unwrap();
+                await refetch();
+              }}
+            />
+          )}
+
+          {/* 👇 Conditional rendering wrapper */}
+          {showRestoreButton && (
+            <ActionButton
+              title="Restore Notifications"
+              type="success"
+              onPress={async () => {
+                // Note: You might want to create a specific modal or handler
+                // for restoring rather than reusing the delete selection state
+                await restoreNotifications({ userId: item._id }).unwrap();
+                await refetch();
+              }}
+            />
+          )}
+        </View>
+      </View>
+    );
+  };
   return (
     <View
       style={{

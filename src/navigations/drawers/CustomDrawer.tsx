@@ -8,6 +8,7 @@ import {
   Modal,
   FlatList,
   ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
 import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -33,6 +34,7 @@ import {
 } from '../../utils/subscribeUnsubscribe';
 import { TruncateText } from '../../utils/trancateText';
 import { useLogoutMutation } from '../../services/apis/auth.api';
+import { useFetchStatusCountQuery } from '../../services/apis/parcel.api';
 
 export default function CustomDrawerContent(props: any) {
   const { colors } = useTheme();
@@ -48,8 +50,15 @@ export default function CustomDrawerContent(props: any) {
     (state: any) => state.pickups.currentPickup,
   );
   const isPaid = currentPickup?.paid ?? true;
+  const { data: parcelData, refetch: refetchCount } = useFetchStatusCountQuery({
+    pickupId: currentPickup?._id,
+  });
 
-  const menuItems = getDrawerConfig(pickupState, isPaid)[userRole as UserRole];
+  const count = parcelData ? parcelData?.data : [];
+
+  const menuItems = getDrawerConfig(pickupState, count, isPaid)[
+    userRole as UserRole
+  ];
 
   const pickups = useSelector((state: any) => state.pickups.pickups);
 
@@ -117,7 +126,19 @@ export default function CustomDrawerContent(props: any) {
       socket.off('Successful Delivery', onSuccessfullDelivery);
     };
   }, [socket, dispatch, refetch]);
+  useEffect(() => {
+    if (!socket) return;
+    const parcelChange = async (parcel: any) => {
+      console.log(parcel);
+      await refetch();
+      await refetchCount();
+    };
 
+    socket.on('Parcel-change', parcelChange);
+    return () => {
+      socket.off('Parcel-change', parcelChange);
+    };
+  }, [socket, refetchCount, refetch]);
   return (
     <DrawerContentScrollView
       {...props}
@@ -129,150 +150,179 @@ export default function CustomDrawerContent(props: any) {
       showsVerticalScrollIndicator={false}
     >
       {/* TOP CONTENT */}
-     
-        <View>
-          {/* Header */}
-          <View
+
+      <View>
+        {/* Header */}
+        <View
+          style={{
+            backgroundColor: colors.card,
+            padding: 24,
+            alignItems: 'center',
+          }}
+        >
+          <View className="flex items-center justify-center">
+            <Icon name="truck-fast" size={74} color={colors.primaryLight} />
+          </View>
+
+          <Text
             style={{
-              backgroundColor: colors.card,
-              padding: 24,
-              alignItems: 'center',
+              color: colors.secondary,
+              fontSize: 18,
+              textTransform: 'uppercase',
+              fontWeight: '800',
+              fontFamily: colors.fontSemiBold,
             }}
           >
-            <View className="flex items-center justify-center">
-              <Icon name="truck-fast" size={74} color={colors.primaryLight} />
-            </View>
+            {TruncateText(user?.business?.business_name?.toUpperCase(), 20) ||
+              'ParcelMtaani'}
+          </Text>
 
-            <Text
+          <Text style={{ color: '#e0e7ff', textAlign: 'center' }}>
+            {user?.pickup?.pickup_name?.toUpperCase()}
+          </Text>
+
+          <View
+            style={{ backgroundColor: colors.card }}
+            className="flex items-center justify-center px-4 py-1   rounded-md mt-2"
+          >
+            <Text style={{ color: colors.secondary }}>
+              {userRole?.toUpperCase()}
+            </Text>
+          </View>
+
+          <Text
+            style={{
+              color: '#e0e7ff',
+              marginTop: 4,
+              textAlign: 'center',
+            }}
+          >
+            {user?.name}
+          </Text>
+
+          {/* Super Admin Pickup Point Switcher */}
+          {userRole === 'superadmin' && (
+            <TouchableOpacity
               style={{
-                color: colors.secondary,
-                fontSize: 18,
-                textTransform: 'uppercase',
-                fontWeight: '800',
-                fontFamily: colors.fontSemiBold,
+                marginTop: 12,
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: '#1e40af',
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+                borderRadius: 8,
+                maxWidth: '100%',
               }}
+              onPress={() => setModalVisible(true)}
             >
-              {TruncateText(user?.business?.business_name?.toUpperCase(), 20) ||
-                'ParcelMtaani'}
-            </Text>
+              <Ionicons name="location-outline" size={18} color="#fff" />
 
-            <Text style={{ color: '#e0e7ff', textAlign: 'center' }}>
-              {user?.pickup?.pickup_name?.toUpperCase()}
-            </Text>
-
-            <View
-              style={{ backgroundColor: colors.card }}
-              className="flex items-center justify-center px-4 py-1   rounded-md mt-2"
-            >
-              <Text style={{ color: colors.secondary }}>
-                {userRole?.toUpperCase()}
-              </Text>
-            </View>
-
-            <Text
-              style={{
-                color: '#e0e7ff',
-                marginTop: 4,
-                textAlign: 'center',
-              }}
-            >
-              {user?.name}
-            </Text>
-
-            {/* Super Admin Pickup Point Switcher */}
-            {userRole === 'superadmin' && (
-              <TouchableOpacity
+              <Text
+                numberOfLines={1}
                 style={{
-                  marginTop: 12,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  backgroundColor: '#1e40af',
-                  paddingHorizontal: 12,
-                  paddingVertical: 8,
-                  borderRadius: 8,
-                  maxWidth: '100%',
+                  color: '#fff',
+                  fontWeight: '600',
+                  marginLeft: 6,
+                  maxWidth: 180,
                 }}
-                onPress={() => setModalVisible(true)}
               >
-                <Ionicons name="location-outline" size={18} color="#fff" />
+                {currentPickup?.pickup_name || 'Select Pickup'}
+              </Text>
 
-                <Text
-                  numberOfLines={1}
-                  style={{
-                    color: '#fff',
-                    fontWeight: '600',
-                    marginLeft: 6,
-                    maxWidth: 180,
-                  }}
-                >
-                  {currentPickup?.pickup_name || 'Select Pickup'}
-                </Text>
+              <Ionicons
+                name="chevron-down"
+                size={16}
+                color="#fff"
+                style={{ marginLeft: 4 }}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
 
-                <Ionicons
-                  name="chevron-down"
-                  size={16}
-                  color="#fff"
-                  style={{ marginLeft: 4 }}
-                />
-              </TouchableOpacity>
-            )}
-          </View>
+        {/* Drawer Items */}
+        <View
+          style={{
+            flexGrow: 1,
+            backgroundColor: colors.background,
+            padding: 16,
+          }}
+        >
+          {menuItems?.map(item => (
+            <DrawerItem
+              key={item.label}
+              label={({ color }) => (
+                <View style={styles.labelContainer}>
+                  <Text style={[styles.labelText, { color }]}>
+                    {item.label}
+                  </Text>
 
-          {/* Drawer Items */}
+                  {item.counter && item.counter > 0 && (
+                    <View
+                      style={{
+                        borderRadius: 10,
+                        minWidth: 20,
+                        height: 20,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        paddingHorizontal: 6,
+                        backgroundColor: colors.card,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: colors.text,
+                          fontSize: 12,
+                          fontWeight: 'bold',
+                        }}
+                      >
+                        {item.counter}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              )}
+              icon={({ color, size }) => (
+                <Ionicons name="home-outline" size={size} color={color} />
+              )}
+              onPress={() => props.navigation.navigate(item.screen)}
+            />
+          ))}
+
           <View
             style={{
-              flexGrow: 1,
-              backgroundColor: colors.background,
-              padding: 16,
+              height: 1,
+              width: '100%',
+              backgroundColor: '#fecaca',
+              marginVertical: 10,
             }}
-          >
-            {menuItems?.map(item => (
-              <DrawerItem
-                key={item.label}
-                label={item.label}
-                icon={({ color, size }) => (
-                  <Ionicons name={item.icon} size={size} color={color} />
-                )}
-                onPress={() => props.navigation.navigate(item.screen)}
-              />
-            ))}
-
-            <View
-              style={{
-                height: 1,
-                width: '100%',
-                backgroundColor: '#fecaca',
-                marginVertical: 10,
-              }}
-            />
-            {user.role === 'superadmin' && (
-              <DrawerItem
-                label="Business Profile"
-                icon={({ color, size }) => (
-                  <Ionicons name="home-outline" size={size} color={color} />
-                )}
-                onPress={() => props.navigation.navigate('Business profile')}
-              />
-            )}
-            {user.role === 'admin' && (
-              <DrawerItem
-                label="Pickup Profile"
-                icon={({ color, size }) => (
-                  <Ionicons name="home-outline" size={size} color={color} />
-                )}
-                onPress={() => props.navigation.navigate('Pickup profile')}
-              />
-            )}
+          />
+          {user.role === 'superadmin' && (
             <DrawerItem
-              label="User Profile"
+              label="Business Profile"
               icon={({ color, size }) => (
-                <Ionicons name="person-outline" size={size} color={color} />
+                <Ionicons name="home-outline" size={size} color={color} />
               )}
-              onPress={() => props.navigation.navigate('Profile')}
+              onPress={() => props.navigation.navigate('Business profile')}
             />
-          </View>
+          )}
+          {user.role === 'admin' && (
+            <DrawerItem
+              label="Pickup Profile"
+              icon={({ color, size }) => (
+                <Ionicons name="home-outline" size={size} color={color} />
+              )}
+              onPress={() => props.navigation.navigate('Pickup profile')}
+            />
+          )}
+          <DrawerItem
+            label="User Profile"
+            icon={({ color, size }) => (
+              <Ionicons name="person-outline" size={size} color={color} />
+            )}
+            onPress={() => props.navigation.navigate('Profile')}
+          />
         </View>
-     
+      </View>
 
       {/* Footer */}
       <View
@@ -482,3 +532,20 @@ export default function CustomDrawerContent(props: any) {
     </DrawerContentScrollView>
   );
 }
+const styles = StyleSheet.create({
+  labelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  labelText: {
+    fontSize: 16,
+  },
+
+  badgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+});

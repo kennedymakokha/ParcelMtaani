@@ -27,7 +27,7 @@ export const injectEndpoints = api.injectEndpoints({
             query: () => `/parcel/trucks/count`,
         }),
         fetchStatusCount: builder.query({
-            query: () => `/parcel/status/count`,
+            query: (filter) => `/parcel/status/count?filter=${filter}`,
         }),
         fetchDashboardStats: builder.query({
             query: ({ pickupId, filterType, startDate, endDate }) => `/parcel/events/stats?pickupId=${pickupId}&filterType=${filterType}&startDate=${startDate}&endDate=${endDate}`,

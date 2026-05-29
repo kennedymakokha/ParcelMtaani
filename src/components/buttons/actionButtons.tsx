@@ -6,7 +6,8 @@ import { useTheme } from '../../contexts/themeContext';
 interface ActionButtonProps {
   title: string;
   onPress: () => void;
-  type?: 'primary' | 'error' | 'secondary';
+  loading?: boolean;
+  type?: 'primary' | 'error' | 'secondary' | 'warning'|"danger"|"success";
   style?: ViewStyle;
 }
 
@@ -31,6 +32,21 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
           bg: colors.secondary || '#f97316', // Showcases your bright secondary brand orange
           text: '#ffffff', // Clean contrast for light or dark mode setups
         };
+      case 'warning':
+        return {
+          bg: colors.warning || '#f97316', // Showcases your bright warning brand color
+          text: '#ffffff', // Clean contrast for light or dark mode setups
+        };
+          case 'danger':
+        return {
+          bg: colors.danger || '#dc2626', // Showcases your bright danger brand color
+          text: '#ffffff', // Clean contrast for light or dark mode setups
+        };
+      case 'success':
+        return {
+          bg: colors.success || '#16a34a', // Showcases your bright success brand color
+          text: '#ffffff', // Clean contrast for light or dark mode setups
+        };
       case 'primary':
       default:
         return {
@@ -47,9 +63,9 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
       onPress={onPress}
       activeOpacity={0.75}
       style={[
-        styles.button, 
-        { backgroundColor: currentThemeConfigs.bg }, 
-        style
+        styles.button,
+        { backgroundColor: currentThemeConfigs.bg },
+        style,
       ]}
     >
       <Text style={[styles.text, { color: currentThemeConfigs.text }]}>

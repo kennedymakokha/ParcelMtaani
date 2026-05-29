@@ -3,8 +3,12 @@ import { displayDate } from '../../utils/dates.utils';
 
 export const getDrawerConfig = (
   pickupState: string,
+  count: any,
   isPaid: boolean, // 💡 ADDED: Explicit status flag from your currentPickup profile state
-): Record<UserRole, { label: string; icon: string; screen: string }[]> => ({
+): Record<
+  UserRole,
+  { label: string; icon: string; screen: string; counter?: number }[]
+> => ({
   superuser: [
     { label: 'Dashboard', icon: 'stats-chart', screen: 'Dashboard' },
     { label: 'Business Management', icon: 'bus-outline', screen: 'Business' },
@@ -64,12 +68,19 @@ export const getDrawerConfig = (
       label: 'Parcel Recieval & Loading',
       icon: 'cube-outline',
       screen: 'Parcel Intake',
+       counter: count[2]?.count || 0,
     },
-    { label: 'Offloading', icon: 'qr-code-outline', screen: 'On Receiving' },
+    {
+      label: `Offloading`,
+      icon: 'qr-code-outline',
+      screen: 'On Receiving',
+      counter: count[0]?.count || 0, // 💡 ADDED: Dynamic counter for pending arrivals
+    },
     {
       label: 'Cancelled Parcels',
       icon: 'people-outline',
       screen: 'Cancelled Parcels',
+      counter: count[4]?.count || 0,
     },
   ],
 

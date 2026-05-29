@@ -17,6 +17,20 @@ export const injectEndpoints = api.injectEndpoints({
                 body,
             }),
         }),
+        restoreNotifications: builder.mutation({
+            query: (body) => ({
+                url: `/auth/restore_notifications/${body.userId}`,
+                method: 'PUT',
+                body,
+            }),
+        }),
+        forceLogout: builder.mutation({
+            query: (body) => ({
+                url: `/auth/force-logout/${body.userId}`,
+                method: 'PUT',
+                body,
+            }),
+        }),
         verify: builder.mutation({
             query: (body) => ({
                 url: '/auth/verify-otp',
@@ -105,5 +119,7 @@ export const {
     useGetSessionQuery,
     useLogoutMutation,
     useDeleteUserMutation,
-    useLazyFetchUserQuery
+    useLazyFetchUserQuery,
+    useRestoreNotificationsMutation,
+    useForceLogoutMutation,
 } = injectEndpoints;

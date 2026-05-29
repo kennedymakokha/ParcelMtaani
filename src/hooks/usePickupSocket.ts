@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useAppDispatch } from './storehooks';
 import { setPickupEvent } from '../features/pickupEventsSlice';
 import { useSocket } from '../contexts/socketContext';
+import { setCurrentPickup } from '../features/pickSlice';
 
 export const usePickupSocket = () => {
   const dispatch = useAppDispatch();
@@ -19,6 +20,10 @@ export const usePickupSocket = () => {
           timestamp: Date.now(),
         }),
       );
+
+      if (data?.data?.pickup) {
+        dispatch(setCurrentPickup(data.data.pickup));
+      }
 
       console.log('🚨 Pickup shut event received:', data);
     };

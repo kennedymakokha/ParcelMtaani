@@ -23,7 +23,7 @@ export default function AdminDashboard() {
   );
   const { socket } = useSocket();
   const { user } = useSelector((state: any) => state.auth);
-  console.log(user);
+
   const [filter, setFilter] = useState('today');
   const [filterLoading, setFilterLoading] = useState(false);
 

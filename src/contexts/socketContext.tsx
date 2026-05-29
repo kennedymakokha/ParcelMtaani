@@ -36,7 +36,9 @@ export const SocketProvider = ({ children }: any) => {
     });
     newSocket.on('connect', () => {
       console.log('🟢 Socket connected:', newSocket.id);
+      newSocket.emit('registerDevice', user._id);
 
+      console.log('📱 Device registered:', user._id);
       if (user?.pickup?._id) {
         const room = `pickup_${user.pickup._id}`;
 

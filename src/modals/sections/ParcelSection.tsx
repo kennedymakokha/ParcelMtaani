@@ -94,7 +94,7 @@ export const ParcelSection = ({
       />
 
       <FormInput
-        label="Special Instructions"
+        label="Special Description"
         multiline
         value={formData.parcel.instructions}
         onChangeText={t => updateField('parcel', 'instructions', t)}

@@ -3,7 +3,6 @@ import { FormatDate } from '../utils/dates.utils';
 
 export const buildReceiptText = ({
   receiptNo,
-  invoiceId,
   sender,
   reciever,
   parcel,
@@ -15,6 +14,7 @@ export const buildReceiptText = ({
   changeDue = 0,
   from,
   pickupName,
+  printDate,
   mpesaData,
   phoneNumber,
   user,
@@ -80,7 +80,6 @@ export const buildReceiptText = ({
   text += line;
 
   text += `Receipt No: ${receiptNo}\n`;
-  text += `Invoice ID: ${invoiceId}\n`;
   text += `Payment: ${paymentLabel}\n`;
 
   if (customerPin) {
@@ -97,7 +96,7 @@ export const buildReceiptText = ({
 
   const displayDate = mpesaData?.transactionDate
     ? FormatDate(`${mpesaData.transactionDate}`)
-    : new Date().toLocaleString();
+    : new Date(printDate).toLocaleString()||new Date().toLocaleString();
 
   text += `Date: ${displayDate}\n`;
 
@@ -131,14 +130,11 @@ export const buildReceiptText = ({
   }
 
   const weight =
-    parcel?.weight ||
-    parcel?.weight_kg ||
-    parcel?.parcel?.weight ||
-    '';
+    parcel?.weight ? `${parcel.weight} kg` : 'N/A';
 
   text += formatLine('Weight (kg)', weight);
-  text += formatLine('From', from || '');
-  text += formatLine('Pickup Point', pickupName || '');
+  // text += formatLine('From', from || '');
+  text += formatLine('Pickup:', pickupName || '');
 
   if (parcel?.instructions) {
     text += `Notes: ${parcel.instructions}\n`;

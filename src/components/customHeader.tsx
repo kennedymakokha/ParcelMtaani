@@ -25,15 +25,13 @@ const NotificationBadge = ({ count }: { count: number }) => {
     <View
       style={[
         styles.badgeContainer,
-        { 
-          backgroundColor: colors.secondary || '#f97316', 
-          borderColor: colors.card || '#ffffff' 
+        {
+          backgroundColor: colors.secondary || '#f97316',
+          borderColor: colors.card || '#ffffff',
         },
       ]}
     >
-      <Text style={styles.badgeText}>
-        {count > 9 ? '9+' : count}
-      </Text>
+      <Text style={styles.badgeText}>{count > 9 ? '9+' : count}</Text>
     </View>
   );
 };
@@ -42,9 +40,10 @@ interface CustomHeaderProps {
   title: string;
   back?: boolean;
   nodetails?: boolean;
+  actions?: any;
 }
 
-function CustomHeader({ title, back, nodetails }: CustomHeaderProps) {
+function CustomHeader({ title, back, nodetails, actions }: CustomHeaderProps) {
   const navigation = useNavigation();
   const { colors } = useTheme();
   const [menuVisible, setMenuVisible] = useState(false);
@@ -61,10 +60,10 @@ function CustomHeader({ title, back, nodetails }: CustomHeaderProps) {
     <View
       style={[
         styles.headerMainWrapper,
-        { 
-          backgroundColor: colors.card, 
-          borderBottomWidth: 1, 
-          borderColor: colors.border || '#e2e8f0' 
+        {
+          backgroundColor: colors.card,
+          borderBottomWidth: 1,
+          borderColor: colors.border || '#e2e8f0',
         },
       ]}
     >
@@ -112,6 +111,19 @@ function CustomHeader({ title, back, nodetails }: CustomHeaderProps) {
               count={notifications.filter(e => !e.read).length}
             />
           </TouchableOpacity>
+          {actions && (
+            <TouchableOpacity
+              onPress={() => setMenuVisible(true)}
+              style={styles.iconHitTarget}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="ellipsis-vertical"
+                size={22}
+                color={colors.text}
+              />
+            </TouchableOpacity>
+          )}
         </View>
       )}
 
@@ -130,19 +142,20 @@ function CustomHeader({ title, back, nodetails }: CustomHeaderProps) {
                 { backgroundColor: colors.card, borderColor: colors.border },
               ]}
             >
-              <MenuOption
-                icon="refresh-outline"
-                label="Sync Data"
-                onPress={() => setMenuVisible(false)}
-                color={colors.text}
-              />
-              <MenuOption
-                icon="settings-outline"
-                label="Settings"
-                onPress={() => setMenuVisible(false)}
-                color={colors.text}
-              />
-              <View
+              {actions?.map((action: any, index: number) => (
+                <MenuOption
+                  key={index}
+                  icon={action.icon}
+                  label={action.label}
+                  onPress={() => {
+                    action.onPress();
+                    setMenuVisible(false);
+                  }}
+                  color={colors.text}
+                />
+              ))}
+            
+              {/* <View
                 style={[styles.divider, { backgroundColor: colors.border }]}
               />
               <MenuOption
@@ -150,7 +163,7 @@ function CustomHeader({ title, back, nodetails }: CustomHeaderProps) {
                 label="Logout"
                 onPress={() => setMenuVisible(false)}
                 color={colors.error || '#dc2626'}
-              />
+              /> */}
             </View>
           </View>
         </TouchableWithoutFeedback>
@@ -201,9 +214,9 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     flex: 1,
   },
-  modalOverlay: { 
-    flex: 1, 
-    backgroundColor: 'rgba(0,0,0,0.15)' 
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.15)',
   },
   dropdownMenu: {
     position: 'absolute',
@@ -226,14 +239,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 12,
   },
-  menuText: { 
-    fontSize: 14, 
-    fontWeight: '600' 
+  menuText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
-  divider: { 
-    height: 1, 
-    marginVertical: 4, 
-    marginHorizontal: 16 
+  divider: {
+    height: 1,
+    marginVertical: 4,
+    marginHorizontal: 16,
   },
   badgeContainer: {
     position: 'absolute',
@@ -247,8 +260,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
     borderWidth: 1.5,
   },
-  badgeText: { 
-    fontSize: 8, 
+  badgeText: {
+    fontSize: 8,
     fontWeight: '900',
     color: '#ffffff', // Ensures clear visibility against orange backgrounds
   },

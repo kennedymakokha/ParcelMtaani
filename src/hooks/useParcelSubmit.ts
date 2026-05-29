@@ -42,7 +42,7 @@ const xorTransform = (text: string) => {
     .join('');
 };
 
-const encryptQR = (payload: any) => {
+export const encryptQR = (payload: any) => {
   const json = JSON.stringify(payload);
   return base64Encode(xorTransform(json));
 };
@@ -56,7 +56,7 @@ const simpleHash = (str: string) => {
   return h.toString(36);
 };
 
-const signQR = (code: string, id: string) =>
+export const signQR = (code: string, id: string) =>
   simpleHash(`${code}:${id}:${XOR_KEY}`);
 
 /**
@@ -212,7 +212,7 @@ export const useParcelSubmit = () => {
        * 4. SAVE PAYMENT
        */
       const payments: any[] = [];
-      console.log("PAYMENR", payments);
+     
       /**
        * SPLIT PAYMENT
        */
@@ -283,6 +283,7 @@ export const useParcelSubmit = () => {
       /**
        * 5. QR ENCRYPTION (SAFE)
        */
+     
       const qrPayload = {
         code: parcelCode, // MUST stay plain
         data: encryptQR({
@@ -301,7 +302,10 @@ export const useParcelSubmit = () => {
        * 6. PRINT
        */
       const receiptText = buildReceiptText({
-        receiptNo,
+        printDate: savedParcel?.createdAt,
+        from: currentPickup?.pickup_name || '',
+        pickupName: response?.sentTo,
+        receiptNo: parcelCode,
         sender: formData.sender,
         reciever: formData.receiver,
         parcel: savedParcel?.parcel,

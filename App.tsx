@@ -42,22 +42,33 @@ import { usePickupSocket } from './src/hooks/usePickupSocket';
 
 import PickupUserSync from './src/screens/syncUserNevents';
 import { setCurrentPickup } from './src/features/pickSlice';
+import { loadArchivedNotifications } from './src/utils/loadArchivedNotifications';
+import {
+  unsubscribeAllTopics,
+  unsubscribeFromTopic,
+} from './src/utils/subscribeUnsubscribe';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLogoutMutation } from './src/services/apis/auth.api';
+import { logout } from './src/features/auth/authSlice';
 
 function AppNavigator() {
   const { colors } = useTheme();
 
   const dispatch = useDispatch();
-
+  const [logoutUser] = useLogoutMutation();
   const { socket } = useSocket();
 
   const { user } = useSelector((state: any) => state.auth);
-
+  const currentPickup = useSelector(
+    (state: any) => state.pickups.currentPickup,
+  );
   usePickupSocket();
 
   /**
    * NOTIFICATION PERMISSION
    */
   useEffect(() => {
+    // dispatch(clearNotifications());
     const requestNotificationPermission = async () => {
       try {
         if (Platform.OS === 'android' && Number(Platform.Version) >= 33) {
@@ -112,15 +123,32 @@ function AppNavigator() {
    */
   useEffect(() => {
     const unsubscribe = messaging().onMessage(async remoteMessage => {
+    
+      const messageData = remoteMessage.data || {};
+
+      const title =
+        typeof remoteMessage.notification?.title === 'string'
+          ? remoteMessage.notification.title
+          : typeof messageData.title === 'string'
+          ? messageData.title
+          : 'Notification';
+
+      const body =
+        typeof remoteMessage.notification?.body === 'string'
+          ? remoteMessage.notification.body
+          : typeof messageData.body === 'string'
+          ? messageData.body
+          : '';
+
       dispatch(
         addNotification({
           id: remoteMessage.messageId || Date.now().toString(),
 
-          title: remoteMessage.notification?.title || 'Notification',
+          title,
 
-          body: remoteMessage.notification?.body || '',
+          body,
 
-          data: remoteMessage.data,
+          data: messageData,
 
           read: false,
 
@@ -160,18 +188,83 @@ function AppNavigator() {
     const onSuccessfulDelivery = (payload: any) => {
       console.log('✅ Successful Delivery:', payload);
     };
+    const ForceLogout = async (payload: any) => {
+      console.log(payload)
+      try {
+        /**
+         * UNSUBSCRIBE FROM ALL USER TOPICS
+         */
+
+        await unsubscribeAllTopics(user);
+
+        /**
+         * EXTRA SAFETY UNSUBSCRIBE
+         */
+
+        if (currentPickup?._id) {
+          await unsubscribeFromTopic(`pickup_${currentPickup._id}_attendants`);
+        }
+
+        if (user?.business?._id) {
+          await unsubscribeFromTopic(`business_${user.business._id}_crew`);
+
+          await unsubscribeFromTopic(`business_${user.business._id}_admin`);
+        }
+
+        /**
+         * GLOBAL TOPICS
+         */
+        await unsubscribeFromTopic('parcel-updates');
+
+        /**
+         * SOCKET CLEANUP
+         */
+        if (socket?.disconnect) {
+          socket.disconnect();
+        }
+
+        /**
+         * CLEAR STORAGE
+         */
+        await AsyncStorage.multiRemove([
+          'accessToken',
+          'userId',
+          'tokenExpiry',
+        ]);
+
+        /**
+         * CLEAR REDUX
+         */
+        dispatch(setCurrentPickup(null));
+        await logoutUser({}).unwrap();
+        dispatch(logout());
+      } catch (error) {
+        console.log('Logout error:', error);
+      }
+
+      loadArchivedNotifications(dispatch);
+     
+    };
+    const restoreNotifications = (payload: any) => {
+      loadArchivedNotifications(dispatch);
+      console.log(payload);
+    };
     const updatePickup = (payload: any) => {
       const freshPickup = payload.data?.pickup;
-    
+
       if (freshPickup) {
         dispatch(setCurrentPickup(freshPickup));
       }
     };
     socket.on('Successful Delivery', onSuccessfulDelivery);
+    socket.on('Restore Notifications', restoreNotifications);
+    socket.on('Force Logout', ForceLogout);
     const currentPickupId = user.pickup._id;
     socket.on(`pickup_${currentPickupId}`, updatePickup);
     return () => {
       socket.off('Successful Delivery', onSuccessfulDelivery);
+      socket.off('Restore Notifications', restoreNotifications);
+      socket.off('Force Logout', ForceLogout);
     };
   }, [socket]);
 

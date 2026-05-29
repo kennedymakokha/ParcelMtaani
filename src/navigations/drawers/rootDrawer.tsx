@@ -21,10 +21,20 @@ import TrucksManagementScreen from '../../screens/fleet/truckScreen';
 import BusinessProfileScreen from '../../screens/business/businessProfile';
 import ParcelCashScreen from '../../screens/cash';
 import PickupProfileScreen from '../../screens/business/pickupProfile';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  clearNotifications,
+  markAllAsRead,
+} from '../../features/notificationsSlice';
+import { useSocket } from '../../contexts/socketContext';
 
 const Drawer = createDrawerNavigator();
 
 export default function RootDrawer() {
+  const { user:{_id} } = useSelector((state: any) => state.auth);
+  const dispatch = useDispatch();
+  const { socket } = useSocket();
+ 
   return (
     <Drawer.Navigator
       initialRouteName="Dashboard"
@@ -59,7 +69,32 @@ export default function RootDrawer() {
       <Drawer.Screen
         name="notifications"
         options={() => ({
-          header: () => <CustomHeader back title="Notifications" />,
+          header: () => (
+            <CustomHeader
+              actions={[
+                {
+                  icon: 'checkmark-done-outline',
+                  label: 'marks all as read',
+                  onPress: () => {
+                    dispatch(markAllAsRead());
+                  },
+                },
+                {
+                  icon: 'trash-outline',
+                  label: 'clear all',
+                  onPress: () => {
+                    dispatch(clearNotifications());
+                    if (socket) {
+                      socket.emit('clearNotifications', { userId: _id }); // Emit event to clear notifications for the user
+                    }
+                  },
+                },
+               
+              ]}
+              back
+              title="Notifications"
+            />
+          ),
         })}
         component={NotificationPage}
       />
@@ -117,14 +152,14 @@ export default function RootDrawer() {
         })}
         component={BusinessProfileScreen}
       />
-         <Drawer.Screen
+      <Drawer.Screen
         name="Pickup profile"
         options={() => ({
           header: () => <CustomHeader title="MY Pickup Station" />,
         })}
         component={PickupProfileScreen}
       />
-      
+
       <Drawer.Screen
         name="Delivery"
         options={() => ({
@@ -139,7 +174,7 @@ export default function RootDrawer() {
         })}
         component={StaffManagementScreen}
       />
-       <Drawer.Screen
+      <Drawer.Screen
         name="Todays cash Records"
         options={() => ({
           header: () => <CustomHeader title="Todays Cash Flow" />,

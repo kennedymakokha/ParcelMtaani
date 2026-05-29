@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   Modal,
   ScrollView,
+  Pressable,
 } from 'react-native';
 import { useTheme } from '../contexts/themeContext';
 import ParcelIntakeScreen from '../modals/parcelIntekeModal';
@@ -27,12 +28,24 @@ import { Fab } from '../components/buttons/fab';
 import { useSocket } from '../contexts/socketContext';
 import { RootState } from '../../store';
 import { ParcelCard } from '../components/parcekCard';
+import { useQrPrinter } from '../hooks/useQrPrinter';
+
+// 1. 👇 Import your thermal text printing service or library module
+import { ThermalPrinterModule } from 'react-native-thermal-receipt-printer';
+import { usePrinter } from '../hooks/usePrinter';
+import { encryptQR, signQR } from '../hooks/useParcelSubmit';
+import { printToPrinter } from '../services /printer.service';
+import { buildReceiptText } from '../services /recieptBuilder';
 
 export default function DispatchToTrackScreen() {
   const { colors } = useTheme();
   const [search, setSearch] = useState('');
   const [showIntakeModal, setShowIntakeModal] = useState(false);
   const [showTrackModal, setShowTrackModal] = useState(false);
+
+  const [showReprintModal, setShowReprintModal] = useState(false);
+  const [targetParcel, setTargetParcel] = useState<any | null>(null);
+
   const [selectedParcels, setSelectedParcels] = useState<any[]>([]);
   const [msg, setMsg] = useState({ msg: '', state: '' });
   const handleToastMsg = (message: string) =>
@@ -57,16 +70,13 @@ export default function DispatchToTrackScreen() {
     (state: any) => state.pickups.currentPickup,
   );
 
-  // 2. Build explicit safety boundaries
   const isPickupShut = pickupState === 'pickup_shut';
 
-  // Guard clause: If the pickup object isn't loaded yet, default to NOT shutting down the UI
   const isNotPaid =
     currentPickup && Object.keys(currentPickup).length > 0
       ? currentPickup.paid === false || currentPickup.paid === 'false'
       : false;
 
-  // 3. Combine statuses
   const isInactive = isPickupShut || isNotPaid;
   const { data, isLoading, refetch } = useFetchparcelQuery({
     limit: 10,
@@ -78,6 +88,15 @@ export default function DispatchToTrackScreen() {
   const parcels = data?.parcels || [];
 
   const [vehicleReg, setVehicleReg] = useState('');
+
+  const { selectedPrinterMac } = usePrinter();
+
+  // 2. 👇 Pass the mac straight from your local async storage state wire
+  const { setQrPrintData, printQr } = useQrPrinter({
+    selectedPrinterMac,
+    onClose: () => setShowReprintModal(false),
+    setMsg: (toastState: any) => setMsg(toastState),
+  });
 
   const toggleSelect = (item: any) => {
     if (item.status !== 'Pending Dispatch') return;
@@ -98,8 +117,6 @@ export default function DispatchToTrackScreen() {
 
     const onCanceledParcel = async (parcel: any) => {
       console.log(parcel);
-      //
-
       await refetch();
     };
 
@@ -108,6 +125,82 @@ export default function DispatchToTrackScreen() {
       socket.off('Parcel-change', onCanceledParcel);
     };
   }, [socket, refetch]);
+
+  // 3. 👇 FIXED: Properly format data structure context and fire print job
+  const triggerReprintQr = async () => {
+    if (!selectedPrinterMac) {
+      setMsg({ msg: 'Please select a hardware printer first', state: 'error' });
+      return;
+    }
+    if (!targetParcel) return;
+
+    const qrPayload = {
+      code: targetParcel.code, // MUST stay plain
+      data: encryptQR({
+        id: targetParcel.receiptNo,
+        receiver: targetParcel.receiver_phone,
+        receivername: targetParcel.receiver_name,
+        pickupName: currentPickup?.pickup_name,
+        from: user?.pickup?.pickup_name || '',
+      }),
+      signature: signQR(targetParcel.code, targetParcel.receiptNo),
+    };
+
+    const qrData = JSON.stringify(qrPayload);
+    // Set layout matching expected shape inside useQrPrinter hook state container
+    await setQrPrintData({
+      qrData, // falls back to string code identifier
+      parcelCode: targetParcel.code,
+    });
+
+    // Execute the bound function implementation loop
+    setTimeout(() => {
+      printQr();
+    }, 100);
+  };
+
+  // 4. 👇 NEW: Full structured text receipt printing pipeline execution block
+  const triggerReprintReceipt = async () => {
+    if (!selectedPrinterMac) {
+      setMsg({ msg: 'Please select a hardware printer first', state: 'error' });
+      return;
+    }
+    if (!targetParcel) return;
+
+    try {
+      setShowReprintModal(false);
+
+      const receiptText = buildReceiptText({
+        receiptNo: targetParcel.code,
+        printDate: targetParcel.createdAt,
+        from: user?.pickup?.pickup_name || '',
+        pickupName: currentPickup?.pickup_name,
+        sender: {
+          name: targetParcel.sender_name,
+          phone: targetParcel.sender_phone,
+        },
+        reciever: {
+          name: targetParcel.receiver_name,
+          phone: targetParcel.receiver_phone,
+        },
+        parcel: {
+          instructions: targetParcel.instructions,
+          price: targetParcel.price,
+          weight: targetParcel.weight,
+        },
+        method: targetParcel.payment_method || 'CASH',
+        paid: targetParcel.price,
+        phoneNumber: targetParcel.sender_phone,
+        business: user.business,
+      });
+
+      await printToPrinter(selectedPrinterMac, receiptText);
+      setMsg({ msg: 'Receipt printed successfully', state: 'success' });
+    } catch (error) {
+      console.log(error);
+      setMsg({ msg: 'Failed to reprint full receipt text', state: 'error' });
+    }
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, padding: 24 }}>
@@ -140,8 +233,12 @@ export default function DispatchToTrackScreen() {
           renderItem={({ item }: { item: any }) => (
             <ParcelCard
               item={item}
-              onPress={() => toggleSelect(item)}
               colors={colors}
+              onPress={() => toggleSelect(item)}
+              onDoublePress={() => {
+                setTargetParcel(item);
+                setShowReprintModal(true);
+              }}
             />
           )}
           ListEmptyComponent={
@@ -151,8 +248,11 @@ export default function DispatchToTrackScreen() {
           }
         />
       )}
-      {msg.msg && <Toast setMsg={handleToastMsg} msg={msg.msg} state={msg.state} />}
-      {/* Track Button (enabled if pending selected) */}
+      {msg.msg && (
+        <Toast setMsg={handleToastMsg} msg={msg.msg} state={msg.state} />
+      )}
+
+      {/* Track Button */}
       {selectedParcels.length > 0 && (
         <TouchableOpacity
           onPress={() => setShowTrackModal(true)}
@@ -210,7 +310,6 @@ export default function DispatchToTrackScreen() {
       </Modal>
 
       {/* Track Modal */}
-
       <Modal visible={showTrackModal} animationType="slide" transparent>
         <View
           style={{
@@ -225,7 +324,7 @@ export default function DispatchToTrackScreen() {
               backgroundColor: colors.card,
               borderRadius: 12,
               padding: 20,
-              maxHeight: '80%', // ✅ prevents overflow
+              maxHeight: '80%',
             }}
           >
             <ScrollView showsVerticalScrollIndicator={false}>
@@ -240,7 +339,6 @@ export default function DispatchToTrackScreen() {
                 Vehicle & Driver Details
               </Text>
 
-              {/* Truck Selector */}
               <View style={{ marginBottom: 20 }}>
                 <Text
                   style={{
@@ -258,7 +356,7 @@ export default function DispatchToTrackScreen() {
                     borderWidth: 1,
                     borderColor: colors.border,
                     borderRadius: 8,
-                    overflow: 'hidden', // ✅ fixes Android clipping
+                    overflow: 'hidden',
                   }}
                 >
                   <Picker
@@ -274,7 +372,6 @@ export default function DispatchToTrackScreen() {
                 </View>
               </View>
 
-              {/* Buttons */}
               <PrimaryButton
                 title={dispatching ? 'Dispatching...' : 'Confirm Dispatch'}
                 onPress={async () => {
@@ -299,6 +396,70 @@ export default function DispatchToTrackScreen() {
             </ScrollView>
           </View>
         </View>
+      </Modal>
+
+      {/* REPRINT SELECTION MODAL */}
+      <Modal
+        visible={showReprintModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowReprintModal(false)}
+      >
+        <Pressable
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            justifyContent: 'center',
+            padding: 24,
+          }}
+          onPress={() => setShowReprintModal(false)}
+        >
+          <View
+            style={{
+              backgroundColor: colors.card,
+              borderRadius: 16,
+              padding: 24,
+              elevation: 5,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: '700',
+                color: colors.text,
+                marginBottom: 6,
+                textAlign: 'center',
+              }}
+            >
+              Reprint Document
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                color: colors.secondary,
+                marginBottom: 20,
+                textAlign: 'center',
+              }}
+            >
+              Code: {targetParcel?.code || 'N/A'}
+            </Text>
+
+            <View style={{ gap: 12 }}>
+              <PrimaryButton
+                title="Reprint QR Code"
+                onPress={triggerReprintQr}
+              />
+              <PrimaryButton
+                title="Reprint Receipt"
+                onPress={triggerReprintReceipt}
+              />
+              <SecondaryButton
+                title="Close Menu"
+                onPress={() => setShowReprintModal(false)}
+              />
+            </View>
+          </View>
+        </Pressable>
       </Modal>
     </View>
   );
