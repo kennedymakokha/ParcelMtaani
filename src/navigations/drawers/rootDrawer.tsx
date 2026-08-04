@@ -27,6 +27,8 @@ import {
   markAllAsRead,
 } from '../../features/notificationsSlice';
 import { useSocket } from '../../contexts/socketContext';
+import RouteManagementScreen from '../../screens/routes/routeManagementScreen';
+import TicketingScreen from '../../screens/ticketing/TicketingScreen';
 
 const Drawer = createDrawerNavigator();
 
@@ -187,6 +189,20 @@ export default function RootDrawer() {
           header: () => <CustomHeader title="Fleet Management" />,
         })}
         component={TrucksManagementScreen}
+      />
+        <Drawer.Screen
+        name="routes"
+        options={() => ({
+          header: () => <CustomHeader title="Route Management" />,
+        })}
+        component={RouteManagementScreen}
+      />
+       <Drawer.Screen
+        name="Tickets"
+        options={() => ({
+          header: () => <CustomHeader title="Tickets & Seats" />,
+        })}
+        component={TicketingScreen}
       />
     </Drawer.Navigator>
   );

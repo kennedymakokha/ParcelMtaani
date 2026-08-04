@@ -32,7 +32,9 @@ export const getDrawerConfig = (
       screen: 'pickup management',
     },
     { label: 'Fleet Management', icon: 'bus-outline', screen: 'trucks' },
+    { label: 'Routes', icon: 'route-outline', screen: 'routes' },
     { label: 'Reports', icon: 'document-text-outline', screen: 'Parcels' },
+    { label: 'Ticketing', icon: 'document-text-outline', screen: 'Tickets' },
   ],
 
   admin: [

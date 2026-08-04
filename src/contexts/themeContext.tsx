@@ -1,6 +1,6 @@
 /* eslint-disable react-native/no-inline-styles */
-import React, { createContext, useContext } from 'react';
-import { useColorScheme, View, Text } from 'react-native';
+import React, { createContext, useContext, useEffect } from 'react';
+import { useColorScheme, View } from 'react-native';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
 
@@ -119,15 +119,22 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
 
   // 2. Build explicit safety boundaries
   const isPickupShut = pickupState === 'pickup_shut';
-  
-  // Guard clause: If the pickup object isn't loaded yet, default to NOT shutting down the UI
-  const isNotPaid = pickup && Object.keys(pickup).length > 0 
-    ? (pickup.paid === false || pickup.paid === 'false') 
-    : false;
+  const isNotPaid =
+    pickup && Object.keys(pickup).length > 0
+      ? pickup.paid === false || pickup.paid === 'false'
+      : false;
 
+  console.log(pickup);
   // 3. Combine statuses
-  const isInactive = isPickupShut || isNotPaid;
+  const isInactive = pickup?.paid === false || pickup?.paid === 'false';
+  useEffect(() => {
+    console.log('🎨 ThemeProvider Pickup Changed:', pickup);
+    console.log('🎨 Paid Status:', pickup?.paid);
+    console.log('🎨 isInactive:', isInactive);
+  }, [pickup, isInactive]);
+  // Guard clause: If the pickup object isn't loaded yet, default to NOT shutting down the UI
 
+  // console.log(isInactive);
   // console.log('--- SYSTEM STATUS WATCHER ---');
   // console.log('Raw Pickup Object Status:', pickup);
   // console.log('Evaluated Unpaid Boolean (isNotPaid):', isNotPaid);
@@ -154,7 +161,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
       <View style={{ flex: 1 }}>
         {children}
 
-        {isInactive && (
+        {isInactive && pickup && (
           <View
             pointerEvents="none"
             style={{
@@ -177,11 +184,13 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
                 borderRadius: 14,
               }}
             >
-              <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '700' }}>
+              {/* <Text
+                style={{ color: '#ffffff', fontSize: 16, fontWeight: '700' }}
+              >
                 {isPickupShut
                   ? '🔒 We are closed for today'
                   : '⚠️ Payment required to continue'}
-              </Text>
+              </Text> */}
             </View>
           </View>
         )}

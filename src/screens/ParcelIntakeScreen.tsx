@@ -31,7 +31,7 @@ import { ParcelCard } from '../components/parcekCard';
 import { useQrPrinter } from '../hooks/useQrPrinter';
 
 // 1. 👇 Import your thermal text printing service or library module
-import { ThermalPrinterModule } from 'react-native-thermal-receipt-printer';
+
 import { usePrinter } from '../hooks/usePrinter';
 import { encryptQR, signQR } from '../hooks/useParcelSubmit';
 import { printToPrinter } from '../services /printer.service';

@@ -376,7 +376,7 @@ export default function AdminDashboard() {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{
-          paddingBottom: 12,
+          paddingBottom: 32,
         }}
       >
         {isPageLoading ? (
