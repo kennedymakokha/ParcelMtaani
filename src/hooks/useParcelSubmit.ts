@@ -10,8 +10,8 @@ import {
   useMpesapayMutation,
 } from '../services/apis/mpesa.api.ts';
 
-import { buildReceiptText } from '../services /recieptBuilder.tsx';
-import { printToPrinter } from '../services /printer.service.ts';
+import { buildReceiptText } from '../service/recieptBuilder.tsx';
+import { printToPrinter } from '../service/printer.service.ts';
 import { normalizePhoneNumber } from '../utils/trancateText.ts';
 import { useSelector } from 'react-redux';
 

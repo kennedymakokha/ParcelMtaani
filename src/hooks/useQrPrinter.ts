@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { printQrCode } from '../services /printer.service';
+import { printQrCode } from '../service/printer.service';
 
 export const useQrPrinter = ({
   selectedPrinterMac,

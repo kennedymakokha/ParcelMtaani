@@ -34,8 +34,8 @@ import { useQrPrinter } from '../hooks/useQrPrinter';
 
 import { usePrinter } from '../hooks/usePrinter';
 import { encryptQR, signQR } from '../hooks/useParcelSubmit';
-import { printToPrinter } from '../services /printer.service';
-import { buildReceiptText } from '../services /recieptBuilder';
+import { printToPrinter } from '../service/printer.service';
+import { buildReceiptText } from '../service/recieptBuilder';
 
 export default function DispatchToTrackScreen() {
   const { colors } = useTheme();
