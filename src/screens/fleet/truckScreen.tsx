@@ -40,6 +40,8 @@ export default function TrucksManagementScreen() {
     driverId: '',
     driverPhone: '',
     driverIdNo: '',
+    vehicleType: '',
+    route: '',
   });
 
   const openModal = (truck?: Truck) => {
@@ -92,8 +94,11 @@ export default function TrucksManagementScreen() {
         Model: {item.model}
       </Text>
 
-      <Text style={{ color: colors.primary, marginTop: 6 }}>
+      <Text style={{ color: colors.secondary, marginTop: 6 }}>
         Capacity: {item.capacity}
+      </Text>
+      <Text style={{ color: colors.secondary, marginTop: 6 }}>
+        Vehicle type: {item.vehicleType || 'N/A'}
       </Text>
 
       {/* DRIVER INFO */}

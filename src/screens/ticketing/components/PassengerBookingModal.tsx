@@ -35,6 +35,8 @@ import Toast from '../../../components/toast';
 import { COUNTRIES } from '../../../utils/countryCodes';
 
 import { useTicketSubmit } from '../hooks/useTicketSubmit';
+import { usePrinter } from '../../../hooks/usePrinter';
+import { Picker } from '@react-native-picker/picker';
 
 interface Journey {
   from: string;
@@ -62,8 +64,6 @@ interface Props {
   onClose: () => void;
 
   refetch: () => Promise<void>;
-
-  selectedPrinterMac: string;
 }
 
 export default function PassengerBookingModal({
@@ -72,49 +72,36 @@ export default function PassengerBookingModal({
   journey,
   onClose,
   refetch,
-  selectedPrinterMac,
 }: Props) {
+  const { selectedPrinterMac } = usePrinter();
   const { colors } = useTheme();
 
   const { business } = useBusiness();
 
-  const { user } = useSelector(
-    (state: RootState) => state.auth,
+  const { user } = useSelector((state: RootState) => state.auth);
+
+  const { submitTicket, msg, setMsg } = useTicketSubmit();
+
+  const [country, setCountry] = useState(COUNTRIES[0]);
+
+  const [search, setSearch] = useState('');
+
+  const [passenger, setPassenger] = useState<Passenger>({
+    fullName: '',
+    phone: '',
+    nationalId: '',
+    gender: '',
+  });
+
+  const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'Mpesa' | 'Card'>(
+    'Cash',
   );
 
-  const {
-    submitTicket,
-    msg,
-    setMsg,
-  } = useTicketSubmit();
+  const [luggage, setLuggage] = useState(0);
 
-  const [country, setCountry] =
-    useState(COUNTRIES[0]);
+  const [printTicket, setPrintTicket] = useState(true);
 
-  const [search, setSearch] =
-    useState('');
-
-  const [passenger, setPassenger] =
-    useState<Passenger>({
-      fullName: '',
-      phone: '',
-      nationalId: '',
-      gender: '',
-    });
-
-  const [paymentMethod, setPaymentMethod] =
-    useState<'Cash' | 'Mpesa' | 'Card'>(
-      'Cash',
-    );
-
-  const [luggage, setLuggage] =
-    useState(0);
-
-  const [printTicket, setPrintTicket] =
-    useState(true);
-
-  const [printQr, setPrintQr] =
-    useState(true);
+  const [printQr, setPrintQr] = useState(true);
 
   useEffect(() => {
     if (!visible) {
@@ -137,16 +124,13 @@ export default function PassengerBookingModal({
     }
   }, [visible]);
 
-  const updatePassenger = (
-    key: keyof Passenger,
-    value: string,
-  ) => {
+  const updatePassenger = (key: keyof Passenger, value: string) => {
     setPassenger(prev => ({
       ...prev,
       [key]: value,
     }));
   };
-    const handleBookSeat = async () => {
+  const handleBookSeat = async () => {
     if (!seat) {
       return;
     }
@@ -158,24 +142,6 @@ export default function PassengerBookingModal({
       });
       return;
     }
-
-    await submitTicket({
-      passenger,
-      journey,
-      seat,
-      luggage,
-      paymentMethod,
-      phoneNumber: passenger.phone,
-      selectedPrinterMac,
-      business,
-      user,
-      printTicket,
-      printQr,
-      refetch,
-      onSuccess: () => {
-        onClose();
-      },
-    });
   };
 
   return (
@@ -184,21 +150,20 @@ export default function PassengerBookingModal({
         visible={visible}
         transparent
         animationType="slide"
-        onRequestClose={onClose}>
+        onRequestClose={onClose}
+      >
         <KeyboardAvoidingView
-          behavior={
-            Platform.OS === 'ios'
-              ? 'padding'
-              : undefined
-          }
-          style={styles.overlay}>
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.overlay}
+        >
           <View
             style={[
               styles.card,
               {
                 backgroundColor: colors.card,
               },
-            ]}>
+            ]}
+          >
             {/* HEADER */}
 
             <View style={styles.header}>
@@ -209,60 +174,35 @@ export default function PassengerBookingModal({
                     {
                       color: colors.text,
                     },
-                  ]}>
+                  ]}
+                >
                   Book Passenger
                 </Text>
 
                 <Text
                   style={{
                     color: colors.secondary,
-                  }}>
+                  }}
+                >
                   Seat {seat?.seatNo ?? '--'}
                 </Text>
               </View>
 
               <TouchableOpacity onPress={onClose}>
-                <Icon
-                  name="close"
-                  size={28}
-                  color={colors.text}
-                />
+                <Icon name="close" size={28} color={colors.text} />
               </TouchableOpacity>
             </View>
 
             <ScrollView
               keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}>
+              showsVerticalScrollIndicator={false}
+            >
               {/* SEARCH */}
-
-              <FormInput
-                label="Search Passenger"
-                placeholder="Phone or ID Number"
-                value={search}
-                onChangeText={setSearch}
-              />
-
-              {/* PASSENGER */}
-
-              <Text
-                style={[
-                  styles.sectionTitle,
-                  {
-                    color: colors.text,
-                  },
-                ]}>
-                Passenger Details
-              </Text>
 
               <FormInput
                 label="Full Name"
                 value={passenger.fullName}
-                onChangeText={v =>
-                  updatePassenger(
-                    'fullName',
-                    v,
-                  )
-                }
+                onChangeText={v => updatePassenger('fullName', v)}
               />
 
               <PhoneInput
@@ -270,133 +210,38 @@ export default function PassengerBookingModal({
                 value={passenger.phone}
                 country={country}
                 onChangeCountry={setCountry}
-                onChange={phone =>
-                  updatePassenger(
-                    'phone',
-                    phone,
-                  )
-                }
+                onChange={phone => updatePassenger('phone', phone)}
               />
 
               <FormInput
                 label="National ID"
+                keyboardType="numeric"
                 value={passenger.nationalId}
-                onChangeText={v =>
-                  updatePassenger(
-                    'nationalId',
-                    v,
-                  )
-                }
+                onChangeText={v => updatePassenger('nationalId', v)}
               />
-
-              <FormInput
-                label="Gender"
-                value={passenger.gender}
-                onChangeText={v =>
-                  updatePassenger(
-                    'gender',
-                    v,
-                  )
-                }
-              />
-
-              {/* JOURNEY */}
-
-              <Text
-                style={[
-                  styles.sectionTitle,
-                  {
-                    color: colors.text,
-                  },
-                ]}>
-                Journey
-              </Text>
-
               <View
-                style={[
-                  styles.summaryCard,
-                  {
-                    borderColor:
-                      colors.border,
-                  },
-                ]}>
-                <Row
-                  label="Route"
-                  value={`${journey.from} → ${journey.destination}`}
-                />
-
-                <Row
-                  label="Vehicle"
-                  value={journey.truck}
-                />
-
-                <Row
-                  label="Trip"
-                  value={journey.trip}
-                />
-
-                <Row
-                  label="Seat"
-                  value={String(
-                    seat?.seatNo,
-                  )}
-                />
-
-                <Row
-                  label="Fare"
-                  value={`KES ${journey.fare}`}
-                />
+                style={{
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  borderRadius: 8,
+                }}
+              >
+                <Picker
+                  selectedValue={passenger.gender}
+                  onValueChange={v => updatePassenger('gender', v)}
+                >
+                  <Picker.Item label="-- Select Gender --" value={null} />
+                  <Picker.Item label="Male" value="Male" />
+                  <Picker.Item label="Female" value="Female" />
+                </Picker>
               </View>
-
-              {/* LUGGAGE */}
-
-              <Text
-                style={[
-                  styles.sectionTitle,
-                  {
-                    color: colors.text,
-                  },
-                ]}>
-                Luggage
-              </Text>
-
-              <View style={styles.counterRow}>
-                <TouchableOpacity
-                  style={styles.counterButton}
-                  onPress={() =>
-                    setLuggage(prev =>
-                      Math.max(0, prev - 1),
-                    )
-                  }>
-                  <Icon
-                    name="minus"
-                    size={20}
-                    color="#FFF"
-                  />
-                </TouchableOpacity>
-
-                <Text
-                  style={[
-                    styles.counterValue,
-                    {
-                      color: colors.text,
-                    },
-                  ]}>
-                  {luggage}
-                </Text>
-
-                <TouchableOpacity
-                  style={styles.counterButton}
-                  onPress={() =>
-                    setLuggage(prev => prev + 1)
-                  }>
-                  <Icon
-                    name="plus"
-                    size={20}
-                    color="#FFF"
-                  />
-                </TouchableOpacity>
-              </View>
+              
+              <FormInput
+                label="Luggage"
+                value={String(luggage)}
+                keyboardType="numeric"
+                onChangeText={v => setLuggage(Number(v))}
+              />
 
               {/* PAYMENT */}
 
@@ -406,92 +251,38 @@ export default function PassengerBookingModal({
                   {
                     color: colors.text,
                   },
-                ]}>
+                ]}
+              >
                 Payment Method
               </Text>
 
               <View style={styles.paymentRow}>
-                {['Cash', 'Mpesa', 'Card'].map(
-                  method => (
-                    <TouchableOpacity
-                      key={method}
-                      onPress={() =>
-                        setPaymentMethod(
-                          method as any,
-                        )
-                      }
-                      style={[
-                        styles.paymentChip,
-                        paymentMethod ===
-                          method && {
-                          backgroundColor:
-                            colors.primary,
-                        },
-                      ]}>
-                      <Text
-                        style={{
-                          color:
-                            paymentMethod ===
-                            method
-                              ? '#FFF'
-                              : colors.text,
-                          fontWeight:
-                            '700',
-                        }}>
-                        {method}
-                      </Text>
-                    </TouchableOpacity>
-                  ),
-                )}
+                {['Cash', 'Mpesa', 'Card'].map(method => (
+                  <TouchableOpacity
+                    key={method}
+                    onPress={() => setPaymentMethod(method as any)}
+                    style={[
+                      styles.paymentChip,
+                      paymentMethod === method && {
+                        backgroundColor: colors.primary,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={{
+                        color: paymentMethod === method ? '#FFF' : colors.text,
+                        fontWeight: '700',
+                      }}
+                    >
+                      {method}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
 
-              {/* PRINT */}
+              <View style={{ height: 30 }} />
 
-              <Text
-                style={[
-                  styles.sectionTitle,
-                  {
-                    color: colors.text,
-                  },
-                ]}>
-                Printing
-              </Text>
-
-              <View style={styles.switchRow}>
-                <Text
-                  style={{
-                    color: colors.text,
-                  }}>
-                  Print Ticket
-                </Text>
-
-                <Switch
-                  value={printTicket}
-                  onValueChange={
-                    setPrintTicket
-                  }
-                />
-              </View>
-
-              <View style={styles.switchRow}>
-                <Text
-                  style={{
-                    color: colors.text,
-                  }}>
-                  Print Bag Tags
-                </Text>
-
-                <Switch
-                  value={printQr}
-                  onValueChange={setPrintQr}
-                />
-              </View>
-                            <View style={{ height: 30 }} />
-
-              <PrimaryButton
-                title="Book Ticket"
-                onPress={handleBookSeat}
-              />
+              <PrimaryButton title="Book Ticket" onPress={handleBookSeat} />
 
               <View style={{ height: 12 }} />
 
@@ -507,13 +298,7 @@ export default function PassengerBookingModal({
         </KeyboardAvoidingView>
       </Modal>
 
-      {msg.msg && (
-        <Toast
-          msg={msg.msg}
-          state={msg.state}
-          setMsg={setMsg}
-        />
-      )}
+      {msg.msg && <Toast msg={msg.msg} state={msg.state} setMsg={setMsg} />}
     </>
   );
 }
@@ -521,26 +306,6 @@ export default function PassengerBookingModal({
 /* -------------------------------- */
 /* Helper Component                 */
 /* -------------------------------- */
-
-function Row({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
-  return (
-    <View style={styles.row}>
-      <Text style={styles.rowLabel}>
-        {label}
-      </Text>
-
-      <Text style={styles.rowValue}>
-        {value}
-      </Text>
-    </View>
-  );
-}
 
 const styles = StyleSheet.create({
   overlay: {

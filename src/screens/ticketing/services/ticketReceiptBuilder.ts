@@ -51,9 +51,9 @@ export const buildTicketReceipt = ({
     '--------------------------------';
 
   return `
-        ${business.name.toUpperCase()}
-${business.address ?? ''}
-Tel: ${business.phone ?? ''}
+        ${business?.name?.toUpperCase() || 'BUSINESS NAME'}
+${business?.address ?? ''}
+Tel: ${business?.phone ?? ''}
 
 ${line}
 
@@ -65,7 +65,7 @@ Ticket No : ${ticket.ticketNumber}
 
 Date      : ${new Date(
     ticket.createdAt,
-).toLocaleString()}
+  ).toLocaleString()}
 
 ${line}
 

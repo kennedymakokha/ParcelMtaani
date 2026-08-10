@@ -32,9 +32,26 @@ export const getDrawerConfig = (
       screen: 'pickup management',
     },
     { label: 'Fleet Management', icon: 'bus-outline', screen: 'trucks' },
+    {
+      label: 'Parcel Recieval & Loading',
+      icon: 'cube-outline',
+      screen: 'Parcel Intake',
+       counter: count[2]?.count || 0,
+    },
     { label: 'Routes', icon: 'route-outline', screen: 'routes' },
     { label: 'Reports', icon: 'document-text-outline', screen: 'Parcels' },
     { label: 'Ticketing', icon: 'document-text-outline', screen: 'Tickets' },
+    //  ...(pickupState === 'pickup_shut' || isPaid === false
+    //   ? [
+    //       {
+    //         label: `${displayDate.toDateString()} Subscription`,
+    //         icon: 'calendar-outline',
+    //         screen: 'payments',
+    //       },
+    //     ]
+    //   : []),
+  
+    
   ],
 
   admin: [

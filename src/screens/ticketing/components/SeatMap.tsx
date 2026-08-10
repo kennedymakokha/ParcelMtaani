@@ -72,7 +72,7 @@ export default function SeatMap({
         return BUS_51;
 
       default:
-        return HIACE_14;
+        return HIACE_11;
     }
   }, [vehicleType]);
 

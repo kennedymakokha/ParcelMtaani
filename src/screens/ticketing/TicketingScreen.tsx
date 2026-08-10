@@ -24,10 +24,11 @@ import PassengerDetailsModal from './components/PassengerDetailsModal';
 import ReservationModal from './components/ReservationModal';
 import PassengerBookingModal from './components/PassengerBookingModal';
 import { Text } from 'react-native';
+import { usePrinter } from '../../hooks/usePrinter';
 
 export default function TicketingScreen() {
   const { colors } = useTheme();
-
+  const { selectedPrinterMac } = usePrinter();
   const { user } = useSelector((state: RootState) => state.auth);
   const [search, setSearch] = useState('');
 
@@ -155,6 +156,7 @@ export default function TicketingScreen() {
 
       <PassengerBookingModal
         visible={modal === 'booking'}
+        
         seat={selectedSeat}
         journey={journey}
         onClose={() => setModal('none')}

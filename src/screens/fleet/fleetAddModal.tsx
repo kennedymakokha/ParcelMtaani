@@ -15,6 +15,7 @@ import {
 
 import { useTheme } from '../../contexts/themeContext';
 import { useGetUsersQuery } from '../../services/apis/auth.api';
+import { useFetchRoutesQuery } from '../../services/apis/routes.api';
 import {
   useCreateTruckMutation,
   useEditTruckMutation,
@@ -27,6 +28,7 @@ import { FormInput } from '../../components/input.component';
 import { PhoneInput } from '../../components/phoneinput';
 import { COUNTRIES } from '../../utils/countryCodes';
 import { SectionHeader } from '../../components/ui/sectionHeader';
+import { Picker } from '@react-native-picker/picker';
 
 interface Staff {
   _id: string;
@@ -51,7 +53,12 @@ export default function TruckFormModal({
   setItem,
 }: TruckFormModalProps) {
   const { colors } = useTheme();
-
+  const { data: routesData } = useFetchRoutesQuery({
+    page: 1,
+    limit: 100,
+    search: '',
+  });
+  const routes = routesData?.routes || [];
   const [country, setCountry] = useState(COUNTRIES[0]);
 
   const [msg, setMsg] = useState({
@@ -70,18 +77,14 @@ export default function TruckFormModal({
 
   const drivers: Staff[] = data?.users || [];
 
-  const [createTruck, { isLoading }] =
-    useCreateTruckMutation();
+  const [createTruck, { isLoading }] = useCreateTruckMutation();
 
-  const [updateTruck, { isLoading: isUpdating }] =
-    useEditTruckMutation();
+  const [updateTruck, { isLoading: isUpdating }] = useEditTruckMutation();
 
   // FILTER DRIVERS
   const filteredDrivers = driverQuery
     ? drivers.filter(d =>
-        d.name
-          ?.toLowerCase()
-          .includes(driverQuery.toLowerCase()),
+        d.name?.toLowerCase().includes(driverQuery.toLowerCase()),
       )
     : drivers;
 
@@ -97,21 +100,18 @@ export default function TruckFormModal({
 
         // DRIVER
         driverId: editingTruck.driverId?._id || '',
-        driverPhone:
-          editingTruck.driverId?.phone_number || '',
-        driverIdNo:
-          editingTruck.driverId?.identification_No || '',
+        driverPhone: editingTruck.driverId?.phone_number || '',
+        driverIdNo: editingTruck.driverId?.identification_No || '',
       });
 
-      setDriverQuery(
-        editingTruck.driverId?.name || '',
-      );
+      setDriverQuery(editingTruck.driverId?.name || '');
 
       setIsNewDriver(false);
     } else {
       setItem({
         plate: '',
         model: '',
+        route: '',
         capacity: '',
         driverId: '',
         driverPhone: '',
@@ -128,6 +128,7 @@ export default function TruckFormModal({
   // SAVE
   const handleSave = async () => {
     // VALIDATION
+    console.log(item);
     if (!item.plate?.trim()) {
       setMsg({
         msg: 'Truck plate is required',
@@ -194,8 +195,7 @@ export default function TruckFormModal({
         payload.driver = {
           name: driverQuery.trim(),
           phone_number: item.driverPhone.trim(),
-          identification_No:
-            item.driverIdNo.trim(),
+          identification_No: item.driverIdNo.trim(),
         };
       }
 
@@ -223,9 +223,7 @@ export default function TruckFormModal({
       onClose();
     } catch (err: any) {
       setMsg({
-        msg:
-          err?.data?.message ||
-          'Something went wrong',
+        msg: err?.data?.message || 'Something went wrong',
         state: 'error',
       });
     }
@@ -235,11 +233,7 @@ export default function TruckFormModal({
     <Modal visible={visible} animationType="slide">
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={
-          Platform.OS === 'ios'
-            ? 'padding'
-            : 'height'
-        }
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
           contentContainerStyle={{
@@ -249,13 +243,7 @@ export default function TruckFormModal({
           }}
           keyboardShouldPersistTaps="handled"
         >
-          <SectionHeader
-            title={
-              editingTruck
-                ? 'Edit Truck'
-                : 'Add Truck'
-            }
-          />
+          <SectionHeader title={editingTruck ? 'Edit Truck' : 'Add Truck'} />
 
           {/* PLATE */}
           <FormInput
@@ -293,7 +281,48 @@ export default function TruckFormModal({
               })
             }
           />
-
+          <View
+            style={{
+              borderWidth: 1,
+              borderColor: colors.border,
+              borderRadius: 8,
+            }}
+          >
+            <Picker
+              selectedValue={item.route}
+              onValueChange={v => setItem({ ...item, route: v })}
+            >
+              <Picker.Item label="-- Select Route --" value={null} />
+              {routes?.map((route: any) => (
+                <Picker.Item
+                  key={route._id}
+                  label={route.route_name}
+                  value={route._id}
+                />
+              ))}
+            </Picker>
+          </View>
+          <View
+            style={{
+              borderWidth: 1,
+              borderColor: colors.border,
+              borderRadius: 8,
+              marginTop: 12,
+            }}
+          >
+            <Picker
+              selectedValue={item.vehicleType}
+              onValueChange={v => setItem({ ...item, vehicleType: v })}
+            >
+              <Picker.Item label="-- Select Vehicle Type  --" value={null} />
+              <Picker.Item label="11 Seater Matatu" value="HIACE_11" />
+              <Picker.Item label="14 Seater Matatu" value="HIACE_14" />
+              <Picker.Item label="25 Seater Bus" value="BUS_25" />
+              <Picker.Item label="33 Seater Bus" value="BUS_33" />
+              <Picker.Item label="49 Seater Bus" value="BUS_49" />
+              <Picker.Item label="51 Seater Bus" value="BUS_51" />
+            </Picker>
+          </View>
           {/* DRIVER */}
           <Text
             style={{
@@ -347,11 +376,8 @@ export default function TruckFormModal({
                       setItem((prev: any) => ({
                         ...prev,
                         driverId: d._id,
-                        driverPhone:
-                          d.phone_number || '',
-                        driverIdNo:
-                          d.identification_No ||
-                          '',
+                        driverPhone: d.phone_number || '',
+                        driverIdNo: d.identification_No || '',
                       }));
 
                       setDriverQuery(d.name);
@@ -363,8 +389,7 @@ export default function TruckFormModal({
                     style={{
                       padding: 12,
                       borderBottomWidth: 1,
-                      borderBottomColor:
-                        colors.border,
+                      borderBottomColor: colors.border,
                     }}
                   >
                     <Text
@@ -421,32 +446,17 @@ export default function TruckFormModal({
 
           {/* TOAST */}
           {msg.msg ? (
-            <Toast
-              setMsg={setMsg}
-              msg={msg.msg}
-              state={msg.state}
-            />
+            <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />
           ) : null}
 
           {/* BUTTONS */}
           <PrimaryButton
-            title={
-              editingTruck
-                ? 'Save Changes'
-                : 'Add Truck'
-            }
+            title={editingTruck ? 'Save Changes' : 'Add Truck'}
             onPress={handleSave}
-            loading={
-              editingTruck
-                ? isUpdating
-                : isLoading
-            }
+            loading={editingTruck ? isUpdating : isLoading}
           />
 
-          <SecondaryButton
-            title="Cancel"
-            onPress={onClose}
-          />
+          <SecondaryButton title="Cancel" onPress={onClose} />
         </ScrollView>
       </KeyboardAvoidingView>
     </Modal>
